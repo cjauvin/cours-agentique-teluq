@@ -1,0 +1,17 @@
+# Préférences et récompenses
+
+::: {.callout-note}
+Semaine en préparation : ce plan sera remplacé par le contenu.
+:::
+
+**Objectif.** Distinguer l'apprentissage par préférences (RLHF) et l'apprentissage par récompenses vérifiables (RLVR).
+
+## Au programme
+
+- RLHF : modèle de récompense, préférences humaines
+- RLVR : une récompense calculée par un programme (tests, réponse exacte)
+- GRPO : comparer plusieurs réponses à la même question
+
+## Laboratoire prévu
+
+Un GRPO miniature sur un problème arithmétique, avec une récompense vérifiable.

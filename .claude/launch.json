@@ -1,0 +1,57 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "cours",
+      "runtimeExecutable": "quarto",
+      "runtimeArgs": [
+        "preview",
+        "--port",
+        "4400",
+        "--no-browser"
+      ],
+      "port": 4400
+    },
+    {
+      "name": "mini-pi-v0",
+      "runtimeExecutable": "uv",
+      "runtimeArgs": [
+        "run",
+        "marimo",
+        "edit",
+        "labos/s07_mini_pi_v0.py",
+        "--headless",
+        "--no-token",
+        "--port",
+        "2718"
+      ],
+      "port": 2718
+    },
+    {
+      "name": "essai-hugo",
+      "runtimeExecutable": "hugo",
+      "runtimeArgs": [
+        "server",
+        "--source",
+        "essais/hugo",
+        "--port",
+        "1313"
+      ],
+      "port": 1313
+    },
+    {
+      "name": "essai-quarto",
+      "runtimeExecutable": "uv",
+      "runtimeArgs": [
+        "run",
+        "python",
+        "-m",
+        "http.server",
+        "4300",
+        "--directory",
+        "essais/quarto/_site"
+      ],
+      "port": 4300
+    }
+  ]
+}

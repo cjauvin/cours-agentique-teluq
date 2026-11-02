@@ -1,0 +1,25 @@
+# Activité du module {.unnumbered}
+
+> *Activité à finaliser.* Esquisse ci-dessous.
+
+## Objectif
+
+Relier les limites des LLM aux besoins concrets qui justifient une architecture
+agentique.
+
+## Consigne
+
+Choisissez une tâche que vous aimeriez confier à un système IA (p. ex.
+« préparer une revue de presse quotidienne sur un sujet »). Puis :
+
+1. Identifiez **laquelle des quatre limites** (hallucination, cutoff, absence
+   d'état, incapacité d'agir) rend un simple appel LLM insuffisant pour cette
+   tâche.
+2. Décrivez en une phrase, pour chacune, la **capacité agentique** qui y
+   répondrait.
+3. (Approfondissement optionnel) Esquissez la **boucle** que suivrait l'agent.
+
+## Remise
+
+Court texte (≈ 300 mots) déposé dans l'environnement TÉLUQ. Critères :
+justesse de l'analyse des limites, pertinence des réponses agentiques proposées.

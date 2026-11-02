@@ -1,0 +1,21 @@
+# Module 3 — Outils, contexte et MCP {#sec-module3}
+
+::: {.objectifs}
+**Objectifs d'apprentissage**
+
+Au terme de ce module, vous serez capable de :
+
+- concevoir un outil et son schéma de fonction pour un agent ;
+- gérer la fenêtre de contexte (sélection, compression, récupération) ;
+- expliquer le principe de la récupération augmentée (RAG) ;
+- décrire le rôle du **Model Context Protocol** (MCP) [@anthropic2024mcp] comme
+  standard de connexion aux données et services.
+:::
+
+> *Contenu à étoffer.* Comment donner au modèle des capacités d'action et
+> d'accès aux données, en réponse aux limites « incapacité d'agir » et « cutoff »
+> du Module 1.
+
+## Plan du module
+
+*À détailler : conception d'outils, RAG, démonstration MCP, activité.*

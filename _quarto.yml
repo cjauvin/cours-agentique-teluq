@@ -1,0 +1,59 @@
+project:
+  type: book
+  output-dir: _site
+  render:
+    - "*.qmd"
+    - "modules/**/*.qmd"
+
+lang: fr
+
+book:
+  title: "IA agentique"
+  subtitle: "Fondements, conception et développement"
+  author: "Christian Jauvin"
+  search: true
+  page-navigation: true
+  sidebar:
+    style: docked
+    collapse-level: 1
+  chapters:
+    - index.qmd
+    - mise-en-route.qmd
+    - part: "Module 1 — Prédire"
+      chapters:
+        - modules/1-predire/s01.qmd
+        - modules/1-predire/s02.qmd
+        - modules/1-predire/s03.qmd
+    - part: "Module 2 — Assister"
+      chapters:
+        - modules/2-assister/s04.qmd
+        - modules/2-assister/s05.qmd
+        - modules/2-assister/s06.qmd
+    - part: "Module 3 — Agir"
+      chapters:
+        - modules/3-agir/s07.qmd
+        - modules/3-agir/s08.qmd
+        - modules/3-agir/s09.qmd
+    - part: "Module 4 — Étendre"
+      chapters:
+        - modules/4-etendre/s10.qmd
+        - modules/4-etendre/s11.qmd
+        - modules/4-etendre/s12.qmd
+    - part: "Module 5 — Éprouver"
+      chapters:
+        - modules/5-eprouver/s13.qmd
+        - modules/5-eprouver/s14.qmd
+        - modules/5-eprouver/s15.qmd
+  appendices:
+    - evaluation.qmd
+    - references.qmd
+
+bibliography: references.bib
+
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-title: "Sur cette page"
+    code-copy: true
+    number-depth: 1

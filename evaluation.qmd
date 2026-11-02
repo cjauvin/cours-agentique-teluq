@@ -1,0 +1,15 @@
+# Évaluation {.unnumbered}
+
+| Travail | Semaine | Poids | Porte sur |
+|---|---|---|---|
+| TP1 | 4 | 20 % | Module 1 — modélisation de la langue |
+| TP2 | 7 | 20 % | Module 2 — adaptation des modèles |
+| TP3 — conception | 10 | 15 % | Module 3 — le mini-Pi |
+| TP4 — évaluation empirique | 13 | 20 % | Module 4 — mesurer l'apport des extensions |
+| Diagnostic d'un système agentique | 15 | 25 % | Module 5 — expliquer les échecs par les mécanismes |
+
+Le TP3, le TP4 et le diagnostic final portent sur **le même agent**. Chaque
+travail comprend une analyse de ses limites.
+
+Les énoncés et les remises se trouvent dans l'environnement d'apprentissage de
+la TÉLUQ.

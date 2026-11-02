@@ -1,0 +1,17 @@
+# De la complétion à la conversation
+
+::: {.callout-note}
+Semaine en préparation : ce plan sera remplacé par le contenu.
+:::
+
+**Objectif.** Comprendre comment un modèle qui complète du texte devient un assistant qui répond à des consignes.
+
+## Au programme
+
+- le gabarit de conversation : rôles, jetons spéciaux
+- le réglage fin supervisé (SFT) : des paires consigne → réponse
+- réglage fin efficace (LoRA)
+
+## Laboratoire prévu
+
+Comparer un modèle de base et sa version instruite sur les mêmes consignes; un premier réglage fin LoRA.

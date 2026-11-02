@@ -1,0 +1,17 @@
+# Les quatre outils
+
+::: {.callout-note}
+Semaine en préparation : ce plan sera remplacé par le contenu.
+:::
+
+**Objectif.** Compléter le noyau du mini-Pi : lire, écrire, modifier, exécuter.
+
+## Au programme
+
+- `ecrire` et `modifier` : remplacer exactement, échouer clairement
+- `executer` : lancer une commande, avec délai et sortie tronquée
+- un bac à sable minimal : répertoire de travail, délais, refus
+
+## Laboratoire prévu
+
+Le mini-Pi v1 corrige un bogue dans un petit dépôt et fait passer ses tests.

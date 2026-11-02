@@ -1,0 +1,19 @@
+# Module 4 — Planification, mémoire et contrôle {#sec-module4}
+
+::: {.objectifs}
+**Objectifs d'apprentissage**
+
+Au terme de ce module, vous serez capable de :
+
+- comparer les stratégies de décomposition de tâches ;
+- distinguer *plan-then-execute* et boucles réactives ;
+- expliquer les types de mémoire (court terme, long terme) et la gestion d'état ;
+- décrire les patterns d'orchestration : agent unique, sous-agents, multi-agents.
+:::
+
+> *Contenu à étoffer.* Comment un agent décompose, se souvient et orchestre,
+> en réponse à la limite « absence d'état » du Module 1.
+
+## Plan du module
+
+*À détailler : décomposition, mémoire, orchestration, activité.*

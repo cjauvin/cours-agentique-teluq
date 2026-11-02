@@ -1,0 +1,38 @@
+# Présentation {.unnumbered}
+
+Ce cours explique ce qu'est un **agent** fondé sur un grand modèle de langue
+(LLM), et montre comment en construire un. On part de la plus petite brique —
+prédire le mot suivant — pour arriver à un agent de programmation complet,
+écrit de zéro en Python, que l'on étend, mesure et met à l'épreuve.
+
+Le fil rouge du cours est un **mini-Pi** : une réimplémentation minimale de
+[Pi](https://pi.dev), un agent de programmation dont le noyau tient en quatre
+outils (lire, écrire, modifier, exécuter) et une invite système de moins de
+1 000 jetons. Construire cet agent soi-même, c'est comprendre de l'intérieur ce
+que font les outils qu'on utilise tous les jours.
+
+## Les cinq modules
+
+| Module | Semaines | Question | Remise |
+|---|---|---|---|
+| 1 — **Prédire** | 1 à 3 | Que fait réellement un modèle de langue? | TP1 (semaine 4) |
+| 2 — **Assister** | 4 à 6 | Comment un modèle qui complète du texte devient-il un assistant qui suit des consignes et appelle des outils? | TP2 (semaine 7) |
+| 3 — **Agir** | 7 à 9 | Qu'est-ce qu'une boucle agentique? On construit le noyau du mini-Pi. | TP3 (semaine 10) |
+| 4 — **Étendre** | 10 à 12 | Contexte, planification, sous-agents, MCP, sécurité : qu'est-ce qui aide vraiment? On le mesure. | TP4 (semaine 13) |
+| 5 — **Éprouver** | 13 à 15 | Où et pourquoi l'agent échoue-t-il? | Diagnostic final (semaine 15) |
+
+## Comment on travaille
+
+Chaque semaine suit le même rythme :
+
+1. **Explication** — le texte de la semaine, avec ses formules.
+2. **Jouet** — des cellules interactives, directement dans la page : on fait
+   bouger un curseur et on observe.
+3. **Laboratoire** — un notebook [marimo](https://marimo.io) à ouvrir à côté,
+   avec un exercice autocorrigé (✅/❌) et une expérience à mener.
+4. **Limites** — quelques questions sur ce que le mécanisme ne sait pas faire,
+   qui préparent la semaine suivante.
+
+Les jouets s'exécutent dans votre navigateur, sans rien installer. Les
+laboratoires ont besoin d'un vrai Python : voir la [mise en
+route](mise-en-route.qmd).

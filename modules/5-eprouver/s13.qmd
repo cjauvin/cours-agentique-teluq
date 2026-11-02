@@ -1,0 +1,17 @@
+# Tâches cachées
+
+::: {.callout-note}
+Semaine en préparation : ce plan sera remplacé par le contenu.
+:::
+
+**Objectif.** Évaluer l'agent sur des tâches qu'il n'a jamais vues, et distinguer progrès réel et surajustement.
+
+## Au programme
+
+- ensembles visibles et cachés
+- contamination et surajustement au banc d'essai
+- variance et intervalles de confiance
+
+## Laboratoire prévu
+
+Faire passer le mini-Pi sur l'ensemble caché du cours.

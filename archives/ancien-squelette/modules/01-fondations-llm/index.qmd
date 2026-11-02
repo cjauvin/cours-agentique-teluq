@@ -1,0 +1,28 @@
+# Module 1 — Fondations LLM {#sec-module1}
+
+::: {.objectifs}
+**Objectifs d'apprentissage**
+
+Au terme de ce module, vous serez capable de :
+
+- expliquer, en termes simples, comment un LLM génère du texte ;
+- définir *token*, *fenêtre de contexte*, *échantillonnage* et *température* ;
+- distinguer un modèle « de raisonnement » d'un modèle standard ;
+- nommer les limites des LLM (hallucination, cutoff, absence d'état, incapacité
+  d'agir) et expliquer pourquoi elles **motivent** l'approche agentique.
+:::
+
+## Pourquoi commencer par les LLM
+
+Un agent n'est pas magique : c'est un LLM placé dans une **boucle**, doté
+d'**outils**. Pour comprendre ce que les agents apportent — et là où ils
+échouent — il faut d'abord comprendre le moteur qui les anime, et surtout ses
+**limites**. Ce sont précisément ces limites qui justifieront, au Module 2,
+l'existence des agents.
+
+## Plan du module
+
+1. [Comment un LLM génère du texte](01-generation.qmd)
+2. [Contexte et échantillonnage](02-contexte-echantillonnage.qmd)
+3. [Les limites qui motivent l'agentique](03-limites.qmd)
+4. [Activité du module](activite.qmd)

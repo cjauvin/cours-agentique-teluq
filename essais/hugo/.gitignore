@@ -1,0 +1,10 @@
+# Hugo build output
+public/
+resources/_gen/
+.hugo_build.lock
+
+# Hugo cache
+/.cache/
+
+# Generated files by hugo
+/static/files/_gen/

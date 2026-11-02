@@ -1,0 +1,19 @@
+# Module 2 — Fondations des systèmes agentiques {#sec-module2}
+
+::: {.objectifs}
+**Objectifs d'apprentissage**
+
+Au terme de ce module, vous serez capable de :
+
+- distinguer un agent d'un simple appel LLM ;
+- décrire la boucle *perception → raisonnement → action → observation* ;
+- expliquer le rôle du *tool use* et du pattern **ReAct** [@yao2023react] ;
+- situer où réside réellement l'« agentivité » dans une architecture.
+:::
+
+> *Contenu à étoffer.* Ce module introduit la boucle agentique fondamentale et
+> le pattern ReAct, en s'appuyant sur les limites des LLM établies au Module 1.
+
+## Plan du module
+
+*À détailler : leçons, démonstration d'une boucle ReAct minimale, activité.*

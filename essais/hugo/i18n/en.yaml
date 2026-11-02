@@ -1,0 +1,67 @@
+# Book-specific interface labels (used by the templates in layouts/ through
+# i18n). The theme's own labels live in themes/hugo-book-teluq/i18n/. Keep the
+# same keys as fr.yaml.
+- id: labelFigure
+  translation: Figure
+- id: labelTable
+  translation: Table
+- id: labelAlgorithm
+  translation: Algorithm
+- id: labelOutput
+  translation: Output
+- id: labelResult
+  translation: Result
+- id: pyEditor
+  translation: Python code editor
+- id: pyExample
+  translation: Runnable code example
+- id: pyRun
+  translation: Run
+- id: pyReset
+  translation: Reset
+- id: pyOutput
+  translation: Execution output
+- id: pyRunning
+  translation: Running…
+- id: pyDone
+  translation: Run complete.
+- id: pyDoneError
+  translation: Run finished with an error.
+- id: pyInterrupted
+  translation: Run interrupted.
+- id: pyFigureProduced
+  translation: produced by running the code
+- id: pyTooLong
+  translation: "⏱️ The script takes too long: the browser aborted the request. Reduce the amount of computation (less data, fewer epochs) or use a vectorized version of the code."
+- id: pyNetworkError
+  translation: "Network error: "
+- id: scrollFormula
+  translation: Formula, horizontal scrolling
+- id: scrollFigure
+  translation: Figure, horizontal scrolling
+- id: scrollAlgorithm
+  translation: Algorithm, horizontal scrolling
+- id: scrollTable
+  translation: Table, horizontal scrolling
+- id: navBook
+  translation: Book contents
+- id: navPageToc
+  translation: Table of contents for this page
+- id: toggleMenu
+  translation: Show or hide the book contents
+- id: toggleToc
+  translation: Show or hide the table of contents for this page
+- id: prevChapter
+  translation: "Previous chapter:"
+- id: nextChapter
+  translation: "Next chapter:"
+- id: searchResults
+  translation: Search results
+- id: notFound
+  translation: Page not found
+- id: backHome
+  translation: "Back to the home page:"
+- id: languages
+  translation: Languages
+- id: skipToContent
+  translation: Skip to main content

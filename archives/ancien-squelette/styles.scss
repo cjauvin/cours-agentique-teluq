@@ -1,0 +1,27 @@
+/*-- scss:defaults --*/
+
+// Palette sobre, lisible pour un cours en ligne
+$primary: #2c5f7c;
+$body-color: #1a1a1a;
+$link-color: #2c5f7c;
+
+/*-- scss:rules --*/
+
+// Encadrés « double piste » : approfondissement technique optionnel
+.callout.callout-style-default.callout-approfondissement {
+  border-left-color: $primary;
+}
+
+// Bloc objectifs d'apprentissage en tête de module
+.objectifs {
+  background: #f4f8fa;
+  border: 1px solid #d6e4ec;
+  border-radius: 6px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.objectifs > p:first-child {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}

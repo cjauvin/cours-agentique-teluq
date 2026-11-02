@@ -1,0 +1,16 @@
+# Les limites qui motivent l'agentique
+
+> *Section à étoffer.* Esquisse des points à couvrir ci-dessous.
+
+Les LLM ont quatre limites structurelles. Chacune appelle une réponse
+agentique — c'est le fil conducteur du reste du cours.
+
+| Limite | En quoi ça pose problème | Réponse agentique |
+|--------|--------------------------|-------------------|
+| **Hallucination** | Le modèle peut produire des affirmations fausses avec aplomb | Outils de récupération, vérification, garde-fous (Mod. 3, 5) |
+| **Cutoff de connaissances** | Il ignore tout ce qui est postérieur à son entraînement | Accès à des données externes / temps réel (Mod. 3) |
+| **Absence d'état** | Chaque appel est sans mémoire du précédent | Mémoire court/long terme, gestion d'état (Mod. 4) |
+| **Incapacité d'agir** | Il génère du texte, mais n'agit pas sur le monde | *Tool use* : appels de fonctions, actions (Mod. 2, 3) |
+
+C'est la conjonction de ces réponses — **une boucle + des outils + de la
+mémoire + des garde-fous** — qui transforme un LLM en *agent*.

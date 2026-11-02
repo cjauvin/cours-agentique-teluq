@@ -1,0 +1,24 @@
+baseURL = 'http://localhost:1313/'
+languageCode = 'fr'
+defaultContentLanguage = 'fr'
+title = "IA agentique : fondements, conception et développement"
+theme = 'hugo-book-teluq'
+
+[params]
+BookToC = true
+BookSearch = true
+math = true
+BookLogo = "favicon.png"
+
+[markup]
+  [markup.highlight]
+    style = 'github'
+  [markup.goldmark]
+    [markup.goldmark.renderer]
+      unsafe = true
+    [markup.goldmark.extensions]
+      [markup.goldmark.extensions.passthrough]
+        enable = true
+        [markup.goldmark.extensions.passthrough.delimiters]
+          block = [['\[', '\]'], ['$$', '$$']]
+          inline = [['\(', '\)'], ['$', '$']]

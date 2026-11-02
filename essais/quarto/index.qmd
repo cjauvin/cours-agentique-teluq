@@ -1,0 +1,6 @@
+---
+title: "Accueil"
+---
+
+*Essai comparatif — version Quarto.* Une seule page de contenu :
+[Semaine 1 — Prédire le mot suivant](s01_bigramme.qmd).

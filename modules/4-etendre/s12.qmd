@@ -1,0 +1,21 @@
+# Ouvrir et protéger
+
+::: {.callout-note}
+Semaine en préparation : ce plan sera remplacé par le contenu.
+:::
+
+**Objectif.** Connecter l'agent à des outils externes, et le protéger de ce qu'il lit.
+
+## Au programme
+
+- le protocole MCP
+- l'injection d'invite indirecte
+- permissions et confirmations
+
+## Laboratoire prévu
+
+Brancher un serveur MCP au mini-Pi; piéger un fichier du dépôt et mesurer la résistance de l'agent.
+
+## Remise
+
+TP4 — évaluation empirique des extensions, à remettre en semaine 13.

@@ -1,0 +1,17 @@
+# Contexte et mémoire
+
+::: {.callout-note}
+Semaine en préparation : ce plan sera remplacé par le contenu.
+:::
+
+**Objectif.** Gérer la fenêtre de contexte : ce que l'agent garde, résume ou oublie.
+
+## Au programme
+
+- la fenêtre de contexte et son coût (semaine 2)
+- la compaction : résumer l'historique
+- la mémoire persistante entre les sessions
+
+## Laboratoire prévu
+
+Ajouter la compaction au mini-Pi et mesurer son effet sur des tâches longues.

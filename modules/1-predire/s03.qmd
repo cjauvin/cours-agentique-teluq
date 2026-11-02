@@ -1,0 +1,22 @@
+# Un vrai petit modèle
+
+::: {.callout-note}
+Semaine en préparation : ce plan sera remplacé par le contenu.
+:::
+
+**Objectif.** Passer du jouet à un vrai modèle de langue ouvert de petite taille, et retrouver dans ses calculs tout ce qu'on a construit à la main.
+
+## Au programme
+
+- les logits d'un modèle d'environ 135 M de paramètres, jeton par jeton
+- l'encodage de la position, qui distingue les deux « le » de la semaine 2
+- l'entraînement : prédire le jeton suivant, l'entropie croisée
+- ce qu'on gagne et ce qu'on perd par rapport au bigramme
+
+## Laboratoire prévu
+
+Charger le modèle, comparer ses distributions à celles du bigramme, visualiser une tête d'attention réelle (exige un vrai noyau : molab ou local).
+
+## Remise
+
+TP1 — à remettre en semaine 4.

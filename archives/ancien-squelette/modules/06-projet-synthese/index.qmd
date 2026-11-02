@@ -1,0 +1,19 @@
+# Module 6 — Ingénierie agentique appliquée {#sec-module6}
+
+::: {.objectifs}
+**Objectifs d'apprentissage**
+
+Au terme de ce module, vous serez capable de :
+
+- mener un projet agentique **bout-en-bout** : exigences, architecture,
+  implémentation, évaluation, déploiement ;
+- intégrer les acquis des modules 1 à 5 dans un système cohérent ;
+- présenter et justifier vos choix de conception.
+:::
+
+> *Contenu à étoffer.* Projet de synthèse intégrateur. Ancrage à choisir :
+> agent de codage, agent data/analytique, ou automatisation de workflow.
+
+## Le projet fil rouge
+
+*À définir : énoncé du projet, livrables, barème, jalons par module.*

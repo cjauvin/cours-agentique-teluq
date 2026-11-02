@@ -1,0 +1,20 @@
+project:
+  type: website
+
+lang: fr
+
+website:
+  title: "IA agentique : fondements, conception et développement"
+  sidebar:
+    style: docked
+    search: true
+    contents:
+      - index.qmd
+      - section: "Module 1 — Prédire"
+        contents:
+          - s01_bigramme.qmd
+
+format:
+  html:
+    theme: cosmo
+    toc: true

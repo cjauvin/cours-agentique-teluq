@@ -1,0 +1,21 @@
+# Mesurer un agent
+
+::: {.callout-note}
+Semaine en préparation : ce plan sera remplacé par le contenu.
+:::
+
+**Objectif.** Construire un premier banc d'essai : on ne peut pas améliorer ce qu'on ne mesure pas.
+
+## Au programme
+
+- une tâche = un dépôt, une consigne, un vérificateur
+- répéter les essais : un agent n'est pas déterministe
+- taux de réussite, coût en jetons, nombre d'étapes
+
+## Laboratoire prévu
+
+Un banc d'essai de dix tâches pour le mini-Pi; comparer deux modèles.
+
+## Remise
+
+TP3 — conception de l'agent, à remettre en semaine 10.

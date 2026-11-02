@@ -1,0 +1,40 @@
+# Contexte et échantillonnage
+
+> *Section à étoffer.* Esquisse des points à couvrir ci-dessous.
+
+## La fenêtre de contexte
+
+- Tout ce que le modèle « voit » à un instant donné tient dans sa fenêtre de
+  contexte (mesurée en tokens).
+- Conséquences pratiques : coût, latence, et oubli de ce qui sort de la fenêtre.
+
+## Échantillonnage et température
+
+- Le modèle propose une distribution ; **l'échantillonnage** décide quel token
+  retenir.
+- La **température** règle le compromis déterminisme ↔ créativité.
+- Notions connexes : *top-p*, *top-k*.
+
+::: {.callout-note appearance="simple" icon=false}
+## Approfondissement — l'effet de la température
+
+Démonstration purement numérique (sans appel d'API) de l'effet de la température
+sur une distribution de probabilités via la fonction *softmax*.
+
+```{python}
+import math
+
+logits = [2.0, 1.0, 0.5, 0.1]
+
+def softmax(xs, t):
+    exps = [math.exp(x / t) for x in xs]
+    s = sum(exps)
+    return [round(e / s, 3) for e in exps]
+
+for t in (0.2, 1.0, 2.0):
+    print(f"température={t}: {softmax(logits, t)}")
+```
+
+Plus la température est basse, plus la masse de probabilité se concentre sur le
+token le plus probable (sortie quasi déterministe).
+:::

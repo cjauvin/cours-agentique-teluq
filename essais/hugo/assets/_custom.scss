@@ -1,0 +1,601 @@
+// Le thème n'expose que la palette claire (BookTheme non défini), mais
+// html-head.html annonce `color-scheme: light dark`. Les navigateurs en mode
+// sombre rendaient alors les contrôles de formulaire et les barres de
+// défilement en sombre sur une page claire. La propriété CSS l'emporte sur la
+// balise <meta> : on aligne la déclaration sur ce que la feuille de style fait
+// réellement.
+:root {
+  color-scheme: light;
+}
+
+// Texte secondaire. `--gray-500` est la couleur de *bordure* du thème
+// (#adb5bd) : utilisée comme couleur de texte, elle plafonne à 2:1 sur fond
+// clair, loin des 4,5:1 exigés (WCAG 1.4.3). Ce jeton lui sert de remplaçant
+// partout où du texte est concerné.
+:root {
+  --muted-font-color: #5c6672; // 5,8:1 sur blanc, 4,9:1 sur --gray-200
+}
+
+// Texte justifié : WCAG 1.4.8 le déconseille (les « rivières » de blanc
+// gênent notamment les lecteurs dyslexiques).
+p {
+  text-align: left;
+}
+
+// Coloration syntaxique : le style Chroma « github » colore `self` (et les
+// autres identifiants « NameBuiltinPseudo ») en #6a737d, soit 4,49:1 sur le
+// fond #f7f7f7 des blocs de code — juste sous le seuil de 4,5:1, mais sur plus
+// d'une centaine d'occurrences dans le chapitre sur les réseaux de neurones.
+// Les autres jetons du style passent tous.
+//
+// Hugo laisse Chroma écrire ses couleurs en style *inline* (`noClasses` vaut
+// vrai par défaut) : il n'existe pas de classe à cibler, et seule une
+// déclaration `!important` peut reprendre la main sur l'attribut style. Ce ton
+// à peine plus sombre atteint 5,7:1 sans changer l'allure du thème.
+.markdown [style*="color:#6a737d"] {
+  color: #5b636b !important;
+}
+
+// Animations : respecter le réglage système « réduire les animations »
+// (WCAG 2.3.3). L'indicateur d'exécution tourne pendant toute la durée d'un
+// script, qui peut atteindre 75 secondes.
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+// Lien d'évitement : premier élément focalisable de la page, il permet de
+// sauter les ~200 entrées du menu latéral (WCAG 2.4.1).
+.skip-link {
+  position: absolute;
+  top: 0;
+  inset-inline-start: 0;
+  z-index: 100;
+  padding: 0.6em 1em;
+  background: var(--body-background, #fff);
+  color: var(--color-link);
+  border: 2px solid currentColor;
+  border-radius: 0 0 $border-radius 0;
+  font-weight: 600;
+  text-decoration: none;
+  // Hors écran tant qu'il n'a pas le focus, mais toujours dans l'ordre de
+  // tabulation (contrairement à `display: none`).
+  transform: translateY(-150%);
+
+  &:focus {
+    transform: translateY(0);
+  }
+}
+
+// Menu latéral : le thème signale le survol par `opacity: .5`, ce qui ramène
+// le texte à 3,95:1 sur le fond blanc et l'entrée active à 2,41:1 — sous le
+// seuil de 4,5:1, qui vaut pour tous les états d'un texte (WCAG 1.4.3). Le
+// soulignement donne le même repère sans toucher à la couleur.
+.book-menu-content nav a:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
+
+// Champ de recherche : le gris par défaut du navigateur pour le texte
+// indicatif (#757575 sous Chrome) plafonne à 4,37:1 sur le fond du champ.
+#book-search-input::placeholder {
+  color: var(--muted-font-color);
+  opacity: 1; // Firefox applique sinon une transparence supplémentaire
+}
+
+// Régions défilantes : `overflow: auto` crée un conteneur que la souris fait
+// défiler mais que le clavier ne peut pas atteindre (WCAG 2.1.1). Celles qui
+// reçoivent `tabindex="0"` doivent montrer clairement qu'elles ont le focus.
+.katex-display[tabindex],
+.book-fig-media[tabindex],
+.pyodide-output[tabindex] {
+  &:focus-visible {
+    outline: 2px solid var(--color-link);
+    outline-offset: 2px;
+  }
+}
+
+// Titres : laisser de la place aux indices/exposants KaTeX (line-height: 1
+// du thème les rogne dans les h2 contenant v_π(s), G_t, etc.).
+.markdown {
+  h1, h2, h3, h4, h5, h6 {
+    line-height: 1.25;
+  }
+}
+
+// Table des matières : un titre de section peut contenir une formule
+// (\(G_{t}\), \(\pi\), \(v_{\pi}(s)\)…) que KaTeX rend sous forme de nombreux
+// <span> imbriqués. La règle `aside nav ul { a, span { display: block } }` du
+// thème les empilait alors verticalement, un symbole par ligne : la table des
+// matières devenait illisible.
+
+// Conteneur sans classe injecté par auto-render.js autour de chaque formule.
+// (`.book-toc-nav` remplace l'ancien `#TableOfContents`, dupliqué sur chaque
+// page ; voir la surcharge layouts/partials/docs/toc.html.)
+.book-toc-nav a > span {
+  display: inline;
+  padding: 0;
+}
+
+// Spans internes de KaTeX. Ces sélecteurs ne portent qu'une seule classe :
+// plus spécifiques que la règle du thème (qui n'en a aucune), mais moins que
+// celles de KaTeX (`.katex .base`, `.katex .vlist-t`…), dont les valeurs
+// d'affichage restent donc intactes.
+aside nav ul .katex,
+aside nav ul .katex span {
+  display: inline;
+  padding: 0;
+}
+
+// Formules KaTeX : défilement horizontal si la formule reste trop large
+// (filet de sécurité après découpage multi-lignes des équations)
+.katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
+  padding: 0.25em 0;
+  // Marge visuelle discrète pour indiquer le défilement possible
+  background:
+    linear-gradient(to right, var(--body-background, #fff) 30%, transparent) left center / 1.2em 100% no-repeat,
+    linear-gradient(to left, var(--body-background, #fff) 30%, transparent) right center / 1.2em 100% no-repeat;
+  background-attachment: local, local;
+
+  > .katex {
+    // Évite que le conteneur soit plus large que la colonne
+    max-width: none;
+  }
+}
+
+// Contenir les formules trop larges dans la colonne de lecture
+.book-page,
+article.markdown {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+
+code.has-jax {font: inherit;
+              font-size: 100%;
+              background: inherit;
+              border: inherit;
+              color: #515151;}
+
+// Référence vers un notebook CodePython : {{< notebook "Fichier.ipynb" >}}
+.notebook-ref {
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  margin: 1.2em 0;
+  padding: 0.7em 1em;
+  border: 1px solid var(--gray-200);
+  border-inline-start: 4px solid var(--color-link);
+  border-radius: 6px;
+  background: var(--gray-100);
+  font-size: 0.95em;
+  line-height: 1.4;
+
+  .notebook-ref-icon {
+    font-size: 1.25em;
+    flex: 0 0 auto;
+  }
+
+  .notebook-ref-crumbs {
+    word-break: break-word;
+  }
+
+  .notebook-ref-sep {
+    margin: 0 0.35em;
+    color: var(--muted-font-color);
+    opacity: 0.7;
+  }
+
+  .notebook-ref-file {
+    font-weight: 600;
+    font-family: monospace;
+  }
+}
+
+// Encadré algorithme / pseudo-code : {{< algorithme titre="..." >}} … {{< /algorithme >}}
+.algo {
+  --algo-indent: 1.35em;
+  // Fond gris pâle, distinct du fond de page (adapté clair / sombre via les variables du thème)
+  --algo-bg: color-mix(in srgb, var(--gray-200) 65%, var(--body-background, #fff));
+  --algo-bg-header: color-mix(in srgb, var(--gray-200) 90%, var(--body-background, #fff));
+  --algo-border: var(--gray-200);
+
+  margin: 1.4em 0;
+  padding: 0;
+  border: 1px solid var(--algo-border);
+  border-radius: 8px;
+  background-color: var(--algo-bg);
+  overflow-x: auto;
+  // Ne pas hériter du justify des paragraphes du livre
+  text-align: left;
+
+  .algo-caption {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.5em 0.75em;
+    margin: 0;
+    padding: 0.7em 1em;
+    background-color: var(--algo-bg-header);
+    border-bottom: 1px solid var(--algo-border);
+    font-size: 1em;
+    line-height: 1.35;
+  }
+
+  .algo-badge {
+    flex: 0 0 auto;
+    display: inline-block;
+    padding: 0.15em 0.55em;
+    border-radius: 999px;
+    background: var(--color-link);
+    color: #fff;
+    font-size: 0.75em;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+
+  .algo-title {
+    font-weight: 700;
+    font-size: 1.02em;
+    color: var(--body-font-color, inherit);
+
+    // Annuler les marges des <p> injectés par RenderString
+    p {
+      display: inline;
+      margin: 0;
+      text-align: left;
+    }
+  }
+
+  .algo-subtitle {
+    margin: 0;
+    padding: 0.45em 1em 0.35em;
+    font-size: 0.92em;
+    font-style: italic;
+    color: var(--muted-font-color);
+    background-color: var(--algo-bg);
+    border-bottom: 1px dashed var(--algo-border);
+
+    p {
+      margin: 0;
+      text-align: left;
+    }
+  }
+
+  .algo-body {
+    padding: 0.85em 1.1em 1em;
+    font-size: 0.95em;
+    line-height: 1.5;
+    background-color: var(--algo-bg);
+
+    > :first-child {
+      margin-top: 0;
+    }
+
+    > :last-child {
+      margin-bottom: 0;
+    }
+
+    p {
+      margin: 0.25em 0;
+      text-align: left;
+    }
+
+    // Mots-clés de contrôle (Pour, Si, Sinon, Tant que…)
+    strong {
+      color: var(--color-link);
+      font-variant: small-caps;
+      letter-spacing: 0.03em;
+      font-weight: 700;
+    }
+
+    // Formules dans le pseudo-code
+    .katex-display {
+      margin: 0.35em 0;
+      text-align: left;
+    }
+
+    // ——— Mode étapes indentées (prétraitement des « > ») ———
+    &.algo-body--steps {
+      display: flex;
+      flex-direction: column;
+      gap: 0.28em;
+    }
+
+    .algo-step {
+      --algo-level: 0;
+      position: relative;
+      padding: 0.12em 0 0.12em calc(var(--algo-level) * var(--algo-indent));
+      margin: 0;
+      text-align: left;
+
+      // Filets d'indentation (un trait par niveau parent)
+      &::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        width: calc(var(--algo-level) * var(--algo-indent));
+        background:
+          repeating-linear-gradient(
+            to right,
+            transparent 0,
+            transparent calc(var(--algo-indent) - 1px),
+            var(--algo-border) calc(var(--algo-indent) - 1px),
+            var(--algo-border) var(--algo-indent)
+          );
+        pointer-events: none;
+      }
+
+      // Contenu rendu par RenderString (souvent un <p>)
+      > p {
+        display: inline;
+        margin: 0;
+        text-align: left;
+      }
+
+      > p + p {
+        display: block;
+        margin-top: 0.25em;
+      }
+
+      // Formule display éventuelle dans une étape
+      .katex-display {
+        display: inline-block;
+        margin: 0.15em 0;
+        vertical-align: middle;
+      }
+    }
+
+    // ——— Mode libre : listes Markdown ———
+    ul, ol {
+      margin: 0.25em 0;
+      padding-left: 1.25em;
+      list-style: none;
+
+      ul, ol {
+        margin-top: 0.15em;
+        margin-bottom: 0.15em;
+        border-inline-start: 2px solid var(--gray-200);
+        padding-left: 1em;
+        margin-left: 0.15em;
+      }
+    }
+
+    li {
+      margin: 0.2em 0;
+      padding-left: 0.15em;
+
+      &::marker {
+        content: "";
+      }
+    }
+
+    // Repli si blockquotes Markdown (sans prétraitement)
+    blockquote {
+      margin: 0.15em 0;
+      padding: 0 0 0 1em;
+      border-inline-start: 2px solid var(--gray-200);
+      border-radius: 0;
+      background: transparent;
+
+      p {
+        margin: 0.15em 0;
+      }
+
+      blockquote {
+        margin-top: 0.1em;
+        margin-bottom: 0.1em;
+      }
+    }
+  }
+}
+
+// Carte pour un lien externe autonome : {{< lien "https://..." >}}
+.lien-ref {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6em;
+  margin: 1.2em 0;
+  padding: 0.7em 1em;
+  border: 1px solid var(--gray-200);
+  border-inline-start: 4px solid var(--color-link);
+  border-radius: 6px;
+  background: var(--gray-100);
+  font-size: 0.95em;
+  line-height: 1.4;
+
+  .lien-ref-icon {
+    font-size: 1.25em;
+    flex: 0 0 auto;
+    margin-top: 0.05em;
+  }
+
+  .lien-ref-body {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .lien-ref-title {
+    font-weight: 600;
+    word-break: break-word;
+  }
+
+  .lien-ref-url {
+    margin-top: 0.15em;
+    font-size: 0.8em;
+    font-family: monospace;
+    color: var(--muted-font-color);
+    word-break: break-all;
+  }
+}
+
+
+// Figures numérotées : {{< figure src="..." titre="..." >}}
+.book-fig {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 1.6em auto;
+  padding: 0;
+  max-width: 100%;
+  text-align: center;
+  // Annuler le justify hérité des paragraphes
+  p {
+    text-align: center;
+  }
+
+  .book-fig-media {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    max-width: 100%;
+    padding: 0.5em 0.25em;
+    overflow-x: auto;
+
+    img,
+    svg {
+      display: block;
+      max-width: 100%;
+      width: auto;
+      height: auto;
+      margin: 0 auto;
+    }
+
+    // Images injectées via le corps Markdown
+    p {
+      margin: 0;
+      text-align: center;
+    }
+  }
+
+  .book-fig-caption {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: baseline;
+    gap: 0.4em 0.65em;
+    margin: 0.15em 0 0;
+    padding: 0.45em 0.75em 0.15em;
+    max-width: 40rem;
+    font-size: 0.95em;
+    line-height: 1.4;
+    color: var(--body-font-color, inherit);
+  }
+
+  .book-fig-badge {
+    flex: 0 0 auto;
+    display: inline-block;
+    padding: 0.12em 0.5em;
+    border-radius: 999px;
+    background: var(--color-link);
+    color: #fff;
+    font-size: 0.72em;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+
+  .book-fig-title {
+    font-style: italic;
+    font-weight: 400;
+    color: var(--body-font-color, #000);
+
+    // RenderString peut injecter un <p>
+    p {
+      display: inline;
+      margin: 0;
+      text-align: center;
+      font-style: inherit;
+    }
+  }
+
+  .book-fig-caption--solo {
+    padding-top: 0.35em;
+  }
+}
+
+// Encadré résultat d'exécution figé : {{% resultat %}} … {{% /resultat %}}
+// Couleur distincte des notebooks (bleu) et des algorithmes (gris).
+.book-resultat {
+  --resultat-accent: #b45309; // ambre
+  --resultat-bg: color-mix(in srgb, #fde68a 35%, var(--body-background, #fff));
+  --resultat-bg-header: color-mix(in srgb, #fbbf24 28%, var(--body-background, #fff));
+  --resultat-border: color-mix(in srgb, #d97706 45%, var(--gray-200));
+  --resultat-pre-bg: color-mix(in srgb, #78350f 6%, var(--body-background, #fff));
+
+  margin: 1.4em 0;
+  padding: 0;
+  border: 1px solid var(--resultat-border);
+  border-inline-start: 4px solid var(--resultat-accent);
+  border-radius: 8px;
+  background-color: var(--resultat-bg);
+  overflow: hidden;
+  text-align: left;
+
+  .book-resultat-caption {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.45em 0.75em;
+    margin: 0;
+    padding: 0.65em 1em;
+    background-color: var(--resultat-bg-header);
+    border-bottom: 1px solid var(--resultat-border);
+    font-size: 0.98em;
+    line-height: 1.35;
+  }
+
+  .book-resultat-badge {
+    flex: 0 0 auto;
+    display: inline-block;
+    padding: 0.15em 0.55em;
+    border-radius: 999px;
+    background: var(--resultat-accent);
+    color: #fff;
+    font-size: 0.72em;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .book-resultat-title {
+    font-weight: 700;
+    color: var(--body-font-color, inherit);
+  }
+
+  .book-resultat-note {
+    font-size: 0.88em;
+    font-style: italic;
+    color: var(--muted-font-color);
+    opacity: 0.95;
+  }
+
+  .book-resultat-body {
+    margin: 0;
+    padding: 0.85em 1em 1em;
+    background-color: var(--resultat-pre-bg);
+    color: var(--body-font-color, inherit);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.86em;
+    line-height: 1.45;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-x: auto;
+    border: 0;
+    border-radius: 0;
+  }
+}

@@ -1,0 +1,17 @@
+# Diagnostiquer les échecs
+
+::: {.callout-note}
+Semaine en préparation : ce plan sera remplacé par le contenu.
+:::
+
+**Objectif.** Expliquer un échec d'agent par les mécanismes vus aux modules 1 et 2.
+
+## Au programme
+
+- lire une trace : où l'agent a-t-il décroché?
+- une taxonomie des échecs
+- remonter aux mécanismes : échantillonnage, contexte, attention, adaptation
+
+## Laboratoire prévu
+
+Diagnostiquer trois échecs du mini-Pi, avec preuves à l'appui.

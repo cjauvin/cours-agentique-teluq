@@ -1,0 +1,40 @@
+# Présentation du cours {.unnumbered}
+
+Ce cours initie à l'**ingénierie agentique** : l'art et la discipline de concevoir,
+construire, évaluer et déployer des systèmes logiciels qui s'appuient sur des
+grands modèles de langage (LLM) pour **raisonner et agir** de façon autonome.
+
+## À qui s'adresse ce cours
+
+Le cours vise un **public mixte**. Aucune compétence avancée en programmation
+n'est présupposée : le fil principal de chaque module est conceptuel et
+accessible. Les personnes plus techniques trouveront, dans des encadrés
+d'**approfondissement** optionnels, du code exécutable et des détails
+d'implémentation.
+
+::: {.callout-note appearance="simple" icon=false}
+## Double piste
+Tout au long du cours, ces encadrés signalent un **approfondissement technique
+optionnel**. On peut les ignorer sans perdre le fil principal.
+:::
+
+## Comment le cours est organisé
+
+Le cours est **asynchrone** : chaque module est autoportant (objectifs, contenu,
+activité, auto-évaluation) et se parcourt à son rythme. Un **projet fil rouge**
+se construit module après module et culmine au Module 6.
+
+| Module | Titre | Idée centrale |
+|--------|-------|---------------|
+| 1 | Fondations LLM | Ce qu'un LLM sait faire — et ses limites, qui motivent l'agentique |
+| 2 | Fondations des systèmes agentiques | La boucle perception → raisonnement → action → observation |
+| 3 | Outils, contexte et MCP | Donner au modèle des capacités d'action et d'accès aux données |
+| 4 | Planification, mémoire et contrôle | Décomposer, se souvenir, orchestrer |
+| 5 | Fiabilité et évaluation | Rendre un système non déterministe sûr et mesurable |
+| 6 | Ingénierie agentique appliquée | Projet de synthèse bout-en-bout |
+
+## Évaluation
+
+Le contenu, les démonstrations et le code vivent dans ce site. Les **évaluations
+notées** (quiz, remises, suivi de progression) se font dans l'environnement
+d'apprentissage de la TÉLUQ.

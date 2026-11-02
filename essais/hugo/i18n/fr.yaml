@@ -1,0 +1,68 @@
+# Libellés de l'interface propres au livre (les gabarits de layouts/ y font
+# appel par i18n). Les libellés du thème lui-même sont dans
+# themes/hugo-book-teluq/i18n/. Voir aussi en.yaml : les deux fichiers doivent
+# déclarer les mêmes clés.
+- id: labelFigure
+  translation: Figure
+- id: labelTable
+  translation: Tableau
+- id: labelAlgorithm
+  translation: Algorithme
+- id: labelOutput
+  translation: Sortie
+- id: labelResult
+  translation: Résultat
+- id: pyEditor
+  translation: Éditeur de code Python
+- id: pyExample
+  translation: Exemple de code exécutable
+- id: pyRun
+  translation: Exécuter
+- id: pyReset
+  translation: Réinitialiser
+- id: pyOutput
+  translation: Sortie de l'exécution
+- id: pyRunning
+  translation: Exécution…
+- id: pyDone
+  translation: Exécution terminée.
+- id: pyDoneError
+  translation: Exécution terminée avec une erreur.
+- id: pyInterrupted
+  translation: Exécution interrompue.
+- id: pyFigureProduced
+  translation: produite par l’exécution du code
+- id: pyTooLong
+  translation: "⏱️ Le script est trop long : le navigateur a interrompu la requête. Réduisez la charge de calcul (moins de données, moins d'epochs) ou utilisez une version vectorisée du code."
+- id: pyNetworkError
+  translation: "Erreur réseau : "
+- id: scrollFormula
+  translation: Formule, défilement horizontal
+- id: scrollFigure
+  translation: Figure, défilement horizontal
+- id: scrollAlgorithm
+  translation: Algorithme, défilement horizontal
+- id: scrollTable
+  translation: Tableau, défilement horizontal
+- id: navBook
+  translation: Sommaire du manuel
+- id: navPageToc
+  translation: Table des matières de la page
+- id: toggleMenu
+  translation: Afficher ou masquer le sommaire du manuel
+- id: toggleToc
+  translation: Afficher ou masquer la table des matières de la page
+- id: prevChapter
+  translation: "Chapitre précédent :"
+- id: nextChapter
+  translation: "Chapitre suivant :"
+- id: searchResults
+  translation: Résultats de la recherche
+- id: notFound
+  translation: Page introuvable
+- id: backHome
+  translation: "Retour à l’accueil :"
+- id: languages
+  translation: Langues
+- id: skipToContent
+  translation: Aller au contenu principal

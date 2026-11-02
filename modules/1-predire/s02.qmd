@@ -1,0 +1,232 @@
+---
+title: "Jetons et attention"
+engine: marimo
+pyproject: |
+  requires-python = ">=3.10"
+  dependencies = ["numpy"]
+---
+
+```python {.marimo}
+from collections import Counter
+
+import marimo as mo
+import numpy as np
+
+COULEURS = ["#dbeafe", "#fde68a", "#bbf7d0", "#fecaca", "#e9d5ff", "#fed7aa"]
+
+
+def colorer(morceaux):
+    spans = [
+        f"<span style='background:{COULEURS[i % len(COULEURS)]};padding:2px 1px;"
+        f"border-radius:3px;font-family:monospace;white-space:pre'>{m}</span>"
+        for i, m in enumerate(morceaux)
+    ]
+    return mo.Html(
+        "<div style='display:flex;flex-wrap:wrap;gap:2px;line-height:1.8'>"
+        + "".join(spans) + "</div>"
+    )
+
+
+def barres(etiquettes, valeurs, largeur=300):
+    lignes = [
+        f"<div style='display:flex;align-items:center;gap:.5em;margin:2px 0'>"
+        f"<code style='width:6em'>{e}</code>"
+        f"<div style='background:#3b82f6;height:1em;width:{v * largeur:.0f}px'></div>"
+        f"<span>{v:.0%}</span></div>"
+        for e, v in zip(etiquettes, valeurs)
+    ]
+    return mo.Html("".join(lignes))
+```
+
+La semaine dernière, le bigramme avait deux défauts majeurs : il ne connaît
+que les mots vus dans son corpus, et il ne regarde qu'un seul mot en arrière.
+Les LLM règlent le premier avec la **tokenisation en sous-mots**, et le second
+avec l'**attention**.
+
+## Des mots aux jetons
+
+Un LLM ne voit pas des mots, mais des **jetons** : des morceaux de mots tirés
+d'un vocabulaire fixe, de quelques dizaines de milliers d'éléments. Le
+vocabulaire est appris par l'algorithme **BPE** (*byte pair encoding*) :
+
+1. on part des caractères;
+2. on compte les paires de symboles adjacents dans le corpus;
+3. on fusionne la paire la plus fréquente en un nouveau symbole;
+4. on recommence, autant de fois qu'on veut de symboles dans le vocabulaire.
+
+```python {.marimo}
+#| echo: true
+def compter_paires(mots):
+    paires = Counter()
+    for mot, freq in mots.items():
+        for a, b in zip(mot, mot[1:]):
+            paires[a, b] += freq
+    return paires
+
+
+def fusionner(mot, paire):
+    resultat, i = [], 0
+    while i < len(mot):
+        if mot[i:i + 2] == paire:
+            resultat.append(paire[0] + paire[1])
+            i += 2
+        else:
+            resultat.append(mot[i])
+            i += 1
+    return tuple(resultat)
+
+
+def apprendre_bpe(texte, n_fusions):
+    mots = Counter(tuple("▁" + m) for m in texte.split())
+    fusions = []
+    for _ in range(n_fusions):
+        paires = compter_paires(mots)
+        if not paires:
+            break
+        meilleure = paires.most_common(1)[0][0]
+        fusions.append(meilleure)
+        mots = Counter({fusionner(m, meilleure): f for m, f in mots.items()})
+    return fusions
+
+
+def tokeniser(texte, fusions):
+    jetons = []
+    for m in texte.split():
+        mot = tuple("▁" + m)
+        for paire in fusions:
+            mot = fusionner(mot, paire)
+        jetons.extend(mot)
+    return jetons
+```
+
+Le symbole `▁` marque le début d'un mot. Augmentez le nombre de fusions et
+observez les jetons de la phrase grossir : d'abord des syllabes fréquentes,
+puis des terminaisons (`ons`, `ait`), puis des mots entiers.
+
+```python {.marimo}
+CORPUS_BPE = " ".join(
+    ["le chat mange la souris", "nous mangeons le fromage", "vous mangez le repas",
+     "le chien mangeait", "nous dormons", "vous dormez", "le chat dormait",
+     "nous regardons le chien", "vous regardez la souris", "le chien regardait",
+     "nous courons", "vous courez", "la souris courait"] * 5
+)
+n_fusions = mo.ui.slider(0, 60, value=20, label="Fusions", show_value=True)
+phrase_bpe = mo.ui.text(value="nous mangions le chat", label="Phrase", full_width=True)
+mo.vstack([n_fusions, phrase_bpe])
+```
+
+```python {.marimo}
+_fusions = apprendre_bpe(CORPUS_BPE, n_fusions.value)
+_jetons = tokeniser(phrase_bpe.value, _fusions)
+mo.vstack([
+    colorer(_jetons),
+    mo.md(
+        f"**{len(_jetons)} jetons** pour {len(phrase_bpe.value)} caractères — "
+        f"dernières fusions : {', '.join('`' + a + b + '`' for a, b in _fusions[-5:])}"
+    ),
+])
+```
+
+« mangions » n'est pas dans le corpus, et pourtant il se découpe sans problème
+en morceaux connus : `▁man`, `g`, `i`, `ons` — le radical et la terminaison de
+« mangeons ». Avec un vocabulaire qui contient tous les caractères, **aucun
+texte n'est hors vocabulaire** : c'est le premier défaut du bigramme qui
+disparaît.
+
+## L'attention
+
+Chaque jeton devient un **vecteur** (son *plongement*). Pour prédire la suite,
+le modèle doit combiner les vecteurs des jetons précédents — mais pas tous de la
+même façon. Dans « le chat noir dort », pour accorder « noir », c'est « chat »
+qui compte; pour conjuguer « dort », aussi.
+
+L'attention calcule, pour chaque jeton, une **distribution sur les jetons
+précédents**. Chaque jeton produit une *requête* $q$ (« ce que je cherche ») et
+une *clé* $k$ (« ce que j'offre »). Le score entre deux jetons est leur produit
+scalaire, et un softmax le transforme en poids :
+
+$$\mathrm{Attention}(Q, K, V) = \mathrm{softmax}\!\left(\frac{QK^\top}{\sqrt{d}}\right) V$$
+
+Un **masque causal** interdit de regarder vers l'avant : un jeton ne voit que
+lui-même et ceux qui le précèdent.
+
+```python {.marimo}
+#| echo: true
+def softmax(x):
+    e = np.exp(x - x.max(axis=-1, keepdims=True))
+    return e / e.sum(axis=-1, keepdims=True)
+
+
+def attention(Q, K, V, causal=True):
+    scores = Q @ K.T / np.sqrt(K.shape[1])
+    if causal:
+        scores = np.where(np.tri(len(Q), dtype=bool), scores, -np.inf)
+    poids = softmax(scores)
+    return poids @ V, poids
+```
+
+Dans un vrai modèle, les vecteurs et les matrices sont appris. Ici, on les
+construit à la main pour voir le mécanisme : chaque mot est codé par sa
+catégorie (déterminant, nom, adjectif, verbe, préposition), et une matrice
+$M$ dit quelle catégorie « cherche » quelle autre — un adjectif cherche un
+nom, un verbe cherche un nom, un nom cherche un déterminant.
+
+```python {.marimo}
+#| echo: true
+CATEGORIES = ["dét", "nom", "adj", "verbe", "prép"]
+PHRASE = [("le", "dét"), ("chat", "nom"), ("noir", "adj"), ("dort", "verbe"),
+          ("sur", "prép"), ("le", "dét"), ("tapis", "nom")]
+
+X = np.array([[c == cat for c in CATEGORIES] for _, cat in PHRASE], dtype=float)
+
+M = np.zeros((5, 5))
+M[2, 1] = 4  # l'adjectif cherche un nom
+M[3, 1] = 4  # le verbe cherche un nom
+M[1, 0] = 3  # le nom cherche un déterminant
+M[4, 3] = 3  # la préposition cherche un verbe
+M[0, 4] = 2  # le déterminant cherche une préposition
+```
+
+Choisissez un mot : les barres montrent où il porte son attention. La
+**netteté** multiplie les scores avant le softmax : c'est l'inverse d'une
+température.
+
+```python {.marimo}
+_options = {f"{i + 1}. {mot}": i for i, (mot, _) in enumerate(PHRASE)}
+requete = mo.ui.dropdown(_options, value="4. dort", label="Mot")
+nettete = mo.ui.slider(0.0, 3.0, step=0.1, value=1.0, label="Netteté", show_value=True)
+mo.hstack([requete, nettete], justify="start", gap=2)
+```
+
+```python {.marimo}
+_, _poids = attention(nettete.value * X @ M, X, X)
+_i = requete.value
+barres([m for m, _ in PHRASE[: _i + 1]], _poids[_i, : _i + 1])
+```
+
+À netteté 0, tous les scores sont nuls : l'attention est uniforme sur les mots
+précédents, et on perd toute structure. En la montant, chaque mot se concentre
+sur celui qu'il cherche, **quelle que soit la distance** : c'est le second
+défaut du bigramme qui disparaît.
+
+## Laboratoire
+
+::: {.callout-tip icon=false}
+## Laboratoire 2 — `labos/s02_attention.py`
+
+1. **Exercice** — écrire `softmax` et `attention` en NumPy, avec le masque
+   causal, et les faire passer au vert.
+2. **Expérience** — modifier la matrice $M$ pour que « tapis » regarde
+   « sur » plutôt que « le », et vérifier l'effet sur la carte d'attention.
+:::
+
+## Limites
+
+- Les deux « le » de la phrase ont exactement le même vecteur. Le second
+  peut-il savoir qu'il vient après « sur »? Que manque-t-il? (Indice : la
+  position.)
+- Le calcul de l'attention compare chaque jeton à tous les précédents. Combien
+  d'opérations pour un texte de 100 000 jetons? Quel lien avec la « fenêtre de
+  contexte » d'un agent?
+- Ici, $M$ a été écrite à la main. Dans un vrai modèle, d'où vient-elle?
+  (Semaine 3.)

@@ -1,0 +1,17 @@
+# Enjeux
+
+::: {.callout-note}
+Semaine en préparation : ce plan sera remplacé par le contenu.
+:::
+
+**Objectif.** Prendre du recul sur l'autonomie qu'on donne aux agents.
+
+## Au programme
+
+- coûts et empreinte
+- sécurité et responsabilité
+- ce que les agents ne savent pas (encore) faire
+
+## Remise
+
+Diagnostic d'un système agentique — à remettre en semaine 15.

@@ -1,0 +1,59 @@
+project:
+  type: book
+  output-dir: _book
+
+lang: fr
+
+book:
+  title: "Ingénierie agentique"
+  subtitle: "Concevoir, construire et évaluer des systèmes pilotés par des LLM"
+  author: "Christian Jauvin"
+  date: today
+  search: true
+  page-navigation: true
+  sidebar:
+    style: docked
+    collapse-level: 1
+  chapters:
+    - index.qmd
+    - part: "Module 1 — Fondations LLM"
+      chapters:
+        - modules/01-fondations-llm/index.qmd
+        - modules/01-fondations-llm/01-generation.qmd
+        - modules/01-fondations-llm/02-contexte-echantillonnage.qmd
+        - modules/01-fondations-llm/03-limites.qmd
+        - modules/01-fondations-llm/activite.qmd
+    - part: "Module 2 — Fondations des systèmes agentiques"
+      chapters:
+        - modules/02-fondations-agentiques/index.qmd
+    - part: "Module 3 — Outils, contexte et MCP"
+      chapters:
+        - modules/03-outils-contexte-mcp/index.qmd
+    - part: "Module 4 — Planification, mémoire et contrôle"
+      chapters:
+        - modules/04-planification-memoire/index.qmd
+    - part: "Module 5 — Fiabilité et évaluation"
+      chapters:
+        - modules/05-fiabilite-evaluation/index.qmd
+    - part: "Module 6 — Ingénierie agentique appliquée"
+      chapters:
+        - modules/06-projet-synthese/index.qmd
+
+bibliography: references.bib
+
+execute:
+  freeze: auto
+
+format:
+  html:
+    theme:
+      - cosmo
+      - styles.scss
+    toc: true
+    toc-title: "Sur cette page"
+    code-copy: true
+    code-overflow: wrap
+  pdf:
+    documentclass: scrbook
+    papersize: letter
+    toc-title: "Table des matières"

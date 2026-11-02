@@ -1,0 +1,17 @@
+# Planifier et déléguer
+
+::: {.callout-note}
+Semaine en préparation : ce plan sera remplacé par le contenu.
+:::
+
+**Objectif.** Comparer les patrons d'orchestration : agent unique, sous-agents, multi-agents.
+
+## Au programme
+
+- un mode « plan » : réfléchir avant d'agir
+- les sous-agents : déléguer avec un contexte neuf
+- les systèmes multi-agents : quand est-ce utile?
+
+## Laboratoire prévu
+
+Un sous-agent pour la recherche dans le dépôt; mesurer l'apport réel.

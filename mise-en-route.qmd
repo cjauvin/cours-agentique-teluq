@@ -1,0 +1,56 @@
+# Mise en route {.unnumbered}
+
+## Deux niveaux d'exécution
+
+| | Jouets | Laboratoires |
+|---|---|---|
+| Où | dans la page, dans votre navigateur | un notebook marimo, dans un vrai Python |
+| Installation | aucune | aucune (molab, Codespaces) ou `uv` sur votre machine |
+| Pour quoi | comprendre un mécanisme en le manipulant | construire, tester et mesurer |
+
+Les jouets utilisent [Pyodide](https://pyodide.org), une version de Python qui
+tourne dans le navigateur. Le premier chargement d'une page prend quelques
+secondes. Les laboratoires ont besoin de ce que le navigateur ne peut pas
+offrir : PyTorch, de vrais processus, un système de fichiers, une clé d'API.
+
+## Ouvrir un laboratoire
+
+Trois options, au choix :
+
+- **molab** — l'environnement infonuagique gratuit de marimo, avec GPU.
+  *(lien à ajouter quand le dépôt du cours sera publié)*
+- **GitHub Codespaces** — un environnement complet dans le navigateur.
+  *(idem)*
+- **Sur votre machine**, avec [uv](https://docs.astral.sh/uv/) :
+
+```bash
+git clone <dépôt du cours>
+cd cours-agentique-teluq
+uv run marimo edit labos/s01_temperature.py
+```
+
+## Configurer un modèle
+
+À partir de la semaine 7, les laboratoires peuvent appeler un vrai modèle par
+une API compatible OpenAI. La configuration passe par trois variables
+d'environnement :
+
+| Variable | Exemple (Groq) | Exemple (Ollama, local) |
+|---|---|---|
+| `C1_BASE_URL` | `https://api.groq.com/openai/v1` | `http://localhost:11434/v1` |
+| `C1_API_KEY` | votre clé | `ollama` |
+| `C1_MODELE` | `openai/gpt-oss-120b` | `qwen2.5-coder:7b` |
+
+Sans configuration, les laboratoires fonctionnent avec un **modèle simulé**.
+
+## La bibliothèque du cours
+
+Les laboratoires partagent un petit paquet Python, `c1`, qui fait partie du
+dépôt :
+
+- `c1.verif` — les vérifications autocorrigées ✅/❌;
+- `c1.llm` — le modèle simulé et l'adaptateur pour une API compatible OpenAI;
+- `c1.viz` — les barres de probabilités et l'affichage des traces d'agent.
+
+Il est volontairement court : tout ce qui est au cœur du cours, on l'écrit
+soi-même, en laboratoire.

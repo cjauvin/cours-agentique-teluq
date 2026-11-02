@@ -1,0 +1,34 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Quarto
+/_book/
+/.quarto/
+*.html
+site_libs/
+
+# Secrets
+.env
+
+**/*.quarto_ipynb
+
+# Site Quarto
+/_site/
+**/__marimo__/
+.DS_Store
+
+# Essais : sorties générées et copies de tiers
+/essais/hugo/static/jouets/
+/essais/hugo/public/
+/essais/hugo/themes/
+/essais/hugo/.hugo_build.lock
+/essais/quarto/_site/
+/essais/quarto/.quarto/

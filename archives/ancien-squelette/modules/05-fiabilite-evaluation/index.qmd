@@ -1,0 +1,21 @@
+# Module 5 — Fiabilité et évaluation {#sec-module5}
+
+::: {.objectifs}
+**Objectifs d'apprentissage**
+
+Au terme de ce module, vous serez capable de :
+
+- mettre en place gestion d'erreurs, retries et garde-fous ;
+- placer des points de contrôle *human-in-the-loop* et gérer permissions et
+  sandboxing ;
+- arbitrer entre coût, latence et fiabilité ;
+- définir le succès d'un système non déterministe et construire un **harnais
+  d'évaluation** (traçage, journalisation, débogage des modes d'échec).
+:::
+
+> *Contenu à étoffer.* Rendre un système agentique sûr, prévisible et mesurable.
+> Fusionne fiabilité (ingénierie de production) et évaluation (mesure de qualité).
+
+## Plan du module
+
+*À détailler : garde-fous, observabilité, harnais d'éval, activité.*

@@ -1,0 +1,141 @@
+---
+title: "Semaine 1 — Prédire le mot suivant"
+engine: marimo
+---
+
+```python {.marimo}
+import random
+from collections import Counter, defaultdict
+
+import marimo as mo
+```
+
+Un modèle de langue ne fait qu'une chose : étant donné un début de texte, il
+attribue une probabilité à chaque jeton qui pourrait suivre. Tout le reste — la
+conversation, le raisonnement, les appels d'outils de la semaine 7 — est
+construit sur cette seule opération. Cette semaine, on la réalise avec le
+modèle le plus simple qui soit : le **bigramme**.
+
+## Le bigramme
+
+Le bigramme ne regarde que le mot précédent. Il estime la probabilité du mot
+suivant en comptant, dans un corpus, combien de fois chaque paire apparaît :
+
+$$P(w_t \mid w_{t-1}) = \frac{C(w_{t-1}, w_t)}{C(w_{t-1})}$$
+
+Voici le corpus, et le comptage des paires :
+
+```python {.marimo}
+#| echo: true
+CORPUS = """
+le chat dort sur le tapis . le chien dort sur le canapé .
+le chat mange la souris . le chien mange le repas du chat .
+la souris dort dans le trou . le chat regarde le chien .
+le chien regarde la souris . la souris regarde le fromage .
+la souris mange le fromage . le chat dort dans le panier .
+le chien court dans le jardin . le chat court après la souris .
+la souris court dans le trou . le chien dort dans le jardin .
+le chat mange le fromage du chien . la souris dort sur le tapis .
+"""
+jetons = CORPUS.split()
+
+comptes = defaultdict(Counter)
+for precedent, suivant in zip(jetons, jetons[1:]):
+    comptes[precedent][suivant] += 1
+vocabulaire = sorted(comptes)
+```
+
+Choisis un mot : les barres montrent la distribution du mot suivant.
+
+```python {.marimo}
+mot = mo.ui.dropdown(vocabulaire, value="le", label="Mot précédent")
+mot
+```
+
+```python {.marimo}
+def probabilites(compteur, temperature):
+    poids = {m: c ** (1 / temperature) for m, c in compteur.items()}
+    total = sum(poids.values())
+    return {m: p / total for m, p in poids.items()}
+
+def barres(probs):
+    lignes = []
+    for m, p in sorted(probs.items(), key=lambda x: -x[1]):
+        lignes.append(
+            f"<div style='display:flex;align-items:center;gap:.5em;margin:2px 0'>"
+            f"<code style='width:6em'>{m}</code>"
+            f"<div style='background:#3b82f6;height:1em;width:{p * 300:.0f}px'></div>"
+            f"<span>{p:.0%}</span></div>"
+        )
+    return mo.Html("".join(lignes))
+
+barres(probabilites(comptes[mot.value], temperature.value))
+```
+
+## La température
+
+Pour générer, on tire le mot suivant au hasard selon cette distribution, puis
+on recommence. La **température** $T$ modifie la distribution avant le tirage :
+chaque compte $c_i$ devient $c_i^{1/T}$, puis on renormalise. C'est exactement
+le paramètre `temperature` des API de LLM. Déplace le curseur : les barres
+ci-dessus se mettent à jour.
+
+```python {.marimo}
+temperature = mo.ui.slider(
+    0.1, 3.0, step=0.1, value=1.0, label="Température", show_value=True
+)
+temperature
+```
+
+```python {.marimo}
+generer = mo.ui.run_button(label="Générer une phrase")
+generer
+```
+
+```python {.marimo}
+mo.stop(not generer.value, mo.md("*Clique sur le bouton pour générer.*"))
+phrase = ["le"]
+while phrase[-1] != "." and len(phrase) < 20:
+    probs = probabilites(comptes[phrase[-1]], temperature.value)
+    phrase.append(random.choices(list(probs), weights=list(probs.values()))[0])
+mo.md(f"**{' '.join(phrase)}**")
+```
+
+## Exercice
+
+Complète la fonction `exercice_probabilites` dans l'éditeur ci-dessous, puis
+exécute-la : les vérifications se mettent à jour.
+
+```python {.marimo}
+#| editor: true
+def exercice_probabilites(compteur, temperature):
+    # À compléter : chaque compte c devient c ** (1 / temperature),
+    # puis on normalise pour que la somme fasse 1.
+    ...
+```
+
+```python {.marimo}
+def verifier(nom, condition):
+    try:
+        ok = bool(condition())
+    except Exception as e:
+        return f"❌ {nom} — erreur : {e}"
+    return f"{'✅' if ok else '❌'} {nom}"
+
+_c = {"chat": 6, "chien": 3, "fromage": 1}
+_f = exercice_probabilites
+mo.md("\n\n".join([
+    verifier("renvoie un dictionnaire", lambda: isinstance(_f(_c, 1.0), dict)),
+    verifier("la somme fait 1", lambda: abs(sum(_f(_c, 0.7).values()) - 1) < 1e-9),
+    verifier("à température 1, ce sont les fréquences", lambda: abs(_f(_c, 1.0)["chat"] - 0.6) < 1e-9),
+    verifier("à basse température, le plus fréquent domine", lambda: _f(_c, 0.1)["chat"] > 0.99),
+    verifier("à haute température, on s'approche de l'uniforme", lambda: _f(_c, 100)["fromage"] > 0.3),
+]))
+```
+
+## Limites
+
+- La phrase « le chat dort sur le canapé du chien . » peut être générée, même
+  si elle n'apparaît nulle part dans le corpus. Pourquoi?
+- Que faudrait-il pour que le modèle accorde un adjectif avec un nom situé trois
+  mots plus tôt?

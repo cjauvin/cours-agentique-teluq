@@ -1,0 +1,21 @@
+# Invites et appels d'outils
+
+::: {.callout-note}
+Semaine en préparation : ce plan sera remplacé par le contenu.
+:::
+
+**Objectif.** Comprendre comment un modèle « appelle » un outil : ce n'est que du texte structuré.
+
+## Au programme
+
+- l'ingénierie d'invites et l'apprentissage en contexte (ICL)
+- le format des appels d'outils : schémas JSON, messages `tool`
+- le décodage contraint : forcer une sortie valide
+
+## Laboratoire prévu
+
+Faire émettre des appels d'outils à un petit modèle, mesurer le taux d'appels valides.
+
+## Remise
+
+TP2 — à remettre en semaine 7.

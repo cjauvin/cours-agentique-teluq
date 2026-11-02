@@ -1,0 +1,28 @@
+# Comment un LLM génère du texte
+
+> *Section à étoffer.* Esquisse des points à couvrir ci-dessous.
+
+Un grand modèle de langage produit du texte **un token à la fois** : à chaque
+étape, il prédit une distribution de probabilité sur le prochain token, en
+choisit un, l'ajoute à la séquence, et recommence.
+
+- Qu'est-ce qu'un *token* (≠ un mot).
+- Prédiction du prochain token et génération auto-régressive.
+- L'intuition « complétion de texte » derrière toute capacité apparente.
+
+::: {.callout-note appearance="simple" icon=false}
+## Approfondissement — visualiser la tokenisation
+
+La cellule ci-dessous illustre, sans réseau ni clé d'API, la notion de
+découpage en tokens (ici une approximation naïve par mots, à des fins
+pédagogiques). Elle sert aussi à valider que la chaîne d'exécution du code
+fonctionne dans les pages du cours.
+
+```{python}
+texte = "Un agent est un LLM placé dans une boucle."
+tokens = texte.replace(".", " .").split()
+print(f"{len(tokens)} « tokens » :")
+for i, tok in enumerate(tokens):
+    print(f"  {i}: {tok!r}")
+```
+:::
