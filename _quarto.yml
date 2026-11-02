@@ -11,10 +11,12 @@ book:
   title: "IA agentique"
   subtitle: "Fondements, conception et développement"
   author: "Christian Jauvin"
+  favicon: images/logo.svg
   search: true
   page-navigation: true
   sidebar:
     style: docked
+    logo: images/logo.svg
     collapse-level: 1
   chapters:
     - index.qmd
@@ -53,6 +55,7 @@ bibliography: references.bib
 format:
   html:
     theme: cosmo
+    css: styles.css
     toc: true
     toc-title: "Sur cette page"
     code-copy: true

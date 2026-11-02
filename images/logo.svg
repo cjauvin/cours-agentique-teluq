@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="IA agentique">
+  <!-- Une boucle (l'agent) autour d'une invite (le code). -->
+  <rect width="64" height="64" rx="14" fill="#2780e3"/>
+  <g fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M45.9 24 A16 16 0 1 1 31 16"/>
+    <path d="M26 27.5 L30.5 32 L26 36.5"/>
+    <path d="M33 37 L39 37"/>
+  </g>
+  <path d="M37.5 16 L30 11.5 L30 20.5 Z" fill="#fff"/>
+</svg>

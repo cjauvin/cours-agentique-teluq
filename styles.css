@@ -1,0 +1,14 @@
+/* L'icône du cours, petite et à gauche du titre, dans la barre latérale. */
+.sidebar-header.sidebar-header-stacked {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.sidebar-header .sidebar-logo {
+  width: 2.2rem;
+  height: 2.2rem;
+  flex: none;
+}
+.sidebar-header .sidebar-title {
+  margin: 0;
+}
