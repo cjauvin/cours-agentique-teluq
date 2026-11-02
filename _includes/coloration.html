@@ -1,0 +1,15 @@
+<!-- Coloration syntaxique du code affiché par quarto-marimo, qui produit du HTML
+     brut (<pre><code class="language-python">) que Pandoc ne colore pas. -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>
+  (function () {
+    const selecteur = "marimo-quarto-island > pre > code[class^='language-']:not(.hljs)";
+    const colorer = () => document.querySelectorAll(selecteur).forEach(el => hljs.highlightElement(el));
+    colorer();
+    new MutationObserver(colorer).observe(document.body, { childList: true, subtree: true });
+  })();
+</script>
+<style>
+  marimo-quarto-island > pre > code.hljs { background: transparent; padding: 0; }
+</style>

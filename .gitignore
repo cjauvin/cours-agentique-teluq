@@ -13,6 +13,7 @@ wheels/
 /_book/
 /.quarto/
 *.html
+!/_includes/*.html
 site_libs/
 
 # Secrets
