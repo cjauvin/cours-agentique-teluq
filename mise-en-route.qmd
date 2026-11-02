@@ -3,7 +3,7 @@
 ## Deux niveaux d'exécution
 
 | | Jouets | Laboratoires |
-|---|---|---|
+|----|---------|---------|
 | Où | dans la page, dans votre navigateur | un notebook marimo, dans un vrai Python |
 | Installation | aucune | aucune (molab, Codespaces) ou `uv` sur votre machine |
 | Pour quoi | comprendre un mécanisme en le manipulant | construire, tester et mesurer |
@@ -36,7 +36,7 @@ une API compatible OpenAI. La configuration passe par trois variables
 d'environnement :
 
 | Variable | Exemple (Groq) | Exemple (Ollama, local) |
-|---|---|---|
+|-------|---------|---------|
 | `C1_BASE_URL` | `https://api.groq.com/openai/v1` | `http://localhost:11434/v1` |
 | `C1_API_KEY` | votre clé | `ollama` |
 | `C1_MODELE` | `openai/gpt-oss-120b` | `qwen2.5-coder:7b` |

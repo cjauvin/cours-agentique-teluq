@@ -22,4 +22,5 @@ uv run marimo edit labos/s01_temperature.py   # un laboratoire
 ```
 
 Ne pas lancer `quarto render` pendant qu'un `quarto preview` tourne : l'aperçu
-peut réécrire une version périmée d'une page.
+peut réécrire une version périmée d'une page. Si une modification n'apparaît
+pas, arrêter l'aperçu, faire `quarto render`, puis relancer l'aperçu.

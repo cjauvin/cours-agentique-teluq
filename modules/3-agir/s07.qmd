@@ -35,7 +35,7 @@ Une conversation est une liste de messages, chacun avec un **rôle**. Les API
 compatibles OpenAI en utilisent quatre :
 
 | Rôle | Qui l'écrit | Contenu |
-|---|---|---|
+|---|----|---------|
 | `system` | le programme | l'invite système : qui est l'agent, quels outils il a |
 | `user` | la personne | la question |
 | `assistant` | le modèle | une réponse, **ou** une demande d'outil (`tool_calls`) |

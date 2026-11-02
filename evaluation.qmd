@@ -1,7 +1,7 @@
 # Évaluation {.unnumbered}
 
 | Travail | Semaine | Poids | Porte sur |
-|---|---|---|---|
+|---------|----|---|--------------|
 | TP1 | 4 | 20 % | Module 1 — modélisation de la langue |
 | TP2 | 7 | 20 % | Module 2 — adaptation des modèles |
 | TP3 — conception | 10 | 15 % | Module 3 — le mini-Pi |

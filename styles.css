@@ -12,3 +12,15 @@
 .sidebar-header .sidebar-title {
   margin: 0;
 }
+
+/* Tableaux sobres : un seul filet, sous l'en-tête. */
+main table.table {
+  border-top: 0;
+  border-bottom: 0;
+}
+main table.table > tbody > tr > td {
+  border-bottom: 0;
+}
+main table.table > thead {
+  border-bottom: 1px solid var(--bs-border-color);
+}

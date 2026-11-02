@@ -14,7 +14,7 @@ que font les outils qu'on utilise tous les jours.
 ## Les cinq modules
 
 | Module | Semaines | Question | Remise |
-|---|---|---|---|
+|-----------|------|-----------------------|----------|
 | 1 — **Prédire** | 1 à 3 | Que fait réellement un modèle de langue? | TP1 (semaine 4) |
 | 2 — **Assister** | 4 à 6 | Comment un modèle qui complète du texte devient-il un assistant qui suit des consignes et appelle des outils? | TP2 (semaine 7) |
 | 3 — **Agir** | 7 à 9 | Qu'est-ce qu'une boucle agentique? On construit le noyau du mini-Pi. | TP3 (semaine 10) |
