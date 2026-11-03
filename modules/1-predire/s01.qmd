@@ -4,38 +4,105 @@ engine: marimo
 ---
 
 ```python {.marimo}
+import math
 import random
 from collections import Counter, defaultdict
 
 import marimo as mo
 
 
-def barres(probs, largeur=300):
+def barres(probs, exclus=(), largeur=300):
     lignes = []
     for jeton, p in sorted(probs.items(), key=lambda x: -x[1]):
+        couleur = "#cbd5e1" if jeton in exclus else "#3b82f6"
         lignes.append(
             f"<div style='display:flex;align-items:center;gap:.5em;margin:2px 0'>"
             f"<code style='width:6em'>{jeton}</code>"
-            f"<div style='background:#3b82f6;height:1em;width:{p * largeur:.0f}px'></div>"
+            f"<div style='background:{couleur};height:1em;width:{p * largeur:.0f}px'></div>"
             f"<span>{p:.0%}</span></div>"
         )
     return mo.Html("".join(lignes))
 ```
 
-Un modèle de langue ne fait qu'une chose : étant donné un début de texte, il
-attribue une probabilité à chaque jeton qui pourrait suivre. Tout le reste — la
-conversation, le raisonnement, les appels d'outils du module 3 — est construit
-sur cette seule opération. Cette semaine, on la réalise avec le modèle le plus
-simple qui soit : le **bigramme**.
+Un grand modèle de langue (LLM), aussi impressionnant soit-il, ne fait qu'une
+seule chose : étant donné un début de texte, il attribue une probabilité à
+chaque suite possible. Converser, raisonner, écrire du code, appeler des
+outils : tout ce qu'un agent fait, il le fait en produisant du texte, un
+morceau à la fois, en tirant chaque morceau dans une distribution de
+probabilités.
+
+Cette semaine, on construit cette opération de zéro, avec le modèle le plus
+simple qui soit, le **bigramme**. Il est bien trop pauvre pour être utile,
+mais il possède déjà toute la structure d'un LLM : une distribution sur le mot
+suivant, une façon de l'apprendre à partir d'un corpus, une façon de
+l'évaluer, et une façon d'en tirer du texte. Les semaines 2 et 3 remplaceront
+le bigramme par un réseau de neurones; tout le reste restera.
+
+À la fin de la semaine, vous saurez :
+
+- définir un modèle de langue comme une distribution de probabilités sur des
+  séquences, et la décomposer avec la règle de la chaîne;
+- estimer un modèle de n-grammes par comptage, et expliquer pourquoi il
+  plafonne;
+- évaluer un modèle de langue par sa perplexité;
+- expliquer les principales stratégies de décodage (glouton, température,
+  top-k, top-p) et leur effet sur le comportement d'un agent.
+
+## Un modèle de langue est une distribution
+
+Considérez la phrase « le chat dort sur le … ». Certains mots sont des suites
+plausibles (« tapis », « canapé »), d'autres beaucoup moins (« dort »,
+« le »). Un **modèle de langue** quantifie cette intuition : il attribue une
+probabilité à chaque suite possible. Formellement, c'est une distribution de
+probabilités sur les **séquences** de mots $w_1, w_2, \dots, w_n$.
+
+Une séquence est un objet trop riche pour qu'on lui attribue directement une
+probabilité : il y en a une infinité. La **règle de la chaîne** des
+probabilités permet de la décomposer en une suite de prédictions, un mot à la
+fois :
+
+$$P(w_1, \dots, w_n) = P(w_1) \, P(w_2 \mid w_1) \, P(w_3 \mid w_1, w_2) \cdots = \prod_{t=1}^{n} P(w_t \mid w_1, \dots, w_{t-1})$$
+
+Cette égalité n'est pas une approximation : elle est toujours vraie. Elle a une
+conséquence décisive. **Un modèle qui sait prédire le mot suivant sait tout
+faire** :
+
+- pour **évaluer** une phrase, on multiplie les probabilités de chacun de ses
+  mots, sachant ceux qui précèdent;
+- pour **générer** une phrase, on tire un premier mot, puis un deuxième sachant
+  le premier, et ainsi de suite.
+
+C'est pourquoi on dit des LLM qu'ils sont **autorégressifs** : chaque mot
+produit devient une partie du contexte qui sert à produire le suivant. Toute
+la difficulté se concentre dans une seule question : comment estimer
+$P(w_t \mid w_1, \dots, w_{t-1})$?
 
 ## Le bigramme
 
-Le bigramme ne regarde que le mot précédent. Il estime la probabilité du mot
-suivant en comptant, dans un corpus, combien de fois chaque paire apparaît :
+Le contexte $w_1, \dots, w_{t-1}$ s'allonge sans cesse, et une phrase de vingt
+mots n'apparaît presque jamais deux fois dans un corpus. Il faut donc
+simplifier. L'**hypothèse de Markov** consiste à ne garder que les quelques
+derniers mots du contexte. Un modèle qui en garde $n - 1$ s'appelle un
+**n-gramme**. Le plus simple, le **bigramme** ($n = 2$), ne regarde que le mot
+précédent :
+
+$$P(w_t \mid w_1, \dots, w_{t-1}) \approx P(w_t \mid w_{t-1})$$
+
+Pour l'estimer, on compte. Parmi toutes les fois où le mot $w_{t-1}$ apparaît
+dans le corpus, quelle proportion est suivie de $w_t$?
 
 $$P(w_t \mid w_{t-1}) = \frac{C(w_{t-1}, w_t)}{C(w_{t-1})}$$
 
-Voici un corpus minuscule, et tout le modèle : un dictionnaire de compteurs.
+où $C(a, b)$ compte les occurrences de la paire « $a$ $b$ », et $C(a)$ celles
+de $a$ suivi de n'importe quoi. On peut montrer que ces fréquences sont les
+probabilités qui rendent le corpus le plus probable possible : c'est
+l'estimation par **maximum de vraisemblance**, le principe même qui guidera
+l'entraînement des réseaux de neurones à la semaine 3.
+
+Voici un corpus minuscule, et tout le modèle : un dictionnaire de compteurs. Le
+point joue un double rôle : il termine une phrase, et il sert de « mot
+précédent » au premier mot de la phrase suivante. On ajoute un point au début
+pour que la première phrase en ait un aussi.
 
 ```python {.marimo}
 #| echo: true
@@ -49,15 +116,15 @@ le chien court dans le jardin . le chat court après la souris .
 la souris court dans le trou . le chien dort dans le jardin .
 le chat mange le fromage du chien . la souris dort sur le tapis .
 """
-jetons = CORPUS.split()
+jetons = ["."] + CORPUS.split()
+vocabulaire = sorted(set(jetons))
 
 comptes = defaultdict(Counter)
 for precedent, suivant in zip(jetons, jetons[1:]):
     comptes[precedent][suivant] += 1
-vocabulaire = sorted(comptes)
 ```
 
-Choisissez un mot : les barres montrent la distribution du mot suivant.
+Choisissez un mot : les barres montrent la distribution du mot qui le suit.
 
 ```python {.marimo}
 mot = mo.ui.dropdown(vocabulaire, value="le", label="Mot précédent")
@@ -65,68 +132,332 @@ mot
 ```
 
 ```python {.marimo}
-barres(probabilites(comptes[mot.value], temperature.value))
+_total = sum(comptes[mot.value].values())
+barres({m: c / _total for m, c in comptes[mot.value].items()})
 ```
 
-## Échantillonner
+Remarquez que la distribution après « . » donne la probabilité de chaque
+**premier** mot de phrase : le point fait office de marqueur de début. Les
+vrais modèles utilisent pour cela des jetons spéciaux, que nous retrouverons à
+la semaine 4.
 
-Pour générer du texte, on tire le mot suivant au hasard selon cette
-distribution, on l'ajoute, puis on recommence. C'est **exactement** ce que fait
-un LLM, un jeton à la fois — seule la façon de calculer la distribution change.
+## Évaluer : la perplexité
 
-La **température** $T$ modifie la distribution avant le tirage. Chaque compte
-$c_i$ devient $c_i^{1/T}$, puis on renormalise :
+Comment savoir si un modèle de langue est bon? On l'évalue sur des phrases
+qu'il **n'a pas vues** pendant l'estimation : l'**ensemble de test**. Évaluer
+sur le corpus d'entraînement serait trompeur, car un modèle qui l'aurait
+appris par cœur y serait parfait, tout en étant incapable de rien prédire de
+nouveau.
 
-$$p_i = \frac{c_i^{1/T}}{\sum_j c_j^{1/T}}$$
+Un bon modèle attribue une probabilité élevée aux phrases de test. Mais une
+probabilité de phrase est un produit de nombres plus petits que 1 : elle
+devient minuscule dès que la phrase s'allonge, et ne permet pas de comparer
+des phrases de longueurs différentes. On travaille donc avec les
+**logarithmes**, qui transforment le produit en somme, et on fait la moyenne
+par mot :
 
-Avec un LLM, on part de *logits* $z_i$ plutôt que de comptes, et on calcule
-$\mathrm{softmax}(z / T)$ : c'est la même opération, puisque $z_i = \log c_i$
-donne $e^{z_i/T} = c_i^{1/T}$. C'est le paramètre `temperature` de toutes les
-API de LLM.
+$$H = -\frac{1}{N} \sum_{t=1}^{N} \log_2 P(w_t \mid w_{t-1})$$
 
-Déplacez le curseur : les barres plus haut se mettent à jour.
+$H$ est l'**entropie croisée**, mesurée en bits par mot. Plus elle est basse,
+moins le modèle est « surpris » par le texte. La **perplexité** en est une
+version plus parlante :
 
-```python {.marimo}
-temperature = mo.ui.slider(
-    0.1, 3.0, step=0.1, value=1.0, label="Température", show_value=True
-)
-temperature
-```
+$$\mathrm{PP} = 2^{H}$$
+
+La perplexité s'interprète comme un **nombre de choix équivalent** : une
+perplexité de 5 signifie que le modèle est, en moyenne, aussi incertain que
+s'il devait choisir au hasard parmi 5 mots équiprobables. Un modèle qui ne sait
+rien, et qui donne la même probabilité aux $V$ mots du vocabulaire, a une
+perplexité de $V$. L'entropie croisée est exactement la quantité que les LLM
+minimisent pendant leur entraînement (semaine 3).
 
 ```python {.marimo}
 #| echo: true
-def probabilites(compteur, temperature):
-    poids = {m: c ** (1 / temperature) for m, c in compteur.items()}
-    total = sum(poids.values())
-    return {m: p / total for m, p in poids.items()}
+def probabilite(precedent, mot, k=0.0):
+    compteur = comptes.get(precedent, Counter())
+    total = sum(compteur.values()) + k * len(vocabulaire)
+    return (compteur[mot] + k) / total if total else 0.0
+
+
+def evaluer(phrase, k=0.0):
+    mots = ["."] + phrase.split()
+    probs = [probabilite(a, b, k) for a, b in zip(mots, mots[1:])]
+    if min(probs) == 0:
+        return probs, math.inf
+    entropie = -sum(math.log2(p) for p in probs) / len(probs)
+    return probs, 2 ** entropie
+```
+
+Le paramètre `k` sert au lissage, présenté à la section suivante; pour
+l'instant, il vaut 0. Écrivez une phrase (avec un point final, et des mots
+séparés par des espaces), et observez la probabilité de chaque mot.
+
+```python {.marimo}
+phrase_test = mo.ui.text(
+    value="le chien dort sur le fromage .", label="Phrase", full_width=True
+)
+phrase_test
 ```
 
 ```python {.marimo}
-generer = mo.ui.run_button(label="Générer une phrase")
+_mots = ["."] + phrase_test.value.split()
+_probs, _pp = evaluer(phrase_test.value, lissage.value)
+_lignes = "\n".join(
+    f"| `{a}` | `{b}` | {p:.3f} | {'∞' if p == 0 else f'{abs(math.log2(p)):.2f}'} |"
+    for a, b, p in zip(_mots, _mots[1:], _probs)
+)
+mo.md(
+    "| précédent | mot | P(mot \\| précédent) | bits |\n|:--|:--|--:|--:|\n" + _lignes
+    + f"\n\n**Perplexité : {'∞' if _pp == math.inf else round(_pp, 2)}** "
+    f"(lissage k = {lissage.value})"
+)
+```
+
+« le chien dort sur le fromage . » n'apparaît pas dans le corpus, mais chacune
+de ses paires y apparaît : le modèle lui donne une probabilité raisonnable.
+Essayez maintenant « le fromage dort . ».
+
+## Le problème des zéros : le lissage
+
+« le fromage dort . » reçoit une probabilité **nulle**, et une perplexité
+infinie, pour une seule raison : la paire « fromage dort » n'apparaît jamais
+dans le corpus. Une seule paire inédite suffit à rendre toute une phrase
+impossible. C'est le défaut fondamental de l'estimation par comptage : ce
+qu'on n'a pas vu est considéré comme impossible.
+
+Le remède le plus simple est le **lissage additif** (ou lissage de Laplace,
+quand $k = 1$) : on fait comme si chaque paire avait été vue $k$ fois de plus.
+
+$$P(w_t \mid w_{t-1}) = \frac{C(w_{t-1}, w_t) + k}{C(w_{t-1}) + kV}$$
+
+Le $kV$ au dénominateur garantit que les probabilités somment encore à 1. Le
+lissage retire un peu de probabilité aux paires observées pour la redistribuer
+aux paires jamais vues. Déplacez le curseur : le tableau de la section
+précédente se met à jour.
+
+```python {.marimo}
+lissage = mo.ui.slider(
+    steps=[0, 0.001, 0.01, 0.05, 0.1, 0.2, 0.5, 1, 2],
+    value=0, label="Lissage k", show_value=True,
+)
+lissage
+```
+
+Combien lisser? Trop peu, et les paires inédites restent quasi impossibles;
+trop, et toutes les distributions s'aplatissent vers l'uniforme. Le tableau
+suivant mesure la perplexité sur le corpus d'entraînement et sur un petit
+ensemble de test, pour plusieurs valeurs de $k$.
+
+```python {.marimo}
+#| echo: true
+PHRASES_TEST = [
+    "le chien dort sur le fromage .",
+    "la souris regarde le chat .",
+    "le chat court dans le jardin du chien .",
+    "le fromage dort .",
+]
+PHRASES_ENTRAINEMENT = [
+    p.strip() + " ." for p in " ".join(CORPUS.split()).split(" .") if p.strip()
+]
+
+
+def perplexite(phrases, k):
+    probs = [p for phrase in phrases for p in evaluer(phrase, k)[0]]
+    if min(probs) == 0:
+        return math.inf
+    return 2 ** (-sum(math.log2(p) for p in probs) / len(probs))
+```
+
+```python {.marimo}
+def _pp(phrases, k):
+    v = perplexite(phrases, k)
+    return "∞" if v == math.inf else f"{v:.2f}"
+
+mo.md(
+    "| k | perplexité (entraînement) | perplexité (test) |\n|--:|--:|--:|\n"
+    + "\n".join(
+        f"| {k} | {_pp(PHRASES_ENTRAINEMENT, k)} | {_pp(PHRASES_TEST, k)} |"
+        for k in [0, 0.001, 0.01, 0.05, 0.1, 0.5, 1, 2]
+    )
+)
+```
+
+Deux courbes, deux comportements. Sur l'entraînement, la perplexité ne fait
+qu'augmenter avec $k$ : sans lissage, le modèle colle parfaitement à ce qu'il a
+vu. Sur le test, elle passe par un **minimum**, autour de $k = 0{,}05$ : c'est
+le meilleur compromis entre coller aux données et rester ouvert à l'inédit. On
+retrouvera ce dilemme sous bien des formes; il porte un nom, le
+**surajustement**. Notez aussi que le bon réglage se choisit sur des données
+que le modèle n'a pas vues, jamais sur l'entraînement.
+
+## Le mur de la parcimonie
+
+Pourquoi ne pas simplement allonger le contexte, avec un trigramme, un
+4-gramme, un 10-gramme? Parce que le nombre de contextes possibles explose. Avec
+un vocabulaire de $V$ mots, un n-gramme a $V^{n-1}$ contextes, chacun avec sa
+propre distribution sur $V$ mots. Pour $V = 50\,000$ (l'ordre de grandeur des
+vocabulaires réels), un trigramme a déjà $50\,000^3 \approx 1{,}25 \times
+10^{14}$ paramètres, bien plus qu'aucun corpus ne pourra jamais en estimer.
+L'immense majorité des contextes ne sera jamais observée, et le lissage ne fait
+que masquer le problème.
+
+Le défaut est plus profond encore : pour un n-gramme, « chat » et « chien »
+sont deux symboles sans aucun rapport. Avoir vu « le chien dort » n'apprend
+rien sur « le chat dort ». Il ne peut pas **généraliser** d'un mot à un mot
+semblable. C'est exactement ce que les réseaux de neurones apportent, en
+représentant chaque mot par un vecteur : deux mots qui apparaissent dans des
+contextes semblables reçoivent des vecteurs proches, et ce que le modèle
+apprend sur l'un profite à l'autre. C'est le sujet de la semaine 2.
+
+## Générer : les stratégies de décodage
+
+Le modèle donne une distribution; il reste à choisir un mot. Cette étape, le
+**décodage**, a un effet énorme sur le texte produit, et donc sur le
+comportement d'un agent.
+
+**Décodage glouton.** La stratégie la plus simple prend toujours le mot le plus
+probable. Elle est déterministe, mais elle tourne vite en rond : partant d'un
+point, le bigramme glouton produit
+
+```python {.marimo}
+#| echo: true
+def generer_glouton(longueur=16):
+    phrase = ["."]
+    while len(phrase) < longueur:
+        suivants = comptes[phrase[-1]]
+        phrase.append(max(suivants, key=suivants.get))
+        if phrase[-1] == ".":
+            break
+    return " ".join(phrase[1:])
+
+generer_glouton()
+```
+
+Le mot le plus probable à chaque étape ne donne pas la phrase la plus probable,
+et il enferme le modèle dans ses propres boucles. Les LLM n'y échappent pas
+entièrement : les répétitions en boucle d'un petit modèle en mode glouton en
+sont la même manifestation.
+
+**Échantillonnage.** On tire plutôt le mot au hasard, selon sa probabilité. Le
+texte devient varié, mais aussi imprévisible. Trois réglages permettent de
+doser ce hasard.
+
+- La **température** $T$ déforme la distribution avant le tirage. Chaque
+  probabilité $p_i$ devient proportionnelle à $p_i^{1/T}$ :
+  $$p_i' = \frac{p_i^{1/T}}{\sum_j p_j^{1/T}}$$
+  À $T = 1$, rien ne change. Quand $T \to 0$, la distribution se concentre sur
+  le mot le plus probable : on retrouve le décodage glouton. Quand $T$ grandit,
+  elle s'aplatit vers l'uniforme. Un LLM calcule des scores $z_i$, les
+  **logits**, puis $\mathrm{softmax}(z / T)$; c'est la même opération, car
+  $p_i \propto e^{z_i}$ entraîne $p_i^{1/T} \propto e^{z_i / T}$.
+- Le **top-k** ne garde que les $k$ mots les plus probables, puis renormalise.
+- Le **top-p** (ou échantillonnage par noyau) garde le plus petit ensemble de
+  mots les plus probables dont la probabilité cumulée atteint $p$, puis
+  renormalise. Contrairement au top-k, sa taille s'adapte : peu de mots quand
+  le modèle est sûr de lui, beaucoup quand il hésite.
+
+```python {.marimo}
+#| echo: true
+def decoder(compteur, temperature=1.0, top_k=None, top_p=1.0):
+    poids = {m: c ** (1 / temperature) for m, c in compteur.items()}
+    total = sum(poids.values())
+    probs = sorted(((m, p / total) for m, p in poids.items()), key=lambda x: -x[1])
+    if top_k is not None:
+        probs = probs[:top_k]
+    gardes, cumul = [], 0.0
+    for m, p in probs:
+        gardes.append((m, p))
+        cumul += p
+        if cumul >= top_p:
+            break
+    total = sum(p for _, p in gardes)
+    return {m: p / total for m, p in gardes}
+```
+
+Ce sont exactement les paramètres `temperature`, `top_k` et `top_p` des API de
+LLM. Faites-les varier : les barres grises sont les mots écartés par top-k ou
+top-p.
+
+```python {.marimo}
+contexte = mo.ui.dropdown(vocabulaire, value="le", label="Mot précédent")
+temperature = mo.ui.slider(0.1, 3.0, step=0.1, value=1.0, label="Température", show_value=True)
+top_k = mo.ui.slider(1, 10, value=10, label="top-k", show_value=True)
+top_p = mo.ui.slider(0.1, 1.0, step=0.05, value=1.0, label="top-p", show_value=True)
+mo.vstack([contexte, temperature, top_k, top_p])
+```
+
+```python {.marimo}
+_avant = decoder(comptes[contexte.value], temperature.value)
+_apres = decoder(comptes[contexte.value], temperature.value, top_k.value, top_p.value)
+barres(_avant, exclus=set(_avant) - set(_apres))
+```
+
+```python {.marimo}
+generer = mo.ui.run_button(label="Générer cinq phrases")
 generer
 ```
 
 ```python {.marimo}
 mo.stop(not generer.value, mo.md("*Cliquez sur le bouton pour générer.*"))
-phrase = ["le"]
-while phrase[-1] != "." and len(phrase) < 20:
-    _probs = probabilites(comptes[phrase[-1]], temperature.value)
-    phrase.append(random.choices(list(_probs), weights=list(_probs.values()))[0])
-mo.md(f"**{' '.join(phrase)}**")
+_phrases = []
+for _ in range(5):
+    _phrase = ["."]
+    while len(_phrase) < 20:
+        _d = decoder(comptes[_phrase[-1]], temperature.value, top_k.value, top_p.value)
+        _phrase.append(random.choices(list(_d), weights=list(_d.values()))[0])
+        if _phrase[-1] == ".":
+            break
+    _phrases.append(" ".join(_phrase[1:]))
+mo.md("\n".join(f"- {p}" for p in _phrases))
 ```
 
-Essayez une température de 0,1, puis de 3. Que se passe-t-il à basse
-température? Pourquoi les phrases deviennent-elles toutes identiques?
+Essayez une température de 0,1 : les phrases ne sont pas toutes identiques.
+Regardez la distribution après « le » pour comprendre pourquoi.
+
+## Ce que ça change pour un agent
+
+Un agent n'est rien d'autre qu'un modèle de langue dont on échantillonne la
+sortie, en boucle. Trois conséquences pratiques en découlent, qui reviendront
+tout au long du cours.
+
+- **Un agent n'est pas déterministe.** La même consigne peut produire des
+  actions différentes d'une exécution à l'autre. Pour évaluer un agent, il
+  faudra donc le faire travailler plusieurs fois sur la même tâche et mesurer
+  un taux de réussite (semaine 9).
+- **Le décodage se règle selon la tâche.** Pour un appel d'outil ou une
+  modification de code, où une seule réponse est correcte et où une erreur de
+  syntaxe fait tout échouer, on choisit une température basse. Pour proposer
+  des idées ou explorer plusieurs pistes, une température plus élevée peut
+  aider.
+- **Le modèle ne sait que ce que son contexte lui dit.** Le bigramme ne voit
+  qu'un mot; un LLM en voit des centaines de milliers, mais sa fenêtre reste
+  finie. Ce qui n'est pas dans le contexte n'existe pas pour lui. Toute
+  l'ingénierie des agents, au module 4, consiste en bonne partie à choisir ce
+  qu'on y met.
+
+## Points clés
+
+- Un modèle de langue est une distribution de probabilités sur des séquences.
+  La règle de la chaîne la ramène à une suite de prédictions du mot suivant.
+- Le n-gramme estime ces prédictions par comptage, en tronquant le contexte.
+  Il ne voit pas loin, ne connaît rien de ce qu'il n'a pas vu, et ne
+  généralise pas d'un mot à un mot semblable.
+- On évalue un modèle de langue par sa perplexité sur des données de test. Les
+  réglages, comme le lissage, se choisissent sur des données que le modèle n'a
+  pas vues.
+- Le décodage (glouton, température, top-k, top-p) transforme une
+  distribution en texte. Il règle le compromis entre fiabilité et diversité,
+  et il est la source du non-déterminisme des agents.
 
 ## Laboratoire
 
 ::: {.callout-tip icon=false}
 ## Laboratoire 1 — `labos/s01_temperature.py`
 
-1. **Exercice** — réécrire `probabilites` vous-même, avec ses vérifications.
-2. **Expérience** — mesurer la *diversité* des phrases générées en fonction de
-   la température, et la proportion de phrases qui n'existent pas dans le
-   corpus.
+1. **Exercice** — écrire la fonction de température vous-même, avec ses
+   vérifications.
+2. **Expérience** — mesurer l'entropie de la distribution, la diversité et la
+   longueur des phrases générées en fonction de la température.
 
 Voir la [mise en route](../../mise-en-route.qmd) pour l'ouvrir.
 :::
@@ -136,8 +467,14 @@ Voir la [mise en route](../../mise-en-route.qmd) pour l'ouvrir.
 - La phrase « le chat dort sur le canapé du chien . » peut être générée, même
   si elle n'apparaît nulle part dans le corpus. Est-ce un défaut ou une
   qualité?
-- Que faudrait-il pour que le modèle accorde un adjectif avec un nom situé trois
-  mots plus tôt? Combien de comptes faudrait-il pour un trigramme? Un
-  10-gramme?
-- Un mot absent du corpus n'a aucune suite possible. Comment un vrai LLM
-  évite-t-il ce problème? (Semaine 2.)
+- Que faudrait-il pour que le modèle accorde un adjectif avec un nom situé
+  trois mots plus tôt? Combien de contextes un 4-gramme aurait-il avec notre
+  vocabulaire de 21 mots? Avec 50 000 mots?
+- Essayez « le hamster dort . » avec et sans lissage. Que vaut la probabilité
+  d'un mot absent du vocabulaire? Comment un vrai LLM évite-t-il ce problème?
+  (Semaine 2.)
+
+## Pour aller plus loin
+
+Facultatif : le chapitre 3, « N-gram Language Models », de
+@jurafsky2026slp, qui approfondit le lissage et l'évaluation.

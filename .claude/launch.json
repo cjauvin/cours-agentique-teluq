@@ -13,6 +13,20 @@
       "port": 4400
     },
     {
+      "name": "cours-statique",
+      "runtimeExecutable": "uv",
+      "runtimeArgs": [
+        "run",
+        "python",
+        "-m",
+        "http.server",
+        "4401",
+        "--directory",
+        "_site"
+      ],
+      "port": 4401
+    },
+    {
       "name": "mini-pi-v0",
       "runtimeExecutable": "uv",
       "runtimeArgs": [
