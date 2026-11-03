@@ -36,3 +36,8 @@ marimo-island > marimo-ui-element:has(marimo-code-editor) {
 marimo-island > div.relative > div.absolute.top-0.right-0 {
   display: none !important;
 }
+
+/* Éditeurs de code : même taille que les autres blocs de code du site. */
+marimo-code-editor {
+  font-size: 0.875em;
+}
