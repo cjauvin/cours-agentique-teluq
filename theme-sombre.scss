@@ -3,3 +3,10 @@
 // Darkly donne à la barre latérale un gris moyen; comme en mode clair, elle
 // prend la couleur du fond de la page (#222, le $body-bg de darkly).
 $sidebar-bg: #222;
+
+// Darkly garde des champs de saisie blancs, dont celui de la recherche :
+// on les assombrit, un ton au-dessus du fond.
+$input-bg: #2d2d2d;
+$input-color: #e9ecef;
+$input-border-color: #444;
+$input-placeholder-color: #adb5bd;
