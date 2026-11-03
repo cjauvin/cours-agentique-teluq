@@ -41,3 +41,9 @@ marimo-island > div.relative > div.absolute.top-0.right-0 {
 marimo-code-editor {
   font-size: 0.875em;
 }
+
+/* Mode sombre : dans les îles marimo, le code en ligne garde sinon le fond
+   clair du thème clair. */
+body.quarto-dark marimo-quarto-island :not(pre) > code {
+  background: rgba(255, 255, 255, 0.08);
+}

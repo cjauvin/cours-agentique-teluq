@@ -18,7 +18,7 @@ COULEURS = ["#dbeafe", "#fde68a", "#bbf7d0", "#fecaca", "#e9d5ff", "#fed7aa"]
 
 def colorer(morceaux):
     spans = [
-        f"<span style='background:{COULEURS[i % len(COULEURS)]};padding:2px 1px;"
+        f"<span style='background:{COULEURS[i % len(COULEURS)]};color:#1e293b;padding:2px 1px;"
         f"border-radius:3px;font-family:monospace;white-space:pre'>{m}</span>"
         for i, m in enumerate(morceaux)
     ]

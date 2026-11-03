@@ -19,7 +19,7 @@ COULEURS = ["#dbeafe", "#fde68a", "#bbf7d0", "#fecaca", "#e9d5ff", "#fed7aa"]
 
 def colorer(morceaux):
     spans = [
-        f"<span style='background:{COULEURS[i % len(COULEURS)]};padding:2px 1px;"
+        f"<span style='background:{COULEURS[i % len(COULEURS)]};color:#1e293b;padding:2px 1px;"
         f"border-radius:3px;font-family:monospace;white-space:pre'>{m}</span>"
         for i, m in enumerate(morceaux)
     ]
@@ -54,7 +54,7 @@ def courbe(pertes, plancher, haut, largeur=520, hauteur=200):
         for v in range(0, int(haut) + 1)
     )
     return mo.Html(
-        f"<svg width='{largeur}' height='{hauteur}' style='font-family:sans-serif'>"
+        f"<svg width='{largeur}' height='{hauteur}' fill='currentColor' style='font-family:sans-serif'>"
         f"<line x1='40' y1='{py(0)}' x2='{largeur - 10}' y2='{py(0)}' stroke='#94a3b8'/>"
         f"<line x1='40' y1='10' x2='40' y2='{py(0)}' stroke='#94a3b8'/>{graduations}"
         f"<text x='46' y='14' font-size='11'>bits</text>"
@@ -105,8 +105,8 @@ def nuage(points, etiquettes, largeur=520, hauteur=320):
         for a, b, es in groupes
     )
     return mo.Html(
-        f"<svg width='{largeur}' height='{hauteur}' style='font-family:monospace;"
-        f"border:1px solid #e2e8f0;border-radius:4px'>{marques}</svg>"
+        f"<svg width='{largeur}' height='{hauteur}' fill='currentColor' style='font-family:monospace;"
+        f"border:1px solid rgba(127,127,127,.3);border-radius:4px'>{marques}</svg>"
     )
 
 
@@ -512,7 +512,7 @@ def _montrer(t):
 def _suite(t):
     return mo.Html(
         "<div style='font-family:monospace;font-size:.85em;white-space:pre-wrap;"
-        "background:#f1f5f9;padding:4px 8px;border-radius:4px'>"
+        "background:rgba(127,127,127,.12);padding:4px 8px;border-radius:4px'>"
         f"{html.escape(_montrer(t))}</div>"
     )
 

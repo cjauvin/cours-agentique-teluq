@@ -55,10 +55,15 @@ nocite: "@*"
 
 format:
   html:
-    theme: cosmo
+    theme:
+      light: cosmo
+      dark: darkly
+    respect-user-color-scheme: true
     css: styles.css
     toc: true
     toc-title: "Sur cette page"
     code-copy: true
-    include-after-body: _includes/coloration.html
+    include-after-body:
+      - _includes/coloration.html
+      - _includes/theme.html
     number-depth: 1

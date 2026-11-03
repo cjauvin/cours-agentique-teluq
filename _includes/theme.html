@@ -1,0 +1,78 @@
+<!-- Thème clair ou sombre : Quarto place la classe quarto-dark ou quarto-light sur
+     <body>. On répercute ce choix sur les îles marimo (qui ont leur propre mode
+     sombre), sur la feuille de style de highlight.js et sur les éditeurs de
+     code. -->
+<script>
+  (function () {
+    // Les éditeurs (CodeMirror, dans un shadow DOM) gardent les couleurs claires
+    // de defaultHighlightStyle. Plutôt que de dépendre de ses noms de classes,
+    // générés, on retrouve ses règles par leur couleur, et on leur ajoute un
+    // équivalent lisible sur fond sombre.
+    const SOMBRE = {
+      "rgb(119, 0, 136)": "#c678dd",  // mots-clés
+      "rgb(0, 0, 255)": "#61afef",    // définitions
+      "rgb(17, 102, 68)": "#d19a66",  // nombres
+      "rgb(170, 17, 17)": "#98c379",  // chaînes
+      "rgb(34, 17, 153)": "#56b6c2",  // constantes (True, None)
+      "rgb(0, 136, 85)": "#e5c07b",   // types et classes
+      "rgb(153, 68, 0)": "#7f848e",   // commentaires
+      "rgb(68, 0, 68)": "#abb2bf",    // méta
+      "rgb(238, 68, 0)": "#e06c75",   // expressions régulières
+      "rgb(48, 160, 0)": "#98c379",   // chaînes spéciales
+      "rgb(0, 0, 204)": "#61afef",    // variables locales
+      "rgb(85, 85, 85)": "#9da5b4",   // ponctuation
+    };
+
+    const reglesSombres = racine => {
+      const feuilles = [...(racine.adoptedStyleSheets || []),
+                        ...[...racine.querySelectorAll("style")].map(s => s.sheet)];
+      const regles = [];
+      for (const feuille of feuilles) {
+        let liste;
+        try { liste = feuille.cssRules; } catch (e) { continue; }
+        for (const regle of liste) {
+          const couleur = regle.style && SOMBRE[regle.style.color];
+          if (couleur) regles.push(`${regle.selectorText} { color: ${couleur} !important; }`);
+        }
+      }
+      return regles.join("\n");
+    };
+
+    const adapterEditeur = (hote, sombre) => {
+      const racine = hote.shadowRoot;
+      if (!racine || !racine.querySelector(".cm-editor")) return;
+      let style = racine.getElementById("c1-sombre");
+      if (!style) {
+        const css = reglesSombres(racine);
+        if (!css) return;  // styles pas encore chargés : on réessaiera
+        style = document.createElement("style");
+        style.id = "c1-sombre";
+        style.textContent = css;
+        racine.appendChild(style);
+      }
+      style.media = sombre ? "all" : "not all";
+    };
+
+    const appliquer = () => {
+      const sombre = document.body.classList.contains("quarto-dark");
+      const theme = sombre ? "dark" : "light";
+      document.querySelectorAll("marimo-quarto-island").forEach(ile => {
+        if (ile.getAttribute("data-marimo-theme") !== theme) ile.setAttribute("data-marimo-theme", theme);
+        ile.classList.toggle("dark", sombre);
+      });
+      document.querySelectorAll("marimo-code-editor").forEach(e => adapterEditeur(e, sombre));
+      const clair = document.getElementById("hljs-clair");
+      const fonce = document.getElementById("hljs-sombre");
+      if (clair && fonce) {
+        clair.disabled = sombre;
+        fonce.disabled = !sombre;
+      }
+    };
+
+    appliquer();
+    new MutationObserver(appliquer).observe(document.body, { attributes: true, attributeFilter: ["class"] });
+    // Les éditeurs apparaissent quand Pyodide a fini de charger, sans événement
+    // à écouter depuis la page : on vérifie chaque seconde.
+    setInterval(appliquer, 1000);
+  })();
+</script>
