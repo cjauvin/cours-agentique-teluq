@@ -57,7 +57,7 @@ format:
   html:
     theme:
       light: cosmo
-      dark: darkly
+      dark: [darkly, theme-sombre.scss]
     respect-user-color-scheme: true
     css: styles.css
     toc: true

@@ -1,0 +1,5 @@
+/*-- scss:defaults --*/
+
+// Darkly donne à la barre latérale un gris moyen; comme en mode clair, elle
+// prend la couleur du fond de la page (#222, le $body-bg de darkly).
+$sidebar-bg: #222;
