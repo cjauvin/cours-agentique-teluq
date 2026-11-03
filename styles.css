@@ -47,3 +47,37 @@ marimo-code-editor {
 body.quarto-dark marimo-quarto-island :not(pre) > code {
   background: rgba(255, 255, 255, 0.08);
 }
+
+/* Sélecteur de thème à trois états (système, clair, sombre), sous la
+   recherche; il remplace l'interrupteur de Quarto. */
+.quarto-color-scheme-toggle {
+  display: none !important;
+}
+
+.selecteur-theme {
+  display: flex;
+  gap: 2px;
+  margin: 0.6rem 0 0.2rem;
+  padding: 2px;
+  border: 1px solid var(--bs-border-color);
+  border-radius: 0.4rem;
+}
+
+.selecteur-theme button {
+  flex: 1;
+  padding: 0.15rem 0;
+  border: 0;
+  border-radius: 0.3rem;
+  background: transparent;
+  color: var(--bs-body-color);
+  opacity: 0.6;
+}
+
+.selecteur-theme button:hover {
+  opacity: 1;
+}
+
+.selecteur-theme button[aria-pressed="true"] {
+  background: rgba(127, 127, 127, 0.2);
+  opacity: 1;
+}

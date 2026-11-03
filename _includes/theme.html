@@ -1,7 +1,8 @@
 <!-- Thème clair ou sombre : Quarto place la classe quarto-dark ou quarto-light sur
      <body>. On répercute ce choix sur les îles marimo (qui ont leur propre mode
      sombre), sur la feuille de style de highlight.js et sur les éditeurs de
-     code. -->
+     code, et on remplace l'interrupteur de Quarto par un sélecteur à trois
+     états. -->
 <script>
   (function () {
     // Les éditeurs (CodeMirror, dans un shadow DOM) gardent les couleurs claires
@@ -68,6 +69,56 @@
         fonce.disabled = !sombre;
       }
     };
+
+    // Sélecteur à trois états (système, clair, sombre), à la place de
+    // l'interrupteur de Quarto. Il s'appuie sur le mécanisme de Quarto : sans
+    // valeur « quarto-color-scheme » dans localStorage, Quarto suit le système;
+    // « alternate » force le sombre, « default » force le clair.
+    const CLE = "quarto-color-scheme";
+    const modeCourant = () => {
+      const valeur = window.localStorage.getItem(CLE);
+      return valeur === "alternate" ? "sombre" : valeur === "default" ? "clair" : "systeme";
+    };
+    const choisir = mode => {
+      if (mode === "systeme") {
+        window.localStorage.removeItem(CLE);
+        localAlternateSentinel = queryPrefersDark.matches ? "alternate" : "default";
+        toggleColorMode(queryPrefersDark.matches);
+      } else {
+        toggleColorMode(mode === "sombre");
+        setStyleSentinel(mode === "sombre");
+      }
+      window.dispatchEvent(new Event("resize"));
+      marquer();
+    };
+    const BOUTONS = [
+      ["systeme", "bi-display", "Thème du système"],
+      ["clair", "bi-sun", "Thème clair"],
+      ["sombre", "bi-moon", "Thème sombre"],
+    ];
+    const selecteur = document.createElement("div");
+    selecteur.className = "selecteur-theme";
+    selecteur.setAttribute("role", "group");
+    selecteur.setAttribute("aria-label", "Thème");
+    for (const [mode, icone, libelle] of BOUTONS) {
+      const bouton = document.createElement("button");
+      bouton.type = "button";
+      bouton.dataset.mode = mode;
+      bouton.title = libelle;
+      bouton.setAttribute("aria-label", libelle);
+      bouton.innerHTML = `<i class="bi ${icone}"></i>`;
+      bouton.addEventListener("click", () => choisir(mode));
+      selecteur.appendChild(bouton);
+    }
+    const marquer = () => {
+      const courant = modeCourant();
+      selecteur.querySelectorAll("button").forEach(b =>
+        b.setAttribute("aria-pressed", b.dataset.mode === courant ? "true" : "false"));
+    };
+    marquer();
+    const recherche = document.querySelector("#quarto-sidebar #quarto-search");
+    const ancre = recherche ? recherche.parentElement : document.querySelector("#quarto-sidebar .sidebar-menu-container");
+    if (ancre) ancre.insertAdjacentElement(recherche ? "afterend" : "beforebegin", selecteur);
 
     appliquer();
     new MutationObserver(appliquer).observe(document.body, { attributes: true, attributeFilter: ["class"] });
