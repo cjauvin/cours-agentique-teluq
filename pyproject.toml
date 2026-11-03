@@ -16,3 +16,9 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["c1"]
+
+[dependency-groups]
+modele = [
+    "torch>=2.15.0",
+    "transformers>=5.22.1",
+]

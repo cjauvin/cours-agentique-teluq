@@ -1,7 +1,3 @@
----
-nocite: "@*"
----
-
 # Références {.unnumbered}
 
 ::: {#refs}

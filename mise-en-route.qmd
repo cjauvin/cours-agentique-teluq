@@ -29,6 +29,16 @@ cd cours-agentique-teluq
 uv run marimo edit labos/s01_temperature.py
 ```
 
+Les laboratoires qui chargent un vrai modèle de langue (à partir de la
+semaine 3) ont besoin de PyTorch et de transformers, regroupés à part pour
+alléger les autres :
+
+```bash
+uv run --group modele marimo edit labos/s03_petit_modele.py
+```
+
+Le modèle lui-même (environ 1 Go) est téléchargé à la première exécution.
+
 ## Configurer un modèle
 
 À partir de la semaine 7, les laboratoires peuvent appeler un vrai modèle par
