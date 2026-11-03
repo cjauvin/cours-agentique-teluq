@@ -1,5 +1,5 @@
 ---
-title: "Jetons et attention"
+title: "Jetons, plongements et attention"
 engine: marimo
 pyproject: |
   requires-python = ">=3.10"
@@ -7,6 +7,7 @@ pyproject: |
 ---
 
 ```python {.marimo}
+import math
 from collections import Counter
 
 import marimo as mo
@@ -27,32 +28,69 @@ def colorer(morceaux):
     )
 
 
-def barres(etiquettes, valeurs, largeur=300):
+def barres(etiquettes, valeurs, largeur=300, format="{:.0%}"):
     lignes = [
         f"<div style='display:flex;align-items:center;gap:.5em;margin:2px 0'>"
         f"<code style='width:6em'>{e}</code>"
-        f"<div style='background:#3b82f6;height:1em;width:{v * largeur:.0f}px'></div>"
-        f"<span>{v:.0%}</span></div>"
+        f"<div style='background:#3b82f6;height:1em;width:{max(v, 0) * largeur:.0f}px'></div>"
+        f"<span>{format.format(v)}</span></div>"
         for e, v in zip(etiquettes, valeurs)
     ]
     return mo.Html("".join(lignes))
 ```
 
-La semaine dernière, le bigramme avait deux défauts majeurs : il ne connaît
-que les mots vus dans son corpus, et il ne regarde qu'un seul mot en arrière.
-Les LLM règlent le premier avec la **tokenisation en sous-mots**, et le second
-avec l'**attention**.
+La semaine dernière, le bigramme nous a laissés devant trois défauts :
+
+1. il ne connaît que les mots de son corpus : un mot nouveau a une probabilité
+   nulle;
+2. il ne **généralise** pas : pour lui, « chat » et « chien » sont deux
+   symboles sans aucun rapport;
+3. il ne voit qu'un mot en arrière, et allonger son contexte fait exploser le
+   nombre de paramètres.
+
+Les LLM répondent à chacun de ces défauts par une idée : les **jetons** pour le
+premier, les **plongements** pour le deuxième, l'**attention** pour le
+troisième. Ces trois idées, assemblées, forment le **transformeur**,
+l'architecture de tous les LLM actuels.
+
+À la fin de la semaine, vous saurez :
+
+- expliquer comment un texte est découpé en jetons par l'algorithme BPE, et
+  pourquoi ce découpage a des conséquences pratiques pour un agent;
+- expliquer ce qu'est un plongement, et pourquoi des vecteurs permettent de
+  généraliser;
+- calculer une attention avec masque causal, et en interpréter les poids;
+- décrire, dans ses grandes lignes, l'architecture d'un transformeur.
 
 ## Des mots aux jetons
 
-Un LLM ne voit pas des mots, mais des **jetons** : des morceaux de mots tirés
-d'un vocabulaire fixe, de quelques dizaines de milliers d'éléments. Le
-vocabulaire est appris par l'algorithme **BPE** (*byte pair encoding*) :
+Sur quelles unités un modèle de langue doit-il travailler? Les **mots** posent
+deux problèmes : leur nombre est sans limite (noms propres, fautes de frappe,
+mots composés, conjugaisons), et un mot absent du vocabulaire est impossible à
+traiter. Les **caractères** règlent ce problème, puisqu'ils sont en nombre
+fini, mais les séquences deviennent très longues, et chaque caractère, pris
+isolément, ne porte presque aucun sens.
+
+Les LLM travaillent avec un compromis : des **jetons** (*tokens*), c'est-à-dire
+des morceaux de mots. Les mots fréquents sont des jetons entiers; les mots
+rares se découpent en plusieurs morceaux plus courants; dans le pire des cas,
+on retombe sur les caractères. Le vocabulaire est fixe, typiquement de
+quelques dizaines à quelques centaines de milliers de jetons, et pourtant
+**n'importe quel texte** peut être représenté.
+
+### L'algorithme BPE
+
+Le vocabulaire de jetons s'apprend à partir d'un corpus, le plus souvent avec
+l'algorithme **BPE** (*byte pair encoding*, codage par paires) :
 
 1. on part des caractères;
 2. on compte les paires de symboles adjacents dans le corpus;
-3. on fusionne la paire la plus fréquente en un nouveau symbole;
-4. on recommence, autant de fois qu'on veut de symboles dans le vocabulaire.
+3. on fusionne la paire la plus fréquente en un nouveau symbole, qu'on ajoute
+   au vocabulaire;
+4. on recommence, jusqu'à atteindre la taille de vocabulaire voulue.
+
+Pour découper un texte nouveau, on rejoue les mêmes fusions, dans le même
+ordre.
 
 ```python {.marimo}
 #| echo: true
@@ -99,9 +137,10 @@ def tokeniser(texte, fusions):
     return jetons
 ```
 
-Le symbole `▁` marque le début d'un mot. Augmentez le nombre de fusions et
-observez les jetons de la phrase grossir : d'abord des syllabes fréquentes,
-puis des terminaisons (`ons`, `ait`), puis des mots entiers.
+Le symbole `▁` marque le début d'un mot, ce qui permet de reconstituer les
+espaces. Augmentez le nombre de fusions et observez les jetons de la phrase
+grossir : d'abord des paires de lettres fréquentes, puis des terminaisons
+(`ons`, `ait`, `ez`), puis des mots entiers.
 
 ```python {.marimo}
 CORPUS_BPE = " ".join(
@@ -128,27 +167,162 @@ mo.vstack([
 ```
 
 « mangions » n'est pas dans le corpus, et pourtant il se découpe sans problème
-en morceaux connus : `▁man`, `g`, `i`, `ons` — le radical et la terminaison de
-« mangeons ». Avec un vocabulaire qui contient tous les caractères, **aucun
-texte n'est hors vocabulaire** : c'est le premier défaut du bigramme qui
-disparaît.
+en morceaux connus : `▁man`, `g`, `i`, `ons`, soit le radical et la terminaison
+de « mangeons ». Avec un vocabulaire qui contient tous les caractères, **aucun
+texte n'est hors vocabulaire**. Essayez un mot inventé, ou une phrase en
+anglais.
+
+### Les jetons en pratique
+
+Les tokeniseurs réels appliquent BPE aux **octets** du texte encodé en UTF-8
+plutôt qu'aux caractères : les 256 octets possibles forment le vocabulaire de
+départ, si bien que tout texte, dans toutes les langues, avec emojis et code
+source, est représentable. Quelques conséquences méritent d'être retenues.
+
+- **Les jetons sont l'unité de compte.** La taille de la fenêtre de contexte,
+  le prix des API et la vitesse de génération se mesurent en jetons, pas en
+  mots. En anglais, un jeton correspond en moyenne à environ quatre caractères;
+  en français, le même texte demande généralement plus de jetons, parce que les
+  tokeniseurs sont surtout entraînés sur de l'anglais.
+- **Le modèle ne voit pas les lettres.** « fromage » est peut-être un seul
+  jeton : le modèle n'a alors aucun accès direct à ses lettres. Compter les
+  « r » d'un mot, inverser une chaîne ou faire de l'arithmétique sur de longs
+  nombres (découpés en morceaux arbitraires) sont des tâches étonnamment
+  difficiles pour un LLM.
+- **Les espaces comptent.** En code, l'indentation et les espaces font partie
+  des jetons. Un agent qui doit reproduire exactement un passage de code pour
+  le modifier peut se tromper d'un espace; nous concevrons nos outils en
+  conséquence (semaine 8).
+
+## Des jetons aux vecteurs : les plongements
+
+Un jeton est un numéro dans le vocabulaire. Pour le bigramme, deux numéros
+différents n'ont rien en commun. Les réseaux de neurones associent plutôt à
+chaque jeton un **vecteur** de nombres réels, son **plongement**
+(*embedding*). Concrètement, le modèle possède une matrice $E$ de $V$ lignes
+(une par jeton) et $d$ colonnes; le plongement du jeton numéro $i$ est
+simplement la ligne $i$ de $E$. La dimension $d$ va de quelques centaines à
+quelques milliers.
+
+Ces vecteurs ne sont pas choisis à la main : ils sont **appris** pendant
+l'entraînement, comme tous les autres paramètres (semaine 3). Et ce
+qu'ils apprennent obéit à un principe ancien, l'**hypothèse distributionnelle** :
+des mots qui apparaissent dans des contextes semblables ont des sens
+semblables. On reconnaît un mot à ses fréquentations.
+
+On peut voir ce principe à l'œuvre sans aucun apprentissage. Représentons
+chaque mot du corpus de la semaine 1 par un vecteur qui compte ses voisins
+immédiats : combien de fois chaque mot apparaît juste à sa gauche, et juste à
+sa droite. Puis mesurons la ressemblance de deux vecteurs par leur **similarité
+cosinus**, le cosinus de l'angle qu'ils forment (1 : même direction, 0 :
+rien en commun) :
+
+$$\cos(u, v) = \frac{u \cdot v}{\lVert u \rVert \, \lVert v \rVert}$$
+
+```python {.marimo}
+#| echo: true
+CORPUS = """
+le chat dort sur le tapis . le chien dort sur le canapé .
+le chat mange la souris . le chien mange le repas du chat .
+la souris dort dans le trou . le chat regarde le chien .
+le chien regarde la souris . la souris regarde le fromage .
+la souris mange le fromage . le chat dort dans le panier .
+le chien court dans le jardin . le chat court après la souris .
+la souris court dans le trou . le chien dort dans le jardin .
+le chat mange le fromage du chien . la souris dort sur le tapis .
+"""
+mots = CORPUS.split()
+vocabulaire = sorted(set(mots) - {"."})
+
+voisins = {m: Counter() for m in vocabulaire}
+for i, m in enumerate(mots):
+    if m == ".":
+        continue
+    if i > 0:
+        voisins[m]["← " + mots[i - 1]] += 1
+    if i + 1 < len(mots):
+        voisins[m][mots[i + 1] + " →"] += 1
+
+
+def cosinus(a, b):
+    u, v = voisins[a], voisins[b]
+    produit = sum(u[c] * v[c] for c in u)
+    normes = math.sqrt(sum(x * x for x in u.values()) * sum(x * x for x in v.values()))
+    return produit / normes
+```
+
+Choisissez un mot : les barres montrent les mots dont le vecteur lui ressemble
+le plus.
+
+```python {.marimo}
+mot_plongement = mo.ui.dropdown(vocabulaire, value="chat", label="Mot")
+mot_plongement
+```
+
+```python {.marimo}
+_proches = sorted(
+    ((cosinus(mot_plongement.value, m), m) for m in vocabulaire if m != mot_plongement.value),
+    reverse=True,
+)[:6]
+_vecteur = ", ".join(f"{c} : {n}" for c, n in voisins[mot_plongement.value].most_common())
+mo.vstack([
+    barres([m for _, m in _proches], [s for s, _ in _proches], format="{:.2f}"),
+    mo.md(f"Vecteur de « {mot_plongement.value} » (composantes non nulles) : {_vecteur}"),
+])
+```
+
+Sans qu'on lui ait rien dit, cette représentation regroupe « chat » et
+« chien », « mange » et « regarde », « sur » et « dans », et tous les lieux
+(« tapis », « trou », « jardin »…). Elle capte des **catégories** de mots. Et
+« souris »? Elle ressemble peu à « chat », parce qu'elle suit « la » et non
+« le » : le genre grammatical, lui aussi, se lit dans les contextes.
+
+Voilà ce qui manquait au bigramme. Si « chat » et « chien » ont des vecteurs
+proches, tout ce que le modèle apprend sur l'un profite à l'autre : avoir vu
+« le chien dort » rend « le chat dort » plus plausible. C'est la
+**généralisation**. Les plongements appris par un LLM sont plus riches que nos
+comptes de voisins (denses, de grande dimension, appris pour prédire le jeton
+suivant), mais le principe est le même. Ils servent aussi, tels quels, à la
+**recherche sémantique** : trouver les passages d'un document dont le sens est
+proche d'une question, une technique que nous retrouverons avec les agents.
 
 ## L'attention
 
-Chaque jeton devient un **vecteur** (son *plongement*). Pour prédire la suite,
-le modèle doit combiner les vecteurs des jetons précédents — mais pas tous de la
-même façon. Dans « le chat noir dort », pour accorder « noir », c'est « chat »
-qui compte; pour conjuguer « dort », aussi.
+Il reste le troisième défaut : le contexte. Pour prédire la suite de « le chat
+noir qui dormait sur le tapis s'est … », il faut se souvenir que le sujet est
+« chat », six mots plus tôt. Un n-gramme ne le peut pas. Il faudrait un
+mécanisme qui, pour chaque position, aille **chercher** dans tout le contexte
+les mots qui comptent, quelle que soit leur distance.
 
-L'attention calcule, pour chaque jeton, une **distribution sur les jetons
-précédents**. Chaque jeton produit une *requête* $q$ (« ce que je cherche ») et
-une *clé* $k$ (« ce que j'offre »). Le score entre deux jetons est leur produit
-scalaire, et un softmax le transforme en poids :
+C'est ce que fait l'**attention**. Pour chaque jeton, elle calcule une
+**distribution sur les jetons précédents** (des poids positifs qui somment à
+1), puis fait la moyenne de leurs vecteurs selon ces poids. Le résultat est un
+nouveau vecteur pour ce jeton, enrichi de ce qu'il a trouvé dans son contexte.
+
+### Requêtes, clés et valeurs
+
+Comment décider où regarder? Chaque jeton produit trois vecteurs, par trois
+multiplications matricielles de son plongement $x$ :
+
+- une **requête** $q = x W_Q$ : ce qu'il cherche;
+- une **clé** $k = x W_K$ : ce qu'il offre, ce sur quoi on peut le trouver;
+- une **valeur** $v = x W_V$ : ce qu'il transmet quand on le trouve.
+
+L'image est celle d'un dictionnaire où l'on chercherait par ressemblance plutôt
+que par égalité exacte. Le score entre le jeton $i$ et le jeton $j$ est le
+produit scalaire $q_i \cdot k_j$ : grand si ce que $i$ cherche ressemble à ce
+que $j$ offre. Un softmax transforme les scores en poids, et le résultat est la
+moyenne des valeurs pondérée par ces poids. Pour tous les jetons à la fois, en
+empilant les vecteurs en matrices :
 
 $$\mathrm{Attention}(Q, K, V) = \mathrm{softmax}\!\left(\frac{QK^\top}{\sqrt{d}}\right) V$$
 
-Un **masque causal** interdit de regarder vers l'avant : un jeton ne voit que
-lui-même et ceux qui le précèdent.
+Deux détails. La division par $\sqrt{d}$ empêche les scores de grandir avec la
+dimension, ce qui rendrait le softmax trop pointu : c'est une température,
+exactement comme à la semaine 1. Et le **masque causal** interdit à chaque
+jeton de regarder les jetons qui le suivent, en mettant leur score à
+$-\infty$ avant le softmax : un modèle qui génère de gauche à droite ne doit
+pas apprendre à « tricher » en regardant l'avenir.
 
 ```python {.marimo}
 #| echo: true
@@ -165,11 +339,16 @@ def attention(Q, K, V, causal=True):
     return poids @ V, poids
 ```
 
-Dans un vrai modèle, les vecteurs et les matrices sont appris. Ici, on les
-construit à la main pour voir le mécanisme : chaque mot est codé par sa
-catégorie (déterminant, nom, adjectif, verbe, préposition), et une matrice
-$M$ dit quelle catégorie « cherche » quelle autre — un adjectif cherche un
-nom, un verbe cherche un nom, un nom cherche un déterminant.
+### Une attention construite à la main
+
+Dans un vrai modèle, les matrices $W_Q$, $W_K$ et $W_V$ sont apprises, et ce
+qu'elles encodent est difficile à lire. Construisons-en une à la main, pour
+voir le mécanisme. Chaque mot de la phrase « le chat noir dort sur le tapis »
+est codé par sa catégorie grammaticale (déterminant, nom, adjectif, verbe,
+préposition). Une matrice $M$ dit quelle catégorie en « cherche » quelle autre :
+un adjectif cherche un nom (pour s'accorder), un verbe cherche un nom (son
+sujet), un nom cherche un déterminant. Le score entre deux mots est alors
+$x_i M x_j^\top$, ce qui revient à prendre $W_Q = M$ et $W_K = I$.
 
 ```python {.marimo}
 #| echo: true
@@ -188,14 +367,14 @@ M[0, 4] = 2  # le déterminant cherche une préposition
 ```
 
 Choisissez un mot : les barres montrent où il porte son attention. La
-**netteté** multiplie les scores avant le softmax : c'est l'inverse d'une
+**netteté** multiplie les scores avant le softmax; c'est l'inverse d'une
 température.
 
 ```python {.marimo}
 _options = {f"{i + 1}. {mot}": i for i, (mot, _) in enumerate(PHRASE)}
 requete = mo.ui.dropdown(_options, value="4. dort", label="Mot")
 nettete = mo.ui.slider(0.0, 3.0, step=0.1, value=1.0, label="Netteté", show_value=True)
-mo.hstack([requete, nettete], justify="start", gap=2)
+mo.vstack([requete, nettete])
 ```
 
 ```python {.marimo}
@@ -205,9 +384,90 @@ barres([m for m, _ in PHRASE[: _i + 1]], _poids[_i, : _i + 1])
 ```
 
 À netteté 0, tous les scores sont nuls : l'attention est uniforme sur les mots
-précédents, et on perd toute structure. En la montant, chaque mot se concentre
-sur celui qu'il cherche, **quelle que soit la distance** : c'est le second
-défaut du bigramme qui disparaît.
+précédents, et toute structure disparaît. En la montant, chaque mot se
+concentre sur celui qu'il cherche, **quelle que soit la distance**. « dort »
+trouve « chat » deux mots plus loin; il le trouverait aussi bien vingt mots
+plus loin. Et le coût ne dépend pas de la distance : contrairement au
+n-gramme, allonger le contexte n'ajoute aucun paramètre.
+
+Remarquez enfin les deux « le » : ils ont exactement le même vecteur, et
+l'attention, telle quelle, ne sait pas lequel vient en premier. Elle traite le
+contexte comme un **ensemble**, sans ordre. Les vrais modèles ajoutent donc une
+information de **position** à chaque jeton; nous verrons comment à la semaine 3.
+
+### Plusieurs têtes
+
+Une seule attention ne peut chercher qu'une chose à la fois. Un transformeur en
+calcule plusieurs en parallèle, avec des matrices différentes : ce sont les
+**têtes** d'attention. L'une peut suivre l'accord grammatical, une autre la
+référence d'un pronom, une autre encore la structure d'un bloc de code. Leurs
+résultats sont concaténés puis combinés.
+
+## Le transformeur, vue d'ensemble
+
+On peut maintenant assembler un **transformeur**, l'architecture de tous les
+LLM actuels. Le texte suit le chemin suivant.
+
+```
+texte ──► jetons ──► plongements + position
+                            │
+              ┌─────────────▼─────────────┐
+              │ attention multi-têtes     │
+              │ (masque causal)           │  × N blocs
+              │             ▼             │
+              │ réseau par jeton          │
+              └─────────────┬─────────────┘
+                            ▼
+      projection sur le vocabulaire : un logit par jeton
+                            ▼
+        softmax : P(jeton suivant)   ◄── semaine 1
+```
+
+Chaque **bloc** contient une attention, où les jetons échangent de
+l'information, suivie d'un petit réseau de neurones appliqué à chaque jeton
+séparément, où cette information est transformée. Des connexions résiduelles
+(on additionne l'entrée du bloc à sa sortie) et des normalisations rendent
+l'empilement stable. On empile des dizaines de blocs. À la sortie, le vecteur
+du **dernier** jeton est projeté sur le vocabulaire : on obtient un score par
+jeton possible, les logits, puis un softmax donne la distribution du jeton
+suivant. On retrouve exactement l'interface de la semaine 1, et tout ce qu'on
+y a vu (perplexité, température, top-p) s'applique tel quel.
+
+L'attention a un prix : chaque jeton se compare à tous les précédents, donc le
+calcul croît comme le **carré** de la longueur du contexte. C'est la raison
+principale pour laquelle la fenêtre de contexte des modèles est limitée.
+
+## Ce que ça change pour un agent
+
+- **Le contexte se paie en jetons.** Tout ce qu'un agent lit (fichiers,
+  résultats d'outils, historique de la conversation) occupe des jetons de sa
+  fenêtre et coûte de l'argent et du temps. Un outil qui renvoie un fichier de
+  10 000 lignes peut saturer le contexte à lui seul. Gérer le contexte sera
+  l'un des enjeux du module 4.
+- **Tout le contexte n'est pas également bien utilisé.** L'attention peut, en
+  principe, atteindre n'importe quel jeton; en pratique, les modèles exploitent
+  moins bien l'information placée au milieu d'un long contexte qu'au début ou à
+  la fin [@liu2024lost]. Où l'on place une consigne importante n'est pas
+  indifférent.
+- **Le texte exact est fragile.** Parce que le modèle voit des jetons et non des
+  caractères, reproduire exactement une chaîne (un chemin de fichier, un
+  passage de code à remplacer) est une source d'erreurs fréquente. Les outils
+  d'un agent doivent vérifier et signaler clairement ces erreurs.
+
+## Points clés
+
+- Les LLM travaillent sur des jetons, des morceaux de mots appris par BPE.
+  Aucun texte n'est hors vocabulaire, mais le modèle ne voit pas directement
+  les caractères.
+- Chaque jeton est représenté par un plongement, un vecteur appris. Des mots
+  employés dans des contextes semblables reçoivent des vecteurs proches, ce
+  qui permet de généraliser.
+- L'attention calcule, pour chaque jeton, une moyenne pondérée des jetons
+  précédents, avec des poids donnés par la ressemblance entre requêtes et clés.
+  Elle atteint n'importe quelle distance sans ajouter de paramètres, mais son
+  coût croît comme le carré du contexte.
+- Un transformeur empile des blocs d'attention et de réseaux par jeton, et se
+  termine par un softmax sur le vocabulaire : la distribution du jeton suivant.
 
 ## Laboratoire
 
@@ -222,11 +482,19 @@ défaut du bigramme qui disparaît.
 
 ## Limites
 
-- Les deux « le » de la phrase ont exactement le même vecteur. Le second
-  peut-il savoir qu'il vient après « sur »? Que manque-t-il? (Indice : la
-  position.)
+- Les deux « le » de la phrase ont le même vecteur. Le second peut-il savoir
+  qu'il vient après « sur »? Proposez une façon d'ajouter la position aux
+  vecteurs.
 - Le calcul de l'attention compare chaque jeton à tous les précédents. Combien
-  d'opérations pour un texte de 100 000 jetons? Quel lien avec la « fenêtre de
-  contexte » d'un agent?
-- Ici, $M$ a été écrite à la main. Dans un vrai modèle, d'où vient-elle?
-  (Semaine 3.)
+  de comparaisons pour un contexte de 1 000 jetons? De 200 000?
+- Nos vecteurs de voisins ont une composante par voisin possible. Combien de
+  composantes auraient-ils avec un vocabulaire de 50 000 jetons? Pourquoi les
+  plongements appris sont-ils plutôt de dimension quelques centaines?
+- Ici, la matrice $M$ a été écrite à la main. Dans un vrai modèle, d'où
+  vient-elle? (Semaine 3.)
+
+## Pour aller plus loin
+
+Facultatif : les chapitres 2 (le texte, les jetons et les plongements) et 3
+(l'attention) de @raschka2024llm, qui construisent ces mêmes mécanismes en
+PyTorch.
