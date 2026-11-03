@@ -22,6 +22,20 @@ def barres(probs, exclus=(), largeur=300):
             f"<span>{p:.0%}</span></div>"
         )
     return mo.Html("".join(lignes))
+
+
+def code_modifiable(code):
+    return mo.ui.code_editor(value=code.strip("\n"), language="python")
+
+
+def executer(editeur, entrees, *sorties):
+    """Exécute le code d'un éditeur et retourne les noms demandés."""
+    espace = dict(entrees)
+    try:
+        exec(editeur.value, espace)
+        return tuple(espace[nom] for nom in sorties)
+    except Exception as erreur:
+        mo.stop(True, mo.callout(mo.md(f"**{type(erreur).__name__}** : {erreur}"), kind="danger"))
 ```
 
 Un grand modèle de langue (LLM), aussi impressionnant soit-il, ne fait qu'une
@@ -104,8 +118,12 @@ point joue un double rôle : il termine une phrase, et il sert de « mot
 précédent » au premier mot de la phrase suivante. On ajoute un point au début
 pour que la première phrase en ait un aussi.
 
+Ce code est **modifiable** : changez le corpus (ajoutez des phrases, inventez
+des mots), puis cliquez hors de l'éditeur. Toute la page — distributions,
+perplexités, phrases générées — se recalcule à partir de votre corpus.
+
 ```python {.marimo}
-#| echo: true
+code_corpus = code_modifiable(r'''
 CORPUS = """
 le chat dort sur le tapis . le chien dort sur le canapé .
 le chat mange la souris . le chien mange le repas du chat .
@@ -122,12 +140,23 @@ vocabulaire = sorted(set(jetons))
 comptes = defaultdict(Counter)
 for precedent, suivant in zip(jetons, jetons[1:]):
     comptes[precedent][suivant] += 1
+''')
+code_corpus
+```
+
+```python {.marimo}
+CORPUS, vocabulaire, comptes = executer(
+    code_corpus, {"Counter": Counter, "defaultdict": defaultdict},
+    "CORPUS", "vocabulaire", "comptes",
+)
 ```
 
 Choisissez un mot : les barres montrent la distribution du mot qui le suit.
 
 ```python {.marimo}
-mot = mo.ui.dropdown(vocabulaire, value="le", label="Mot précédent")
+mot = mo.ui.dropdown(
+    vocabulaire, value="le" if "le" in vocabulaire else vocabulaire[0], label="Mot précédent"
+)
 mot
 ```
 
@@ -325,6 +354,8 @@ def generer_glouton(longueur=16):
     phrase = ["."]
     while len(phrase) < longueur:
         suivants = comptes[phrase[-1]]
+        if not suivants:
+            break
         phrase.append(max(suivants, key=suivants.get))
         if phrase[-1] == ".":
             break
@@ -379,7 +410,9 @@ LLM. Faites-les varier : les barres grises sont les mots écartés par top-k ou
 top-p.
 
 ```python {.marimo}
-contexte = mo.ui.dropdown(vocabulaire, value="le", label="Mot précédent")
+contexte = mo.ui.dropdown(
+    vocabulaire, value="le" if "le" in vocabulaire else vocabulaire[0], label="Mot précédent"
+)
 temperature = mo.ui.slider(0.1, 3.0, step=0.1, value=1.0, label="Température", show_value=True)
 top_k = mo.ui.slider(1, 10, value=10, label="top-k", show_value=True)
 top_p = mo.ui.slider(0.1, 1.0, step=0.05, value=1.0, label="top-p", show_value=True)
@@ -402,7 +435,7 @@ mo.stop(not generer.value, mo.md("*Cliquez sur le bouton pour générer.*"))
 _phrases = []
 for _ in range(5):
     _phrase = ["."]
-    while len(_phrase) < 20:
+    while len(_phrase) < 20 and comptes[_phrase[-1]]:
         _d = decoder(comptes[_phrase[-1]], temperature.value, top_k.value, top_p.value)
         _phrase.append(random.choices(list(_d), weights=list(_d.values()))[0])
         if _phrase[-1] == ".":

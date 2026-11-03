@@ -37,6 +37,20 @@ def barres(etiquettes, valeurs, largeur=300, format="{:.0%}"):
         for e, v in zip(etiquettes, valeurs)
     ]
     return mo.Html("".join(lignes))
+
+
+def code_modifiable(code):
+    return mo.ui.code_editor(value=code.strip("\n"), language="python")
+
+
+def executer(editeur, entrees, *sorties):
+    """Exécute le code d'un éditeur et retourne les noms demandés."""
+    espace = dict(entrees)
+    try:
+        exec(editeur.value, espace)
+        return tuple(espace[nom] for nom in sorties)
+    except Exception as erreur:
+        mo.stop(True, mo.callout(mo.md(f"**{type(erreur).__name__}** : {erreur}"), kind="danger"))
 ```
 
 La semaine dernière, le bigramme nous a laissés devant trois défauts :
@@ -350,8 +364,11 @@ un adjectif cherche un nom (pour s'accorder), un verbe cherche un nom (son
 sujet), un nom cherche un déterminant. Le score entre deux mots est alors
 $x_i M x_j^\top$, ce qui revient à prendre $W_Q = M$ et $W_K = I$.
 
+Ce code est **modifiable** : changez la phrase ou les valeurs de $M$, puis
+cliquez hors de l'éditeur, et observez l'effet sur l'attention plus bas.
+
 ```python {.marimo}
-#| echo: true
+code_attention = code_modifiable(r'''
 CATEGORIES = ["dét", "nom", "adj", "verbe", "prép"]
 PHRASE = [("le", "dét"), ("chat", "nom"), ("noir", "adj"), ("dort", "verbe"),
           ("sur", "prép"), ("le", "dét"), ("tapis", "nom")]
@@ -364,6 +381,14 @@ M[3, 1] = 4  # le verbe cherche un nom
 M[1, 0] = 3  # le nom cherche un déterminant
 M[4, 3] = 3  # la préposition cherche un verbe
 M[0, 4] = 2  # le déterminant cherche une préposition
+''')
+code_attention
+```
+
+```python {.marimo}
+CATEGORIES, PHRASE, X, M = executer(
+    code_attention, {"np": np}, "CATEGORIES", "PHRASE", "X", "M"
+)
 ```
 
 Choisissez un mot : les barres montrent où il porte son attention. La
@@ -372,7 +397,7 @@ température.
 
 ```python {.marimo}
 _options = {f"{i + 1}. {mot}": i for i, (mot, _) in enumerate(PHRASE)}
-requete = mo.ui.dropdown(_options, value="4. dort", label="Mot")
+requete = mo.ui.dropdown(_options, value=list(_options)[min(3, len(_options) - 1)], label="Mot")
 nettete = mo.ui.slider(0.0, 3.0, step=0.1, value=1.0, label="Netteté", show_value=True)
 mo.vstack([requete, nettete])
 ```

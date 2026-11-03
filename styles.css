@@ -24,3 +24,15 @@ main table.table > tbody > tr > td {
 main table.table > thead {
   border-bottom: 1px solid var(--bs-border-color);
 }
+
+/* Les îles marimo affichent deux fois un mo.ui.code_editor : comme sortie de la
+   cellule, et comme « éditeur » de l'île. On masque le second. */
+marimo-island > marimo-ui-element:has(marimo-code-editor) {
+  display: none !important;
+}
+
+/* Barre d'outils de l'île (copier, exécuter) : « exécuter » remplacerait la
+   cellule par le contenu de l'éditeur, ce qui casse la page. */
+marimo-island > div.relative > div.absolute.top-0.right-0 {
+  display: none !important;
+}
