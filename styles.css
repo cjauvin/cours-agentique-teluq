@@ -55,21 +55,23 @@ body.quarto-dark marimo-quarto-island :not(pre) > code {
 }
 
 .selecteur-theme {
-  display: flex;
-  gap: 2px;
-  margin: 0.6rem 0 0.2rem;
-  padding: 2px;
+  display: inline-flex;
+  gap: 1px;
+  margin: 0.5rem 0 0.2rem;
+  padding: 1px;
   border: 1px solid var(--bs-border-color);
-  border-radius: 0.4rem;
+  border-radius: 0.35rem;
 }
 
 .selecteur-theme button {
-  flex: 1;
-  padding: 0.15rem 0;
+  width: 1.9rem;
+  padding: 0 0 0.05rem;
   border: 0;
-  border-radius: 0.3rem;
+  border-radius: 0.25rem;
   background: transparent;
   color: var(--bs-body-color);
+  font-size: 0.75rem;
+  line-height: 1.4;
   opacity: 0.6;
 }
 
