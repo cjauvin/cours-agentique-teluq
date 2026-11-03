@@ -22,21 +22,9 @@ def barres(probs, exclus=(), largeur=300):
             f"<span>{p:.0%}</span></div>"
         )
     return mo.Html("".join(lignes))
-
-
-def code_modifiable(code):
-    return mo.ui.code_editor(value=code.strip("\n"), language="python")
-
-
-def executer(editeur, entrees, *sorties):
-    """Exécute le code d'un éditeur et retourne les noms demandés."""
-    espace = dict(entrees)
-    try:
-        exec(editeur.value, espace)
-        return tuple(espace[nom] for nom in sorties)
-    except Exception as erreur:
-        mo.stop(True, mo.callout(mo.md(f"**{type(erreur).__name__}** : {erreur}"), kind="danger"))
 ```
+
+{{< include /_includes/code-modifiable.qmd >}}
 
 Un grand modèle de langue (LLM), aussi impressionnant soit-il, ne fait qu'une
 seule chose : étant donné un début de texte, il attribue une probabilité à
@@ -118,9 +106,18 @@ point joue un double rôle : il termine une phrase, et il sert de « mot
 précédent » au premier mot de la phrase suivante. On ajoute un point au début
 pour que la première phrase en ait un aussi.
 
-Ce code est **modifiable** : changez le corpus (ajoutez des phrases, inventez
-des mots), puis cliquez hors de l'éditeur. Toute la page — distributions,
-perplexités, phrases générées — se recalcule à partir de votre corpus.
+::: {.callout-note}
+## Tout le code des pages est modifiable
+
+Modifiez-le, puis cliquez hors de l'éditeur : il s'exécute, et tout ce qui en
+dépend plus bas dans la page se recalcule. Une expression placée en dernière
+ligne affiche sa valeur sous l'éditeur, comme dans un carnet. Pour revenir au
+code d'origine, rechargez la page.
+:::
+
+Commencez par le corpus : ajoutez des phrases, inventez des mots, et toute la
+page — distributions, perplexités, phrases générées — se recalculera à partir
+de votre corpus.
 
 ```python {.marimo}
 code_corpus = code_modifiable(r'''
@@ -201,7 +198,7 @@ perplexité de $V$. L'entropie croisée est exactement la quantité que les LLM
 minimisent pendant leur entraînement (semaine 3).
 
 ```python {.marimo}
-#| echo: true
+code_probabilite = code_modifiable(r'''
 def probabilite(precedent, mot, k=0.0):
     compteur = comptes.get(precedent, Counter())
     total = sum(compteur.values()) + k * len(vocabulaire)
@@ -215,6 +212,16 @@ def evaluer(phrase, k=0.0):
         return probs, math.inf
     entropie = -sum(math.log2(p) for p in probs) / len(probs)
     return probs, 2 ** entropie
+''')
+code_probabilite
+```
+
+```python {.marimo}
+probabilite, evaluer = executer(
+    code_probabilite,
+    {"math": math, "Counter": Counter, "comptes": comptes, "vocabulaire": vocabulaire},
+    "probabilite", "evaluer",
+)
 ```
 
 Le paramètre `k` sert au lissage, présenté à la section suivante; pour
@@ -278,7 +285,7 @@ suivant mesure la perplexité sur le corpus d'entraînement et sur un petit
 ensemble de test, pour plusieurs valeurs de $k$.
 
 ```python {.marimo}
-#| echo: true
+code_perplexite = code_modifiable(r'''
 PHRASES_TEST = [
     "le chien dort sur le fromage .",
     "la souris regarde le chat .",
@@ -295,6 +302,16 @@ def perplexite(phrases, k):
     if min(probs) == 0:
         return math.inf
     return 2 ** (-sum(math.log2(p) for p in probs) / len(probs))
+''')
+code_perplexite
+```
+
+```python {.marimo}
+PHRASES_TEST, PHRASES_ENTRAINEMENT, perplexite = executer(
+    code_perplexite,
+    {"math": math, "CORPUS": CORPUS, "evaluer": evaluer},
+    "PHRASES_TEST", "PHRASES_ENTRAINEMENT", "perplexite",
+)
 ```
 
 ```python {.marimo}
@@ -349,7 +366,7 @@ probable. Elle est déterministe, mais elle tourne vite en rond : partant d'un
 point, le bigramme glouton produit
 
 ```python {.marimo}
-#| echo: true
+code_glouton = code_modifiable(r'''
 def generer_glouton(longueur=16):
     phrase = ["."]
     while len(phrase) < longueur:
@@ -362,6 +379,12 @@ def generer_glouton(longueur=16):
     return " ".join(phrase[1:])
 
 generer_glouton()
+''')
+code_glouton
+```
+
+```python {.marimo}
+(generer_glouton,) = executer(code_glouton, {"comptes": comptes}, "generer_glouton")
 ```
 
 Le mot le plus probable à chaque étape ne donne pas la phrase la plus probable,
@@ -388,7 +411,7 @@ doser ce hasard.
   le modèle est sûr de lui, beaucoup quand il hésite.
 
 ```python {.marimo}
-#| echo: true
+code_decoder = code_modifiable(r'''
 def decoder(compteur, temperature=1.0, top_k=None, top_p=1.0):
     poids = {m: c ** (1 / temperature) for m, c in compteur.items()}
     total = sum(poids.values())
@@ -403,6 +426,12 @@ def decoder(compteur, temperature=1.0, top_k=None, top_p=1.0):
             break
     total = sum(p for _, p in gardes)
     return {m: p / total for m, p in gardes}
+''')
+code_decoder
+```
+
+```python {.marimo}
+(decoder,) = executer(code_decoder, {}, "decoder")
 ```
 
 Ce sont exactement les paramètres `temperature`, `top_k` et `top_p` des API de

@@ -1,0 +1,55 @@
+```python {.marimo}
+# Code modifiable dans les pages. L'éditeur natif de quarto-marimo ne
+# réexécute pas le code modifié : on affiche plutôt un mo.ui.code_editor, et
+# une seconde cellule exécute son contenu avec executer(). Les imports sont
+# faits dans les fonctions, pour ne pas redéfinir `mo` (déjà importé par la
+# page).
+
+
+def code_modifiable(code):
+    import marimo as mo
+
+    return mo.ui.code_editor(value=code.strip("\n"), language="python")
+
+
+def executer(editeur, entrees, *sorties):
+    """Exécute le code d'un éditeur et retourne les noms demandés.
+
+    Comme dans un carnet, la valeur d'une expression placée en dernière ligne
+    s'affiche sous l'éditeur.
+    """
+    import ast
+    import traceback
+
+    import marimo as mo
+
+    espace = dict(entrees)
+    try:
+        arbre = ast.parse(editeur.value)
+        derniere = None
+        if arbre.body and isinstance(arbre.body[-1], ast.Expr):
+            derniere = arbre.body.pop()
+        exec(compile(arbre, "<éditeur>", "exec"), espace)
+        if derniere is not None:
+            valeur = eval(compile(ast.Expression(derniere.value), "<éditeur>", "eval"), espace)
+            if isinstance(valeur, str):
+                mo.output.replace(mo.plain_text(valeur))
+            elif valeur is not None:
+                mo.output.replace(valeur)
+    except Exception as erreur:
+        if isinstance(erreur, SyntaxError):
+            ligne = erreur.lineno
+        else:
+            lignes = [f.lineno for f in traceback.extract_tb(erreur.__traceback__)
+                      if f.filename == "<éditeur>"]
+            ligne = lignes[-1] if lignes else None
+        ou = f" (ligne {ligne})" if ligne else ""
+        message = erreur.msg if isinstance(erreur, SyntaxError) else erreur
+        mo.stop(True, mo.callout(
+            mo.md(f"**{type(erreur).__name__}**{ou} : {message}"), kind="danger"))
+    manquants = [nom for nom in sorties if nom not in espace]
+    mo.stop(bool(manquants), mo.callout(mo.md(
+        "Le reste de la page a besoin que ce code définisse "
+        + ", ".join(f"`{nom}`" for nom in manquants) + "."), kind="warn"))
+    return tuple(espace[nom] for nom in sorties)
+```

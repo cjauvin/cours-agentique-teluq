@@ -9,6 +9,8 @@ import json
 import marimo as mo
 ```
 
+{{< include /_includes/code-modifiable.qmd >}}
+
 Un **agent**, c'est un LLM placé dans une **boucle**, avec des **outils**. Le
 modèle ne fait toujours qu'une chose — produire la suite d'une conversation —
 mais cette suite peut maintenant être une *demande d'outil*. Le programme qui
@@ -46,7 +48,7 @@ modèle. Le modèle ne voit jamais le code : seulement le nom, la description et
 les paramètres. La description est donc, elle aussi, une forme d'invite.
 
 ```python {.marimo}
-#| echo: true
+code_schema = code_modifiable(r'''
 SCHEMA_LIRE = {
     "type": "function",
     "function": {
@@ -61,6 +63,12 @@ SCHEMA_LIRE = {
         },
     },
 }
+''')
+code_schema
+```
+
+```python {.marimo}
+(SCHEMA_LIRE,) = executer(code_schema, {}, "SCHEMA_LIRE")
 ```
 
 ## Rejouer une trace

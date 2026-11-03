@@ -37,21 +37,9 @@ def barres(etiquettes, valeurs, largeur=300, format="{:.0%}"):
         for e, v in zip(etiquettes, valeurs)
     ]
     return mo.Html("".join(lignes))
-
-
-def code_modifiable(code):
-    return mo.ui.code_editor(value=code.strip("\n"), language="python")
-
-
-def executer(editeur, entrees, *sorties):
-    """Exécute le code d'un éditeur et retourne les noms demandés."""
-    espace = dict(entrees)
-    try:
-        exec(editeur.value, espace)
-        return tuple(espace[nom] for nom in sorties)
-    except Exception as erreur:
-        mo.stop(True, mo.callout(mo.md(f"**{type(erreur).__name__}** : {erreur}"), kind="danger"))
 ```
+
+{{< include /_includes/code-modifiable.qmd >}}
 
 La semaine dernière, le bigramme nous a laissés devant trois défauts :
 
@@ -107,7 +95,7 @@ Pour découper un texte nouveau, on rejoue les mêmes fusions, dans le même
 ordre.
 
 ```python {.marimo}
-#| echo: true
+code_bpe = code_modifiable(r'''
 def compter_paires(mots):
     paires = Counter()
     for mot, freq in mots.items():
@@ -149,7 +137,19 @@ def tokeniser(texte, fusions):
             mot = fusionner(mot, paire)
         jetons.extend(mot)
     return jetons
+''')
+code_bpe
 ```
+
+```python {.marimo}
+apprendre_bpe, tokeniser = executer(
+    code_bpe, {"Counter": Counter}, "apprendre_bpe", "tokeniser"
+)
+```
+
+Comme tout le code du cours, celui-ci est modifiable : essayez, par exemple, de
+fusionner la paire la **moins** fréquente plutôt que la plus fréquente, et
+comparez les jetons obtenus.
 
 Le symbole `▁` marque le début d'un mot, ce qui permet de reconstituer les
 espaces. Augmentez le nombre de fusions et observez les jetons de la phrase
@@ -234,7 +234,7 @@ rien en commun) :
 $$\cos(u, v) = \frac{u \cdot v}{\lVert u \rVert \, \lVert v \rVert}$$
 
 ```python {.marimo}
-#| echo: true
+code_voisins = code_modifiable(r'''
 CORPUS = """
 le chat dort sur le tapis . le chien dort sur le canapé .
 le chat mange la souris . le chien mange le repas du chat .
@@ -263,13 +263,23 @@ def cosinus(a, b):
     produit = sum(u[c] * v[c] for c in u)
     normes = math.sqrt(sum(x * x for x in u.values()) * sum(x * x for x in v.values()))
     return produit / normes
+''')
+code_voisins
+```
+
+```python {.marimo}
+vocabulaire, voisins, cosinus = executer(
+    code_voisins, {"Counter": Counter, "math": math}, "vocabulaire", "voisins", "cosinus"
+)
 ```
 
 Choisissez un mot : les barres montrent les mots dont le vecteur lui ressemble
 le plus.
 
 ```python {.marimo}
-mot_plongement = mo.ui.dropdown(vocabulaire, value="chat", label="Mot")
+mot_plongement = mo.ui.dropdown(
+    vocabulaire, value="chat" if "chat" in vocabulaire else vocabulaire[0], label="Mot"
+)
 mot_plongement
 ```
 
@@ -339,7 +349,7 @@ $-\infty$ avant le softmax : un modèle qui génère de gauche à droite ne doit
 pas apprendre à « tricher » en regardant l'avenir.
 
 ```python {.marimo}
-#| echo: true
+code_softmax = code_modifiable(r'''
 def softmax(x):
     e = np.exp(x - x.max(axis=-1, keepdims=True))
     return e / e.sum(axis=-1, keepdims=True)
@@ -351,6 +361,12 @@ def attention(Q, K, V, causal=True):
         scores = np.where(np.tri(len(Q), dtype=bool), scores, -np.inf)
     poids = softmax(scores)
     return poids @ V, poids
+''')
+code_softmax
+```
+
+```python {.marimo}
+(attention,) = executer(code_softmax, {"np": np}, "attention")
 ```
 
 ### Une attention construite à la main

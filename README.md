@@ -24,3 +24,28 @@ uv run marimo edit labos/s01_temperature.py   # un laboratoire
 Ne pas lancer `quarto render` pendant qu'un `quarto preview` tourne : l'aperçu
 peut réécrire une version périmée d'une page. Si une modification n'apparaît
 pas, arrêter l'aperçu, faire `quarto render`, puis relancer l'aperçu.
+
+## Code modifiable dans les pages
+
+Tout le code affiché dans une page doit être modifiable. L'éditeur natif de
+quarto-marimo ne réexécutant pas le code modifié, chaque page inclut
+`_includes/code-modifiable.qmd` après sa cellule d'imports, et chaque bloc de
+code affiché s'écrit en deux cellules :
+
+````markdown
+```python {.marimo}
+code_decoder = code_modifiable(r'''
+def decoder(compteur, temperature=1.0):
+    ...
+''')
+code_decoder
+```
+
+```python {.marimo}
+(decoder,) = executer(code_decoder, {}, "decoder")
+```
+````
+
+Le deuxième argument de `executer` donne les noms dont le code a besoin; les
+suivants, ceux qu'il doit exporter vers le reste de la page. Pas de
+`#| echo: true`.
