@@ -17,8 +17,24 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["c1"]
 
+# Le groupe « modele » (PyTorch et transformers, pour les laboratoires qui
+# chargent un vrai modèle) est installé par défaut : `uv sync` et `uv run`
+# suffisent, sans option.
 [dependency-groups]
 modele = [
     "torch>=2.15.0",
     "transformers>=5.22.1",
 ]
+
+[tool.uv]
+default-groups = ["modele"]
+
+# Sous Linux (dont Codespaces), PyTorch installe par défaut plusieurs Go de
+# bibliothèques CUDA. Le modèle du cours est petit : la version CPU suffit.
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux'" }]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true

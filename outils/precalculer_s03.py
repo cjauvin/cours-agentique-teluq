@@ -3,7 +3,7 @@
 Les pages tournent dans le navigateur (Pyodide), où PyTorch n'est pas
 disponible : on calcule ici, une fois, ce que la page montre du vrai modèle.
 
-    uv run --group modele python outils/precalculer_s03.py
+    uv run python outils/precalculer_s03.py
 """
 
 import json

@@ -9,6 +9,7 @@ Cours de la TÉLUQ (programme court en développement logiciel assisté par l'IA
 | `index.qmd`, `mise-en-route.qmd`, `modules/` | le site du cours (livre Quarto, une page par semaine) |
 | `labos/` | les laboratoires (notebooks marimo), à exécuter dans un vrai Python |
 | `c1/` | la bibliothèque commune des laboratoires (`verif`, `llm`, `viz`) |
+| `.devcontainer/` | l'environnement GitHub Codespaces des laboratoires |
 | `_extensions/` | l'extension [quarto-marimo](https://github.com/marimo-team/quarto-marimo) |
 | `documents/` | dossiers de présentation et avant-projet |
 | `essais/` | l'essai comparatif Hugo / Quarto (novembre 2026) |
@@ -19,8 +20,7 @@ Cours de la TÉLUQ (programme court en développement logiciel assisté par l'IA
 ```bash
 quarto preview                          # le site, avec rechargement
 uv run marimo edit labos/s01_temperature.py   # un laboratoire
-uv run --group modele marimo edit labos/s03_petit_modele.py   # avec PyTorch
-uv run --group modele python outils/precalculer_s03.py        # données de la page 3
+uv run python outils/precalculer_s03.py       # données de la page 3
 ```
 
 Ne pas lancer `quarto render` pendant qu'un `quarto preview` tourne : l'aperçu

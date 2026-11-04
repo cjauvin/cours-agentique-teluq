@@ -1,48 +1,197 @@
 # Mise en route {.unnumbered}
 
-## Deux niveaux d'exécution
+Le code du cours s'exécute à deux endroits : dans les pages elles-mêmes (les
+*jouets*) et dans des notebooks à part (les *laboratoires*). Les jouets ne
+demandent rien. Les laboratoires demandent un environnement Python, que vous
+pouvez obtenir sans rien installer (GitHub Codespaces) ou installer sur votre
+machine en trois commandes.
 
 | | Jouets | Laboratoires |
 |----|---------|---------|
 | Où | dans la page, dans votre navigateur | un notebook marimo, dans un vrai Python |
-| Installation | aucune | aucune (molab, Codespaces) ou `uv` sur votre machine |
+| Installation | aucune | aucune (Codespaces) ou `uv` sur votre machine |
 | Pour quoi | comprendre un mécanisme en le manipulant | construire, tester et mesurer |
+| Votre travail | perdu au rechargement de la page | enregistré dans le fichier du laboratoire |
 
-Les jouets utilisent [Pyodide](https://pyodide.org), une version de Python qui
-tourne dans le navigateur. Le premier chargement d'une page prend quelques
-secondes. Les laboratoires ont besoin de ce que le navigateur ne peut pas
-offrir : PyTorch, de vrais processus, un système de fichiers, une clé d'API.
+<!-- À COMPLÉTER à la publication : remplacer les deux <adresse du dépôt>
+     par l'adresse réelle du dépôt. -->
 
-## Ouvrir un laboratoire
+## Les jouets, dans les pages
 
-Trois options, au choix :
+Les jouets utilisent [Pyodide](https://pyodide.org), une version de Python
+compilée pour le navigateur. Ils fonctionnent dans tout navigateur récent
+(Chrome, Edge, Firefox, Safari), sur ordinateur; sur téléphone, ils
+fonctionnent aussi, mais à l'étroit.
 
-- **molab** — l'environnement infonuagique gratuit de marimo, avec GPU.
-  *(lien à ajouter quand le dépôt du cours sera publié)*
-- **GitHub Codespaces** — un environnement complet dans le navigateur.
-  *(idem)*
-- **Sur votre machine**, avec [uv](https://docs.astral.sh/uv/) :
+Au premier chargement d'une page, le navigateur télécharge Python et numpy
+(quelques dizaines de Mo) : les jouets restent inertes pendant quelques
+secondes, parfois une minute sur une connexion lente. Les visites suivantes
+sont presque instantanées, le navigateur ayant tout gardé en cache.
+
+Tout le code affiché dans les pages est modifiable : changez-le, et la page
+recalcule ce qui en dépend. En cas d'erreur, un encadré rouge donne le type
+d'erreur et le numéro de la ligne fautive. Rien de ce que vous modifiez n'est
+enregistré : recharger la page rétablit le code d'origine. Copiez ailleurs ce
+que vous voulez garder.
+
+## Les laboratoires
+
+Chaque semaine a son laboratoire, un notebook [marimo](https://marimo.io) du
+dossier `labos/` du dépôt du cours : `labos/s01_temperature.py` pour la
+semaine 1, et ainsi de suite. Un notebook marimo est un fichier Python
+ordinaire, découpé en cellules, qu'on édite dans le navigateur. Les
+laboratoires ont besoin d'un vrai Python, avec ce que le navigateur ne peut
+pas offrir : PyTorch, un modèle de langue de 1 Go, de vrais processus, un
+système de fichiers, une clé d'API.
+
+Deux façons d'obtenir cet environnement, au choix :
+
+| | GitHub Codespaces | Votre machine |
+|----|---------|---------|
+| Installation | aucune, tout se passe dans le navigateur | `uv`, puis une commande |
+| Compte requis | GitHub (gratuit) | aucun |
+| Coût | gratuit dans la limite du quota mensuel | gratuit |
+| Hors ligne | non | oui, une fois l'installation faite |
+| Matériel | n'importe quel ordinateur avec un navigateur | 8 Go de mémoire vive conseillés, 3 Go d'espace disque |
+
+Si vous hésitez, commencez par Codespaces; vous pourrez toujours installer
+l'environnement chez vous plus tard.
+
+### Option A — GitHub Codespaces
+
+[GitHub Codespaces](https://github.com/features/codespaces) vous prête une
+machine Linux dans le nuage, déjà configurée pour le cours, avec l'éditeur
+VS Code dans le navigateur.
+
+1. **Créez un compte GitHub**, si vous n'en avez pas, sur
+   [github.com](https://github.com). Comme personne étudiante, vous pouvez
+   aussi demander le [GitHub Student Developer
+   Pack](https://education.github.com/pack), qui augmente votre quota.
+2. **Ouvrez le dépôt du cours** (`<adresse du dépôt>`), puis cliquez sur
+   **Code** → **Codespaces** → **Create codespace on main**.
+3. **Attendez la préparation.** La première fois, Codespaces installe Python,
+   `uv` et les dépendances du cours (dont PyTorch) : comptez quelques
+   minutes. VS Code s'ouvre ensuite dans le navigateur.
+4. **Lancez un laboratoire** dans le terminal, en bas de l'écran :
+
+   ```bash
+   uv run marimo edit labos/s01_temperature.py --headless --no-token
+   ```
+
+   marimo s'ouvre dans un nouvel onglet. Si l'onglet ne s'ouvre pas, allez
+   dans l'onglet **Ports** de VS Code et cliquez sur le globe à côté du port
+   2718 (ou 2719, 2720… si un autre marimo tourne déjà).
+
+**Le quota.** Un compte gratuit donne droit à 120 heures-cœurs par mois, soit
+60 heures sur la machine de base (2 cœurs, 8 Go de mémoire vive), qui suffit
+pour tous les laboratoires; le Student Developer Pack porte ce quota à 180
+heures-cœurs (90 heures). Un codespace s'arrête de lui-même après 30 minutes
+d'inactivité; arrêtez-le vous-même quand vous avez fini, depuis
+[github.com/codespaces](https://github.com/codespaces), pour ne pas
+consommer votre quota inutilement.
+
+**Votre travail.** Un codespace arrêté conserve vos fichiers, et vous le
+retrouvez à la même adresse. Il est toutefois supprimé après 30 jours sans
+utilisation : téléchargez les fichiers auxquels vous tenez (clic droit sur le
+fichier dans l'explorateur de VS Code → **Download**).
+
+### Option B — Sur votre machine
+
+Il vous faut Windows 10 ou 11, macOS ou Linux; 8 Go de mémoire vive sont
+conseillés (le laboratoire de la semaine 3 en utilise environ 2,5 Go à lui
+seul) et environ 3 Go d'espace disque (1 Go pour Python et les bibliothèques,
+1 Go pour le modèle de langue). Les commandes ci-dessous se tapent dans un
+terminal : **Terminal** sous macOS, **PowerShell** sous Windows.
+
+**1. Installez uv.** [uv](https://docs.astral.sh/uv/) installe Python et les
+bibliothèques du cours, dans les bonnes versions, sans toucher au reste de
+votre système. Vous n'avez pas besoin d'installer Python vous-même : uv s'en
+charge.
+
+Sous macOS et Linux :
 
 ```bash
-git clone <dépôt du cours>
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+Sous Windows, dans PowerShell :
+
+```powershell
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+Fermez le terminal, ouvrez-en un nouveau, et vérifiez que `uv --version`
+affiche un numéro de version.
+
+**2. Récupérez le dépôt du cours.** Avec [git](https://git-scm.com) :
+
+```bash
+git clone <adresse du dépôt>
 cd cours-agentique-teluq
+```
+
+Sans git, téléchargez l'archive depuis la page du dépôt (**Code** →
+**Download ZIP**) et décompressez-la. git est préférable : il permet de
+récupérer les nouveaux laboratoires en une commande (voir plus bas).
+
+**3. Installez les dépendances**, depuis le dossier du cours :
+
+```bash
+uv sync
+```
+
+uv télécharge Python 3.12, marimo, numpy, PyTorch et transformers, environ
+1 Go en tout. Cette étape ne se fait qu'une fois.
+
+**4. Lancez un laboratoire :**
+
+```bash
 uv run marimo edit labos/s01_temperature.py
 ```
 
-Les laboratoires qui chargent un vrai modèle de langue (à partir de la
-semaine 3) ont besoin de PyTorch et de transformers, regroupés à part pour
-alléger les autres :
+marimo s'ouvre dans votre navigateur. Le terminal doit rester ouvert tant
+que vous travaillez; pour arrêter marimo, revenez-y et faites **Ctrl+C**.
+
+**Récupérer les nouveaux laboratoires.** Depuis le dossier du cours :
 
 ```bash
-uv run --group modele marimo edit labos/s03_petit_modele.py
+git pull
 ```
 
-Le modèle lui-même (environ 1 Go) est téléchargé à la première exécution.
+Si git refuse parce que vous avez modifié un fichier qui a aussi changé de
+son côté, renommez votre version (par exemple
+`labos/s01_temperature_moi.py`) et recommencez.
+
+### Travailler dans marimo
+
+Quelques règles suffisent pour commencer; le [guide de
+marimo](https://docs.marimo.io/getting_started/) en dit davantage.
+
+- **Une cellule s'exécute** avec **Ctrl+Entrée** (**Cmd+Entrée** sous
+  macOS), ou avec le bouton ▷ à sa droite.
+- **marimo est réactif** : quand une cellule change une variable, toutes les
+  cellules qui utilisent cette variable s'exécutent de nouveau. L'ordre des
+  cellules dans la page n'a pas d'importance; seules comptent les
+  dépendances entre elles.
+- **Une variable n'est définie que dans une seule cellule.** Si deux cellules
+  affectent la même variable, marimo signale l'erreur et n'exécute ni l'une
+  ni l'autre. Les variables qui commencent par `_` sont locales à leur cellule et
+  échappent à cette règle.
+- **Les vérifications** (✅/❌) sont des cellules comme les autres : elles se
+  relancent d'elles-mêmes chaque fois que vous modifiez votre code.
+- **Enregistrez** avec **Ctrl+S** (**Cmd+S**). Le laboratoire est un fichier
+  `.py` : c'est ce fichier que vous conservez, ou remettez.
+
+Le premier laboratoire qui charge un vrai modèle de langue (semaine 3)
+télécharge ce modèle, environ 1 Go, à sa première exécution; les suivantes le
+reprennent du disque. Un avertissement au sujet de `HF_TOKEN` peut s'afficher
+pendant le téléchargement : il est sans conséquence.
 
 ## Configurer un modèle
 
 À partir de la semaine 7, les laboratoires peuvent appeler un vrai modèle par
-une API compatible OpenAI. La configuration passe par trois variables
+une API compatible OpenAI, chez un fournisseur en ligne ou sur votre machine
+avec [Ollama](https://ollama.com). La configuration passe par trois variables
 d'environnement :
 
 | Variable | Exemple (Groq) | Exemple (Ollama, local) |
@@ -53,10 +202,39 @@ d'environnement :
 
 Sans configuration, les laboratoires fonctionnent avec un **modèle simulé**.
 
+**Sur votre machine**, définissez les variables dans le terminal, puis lancez
+marimo depuis ce même terminal. Sous macOS et Linux :
+
+```bash
+export C1_BASE_URL=https://api.groq.com/openai/v1
+export C1_API_KEY=votre-clé
+export C1_MODELE=openai/gpt-oss-120b
+uv run marimo edit labos/s07_mini_pi_v0.py
+```
+
+Sous Windows, dans PowerShell :
+
+```powershell
+$env:C1_BASE_URL = "https://api.groq.com/openai/v1"
+$env:C1_API_KEY = "votre-clé"
+$env:C1_MODELE = "openai/gpt-oss-120b"
+uv run marimo edit labos/s07_mini_pi_v0.py
+```
+
+Ces variables disparaissent à la fermeture du terminal.
+
+**Dans Codespaces**, enregistrez-les plutôt comme *secrets* : sur GitHub,
+**Settings** → **Codespaces** → **New secret**, une fois par variable, en
+autorisant le dépôt du cours. Elles seront définies dans tous vos
+codespaces; un codespace déjà ouvert doit être redémarré pour les voir.
+
+Une clé d'API est un mot de passe : ne l'écrivez jamais dans un laboratoire
+ni dans un fichier du dépôt, et ne la partagez pas.
+
 ## La bibliothèque du cours
 
 Les laboratoires partagent un petit paquet Python, `c1`, qui fait partie du
-dépôt :
+dépôt et que `uv sync` installe avec le reste :
 
 - `c1.verif` — les vérifications autocorrigées ✅/❌;
 - `c1.llm` — le modèle simulé et l'adaptateur pour une API compatible OpenAI;
@@ -64,3 +242,19 @@ dépôt :
 
 Il est volontairement court : tout ce qui est au cœur du cours, on l'écrit
 soi-même, en laboratoire.
+
+## En cas de problème
+
+**`uv` est introuvable** juste après son installation : fermez le terminal et
+ouvrez-en un nouveau, pour qu'il voie le dossier où uv s'est installé.
+
+**`No pyproject.toml found`** : la commande a été lancée hors du dossier du
+cours. Placez-vous d'abord dedans (`cd cours-agentique-teluq`).
+
+**Le laboratoire de la semaine 3 est très lent, ou s'interrompt** : la
+machine manque probablement de mémoire. Fermez les autres applications, ou
+passez à Codespaces.
+
+**Un jouet reste inerte** : attendez la fin du premier chargement, puis
+rechargez la page. Certains bloqueurs de publicité empêchent le
+téléchargement de Pyodide; désactivez-les pour le site du cours.
