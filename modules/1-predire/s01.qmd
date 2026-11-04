@@ -407,13 +407,82 @@ vocabulaires réels), un trigramme a déjà $50\,000^3 \approx 1{,}25 \times
 L'immense majorité des contextes ne sera jamais observée, et le lissage ne fait
 que masquer le problème.
 
+::: {#fig-parcimonie}
+
+```{=html}
+<svg class="figure-parcimonie" viewBox="0 0 720 290" role="img"
+     aria-label="Nombre de paramètres d'un n-gramme, en échelle logarithmique : 5 × 10⁴ pour l'unigramme, 2,5 × 10⁹ pour le bigramme, 1,25 × 10¹⁴ pour le trigramme, 6,3 × 10¹⁸ pour le 4-gramme, 3,1 × 10²³ pour le 5-gramme. Dès le trigramme, on dépasse les 18 000 milliards de jetons du corpus d'entraînement de Qwen2.5."
+     style="width:100%;max-width:720px;display:block;margin:auto;font-size:17px">
+  <g fill="currentColor" stroke="currentColor">
+    <!-- axe vertical, échelle logarithmique -->
+    <g stroke-width="1" opacity="0.15">
+      <line x1="90" y1="20" x2="700" y2="20"/>
+      <line x1="90" y1="77.5" x2="700" y2="77.5"/>
+      <line x1="90" y1="135" x2="700" y2="135"/>
+      <line x1="90" y1="192.5" x2="700" y2="192.5"/>
+    </g>
+    <line x1="90" y1="250" x2="700" y2="250" stroke-width="1.5"/>
+    <g stroke="none" font-size="15" text-anchor="end" opacity="0.7">
+      <text x="82" y="25">10²⁴</text>
+      <text x="82" y="82.5">10¹⁸</text>
+      <text x="82" y="140">10¹²</text>
+      <text x="82" y="197.5">10⁶</text>
+      <text x="82" y="255">1</text>
+    </g>
+    <!-- barres : V^n paramètres, V = 50 000 -->
+    <g stroke="none">
+      <rect x="125" y="205" width="70" height="45" fill="#3b82f6"/>
+      <rect x="235" y="160" width="70" height="90" fill="#3b82f6"/>
+      <rect x="345" y="115" width="70" height="135" fill="#f59e0b"/>
+      <rect x="455" y="70" width="70" height="180" fill="#f59e0b"/>
+      <rect x="565" y="25" width="70" height="225" fill="#f59e0b"/>
+    </g>
+    <g stroke="none" font-size="15" text-anchor="middle">
+      <text x="160" y="198">5 × 10⁴</text>
+      <text x="270" y="153">2,5 × 10⁹</text>
+      <text x="380" y="108">1,25 × 10¹⁴</text>
+      <text x="490" y="63">6,3 × 10¹⁸</text>
+      <text x="600" y="18">3,1 × 10²³</text>
+    </g>
+    <g stroke="none" text-anchor="middle">
+      <text x="160" y="272">unigramme</text>
+      <text x="270" y="272">bigramme</text>
+      <text x="380" y="272">trigramme</text>
+      <text x="490" y="272">4-gramme</text>
+      <text x="600" y="272">5-gramme</text>
+    </g>
+    <!-- le plus gros corpus -->
+    <line x1="90" y1="123" x2="700" y2="123" stroke-width="2" stroke-dasharray="7 5"/>
+    <g stroke="none" font-size="15">
+      <text x="98" y="96">tout le corpus de Qwen2.5</text>
+      <text x="98" y="114">(18 000 milliards de jetons)</text>
+    </g>
+  </g>
+</svg>
+```
+
+Nombre de paramètres d'un n-gramme pour un vocabulaire de 50 000 mots ($V^n$),
+en échelle logarithmique : chaque mot de contexte en plus multiplie le total
+par 50 000. Dès le trigramme, il y a plus de paramètres que de jetons dans tout
+le corpus d'entraînement de Qwen2.5, le modèle de la semaine 3 : la plupart des
+contextes n'y apparaîtront jamais, pas même une fois.
+:::
+
+C'est un cas de ce qu'on appelle le **fléau de la dimension** (*curse of
+dimensionality*) : quand le nombre de dimensions augmente, le nombre de
+situations possibles croît de façon exponentielle, et les données, même
+abondantes, n'en couvrent qu'une fraction infime. Ici, chaque mot de contexte
+est une dimension de plus.
+
 Le défaut est plus profond encore : pour un n-gramme, « chat » et « chien »
 sont deux symboles sans aucun rapport. Avoir vu « le chien dort » n'apprend
 rien sur « le chat dort ». Il ne peut pas **généraliser** d'un mot à un mot
 semblable. C'est exactement ce que les réseaux de neurones apportent, en
 représentant chaque mot par un vecteur : deux mots qui apparaissent dans des
 contextes semblables reçoivent des vecteurs proches, et ce que le modèle
-apprend sur l'un profite à l'autre. C'est le sujet de la semaine 2.
+apprend sur l'un profite à l'autre. C'est la réponse au fléau de la dimension
+proposée par le premier modèle de langue neuronal [@bengio2003neural], et le
+sujet de la semaine 2.
 
 ## Générer : les stratégies de décodage
 
