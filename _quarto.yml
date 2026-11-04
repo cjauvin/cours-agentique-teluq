@@ -8,11 +8,16 @@ project:
     - "modules/**/*.qmd"
 
 lang: fr
+language:
+  title-block-author-single: "Professeur"
+  title-block-author-plural: "Professeurs"
 
 book:
   title: "IA agentique"
   subtitle: "Fondements, conception et développement"
-  author: "Christian Jauvin"
+  author:
+    name: "Christian Jauvin"
+    url: "https://www.teluq.ca/communaute/corps-professoral/cjauvin"
   favicon: images/logo.svg
   search: true
   page-navigation: true
