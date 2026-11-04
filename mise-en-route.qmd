@@ -13,9 +13,6 @@ machine en trois commandes.
 | Pour quoi | comprendre un mécanisme en le manipulant | construire, tester et mesurer |
 | Votre travail | perdu au rechargement de la page | enregistré dans le fichier du laboratoire |
 
-<!-- À COMPLÉTER à la publication : remplacer les deux <adresse du dépôt>
-     par l'adresse réelle du dépôt. -->
-
 ## Les jouets, dans les pages
 
 Les jouets utilisent [Pyodide](https://pyodide.org), une version de Python
@@ -67,8 +64,9 @@ VS Code dans le navigateur.
    [github.com](https://github.com). Comme personne étudiante, vous pouvez
    aussi demander le [GitHub Student Developer
    Pack](https://education.github.com/pack), qui augmente votre quota.
-2. **Ouvrez le dépôt du cours** (`<adresse du dépôt>`), puis cliquez sur
-   **Code** → **Codespaces** → **Create codespace on main**.
+2. **Créez votre codespace** en suivant [ce lien](https://codespaces.new/cjauvin/cours-agentique-teluq),
+   puis **Create codespace**. (Depuis la [page du dépôt](https://github.com/cjauvin/cours-agentique-teluq), c'est
+   **Code** → **Codespaces** → **Create codespace on main**.)
 3. **Attendez la préparation.** La première fois, Codespaces installe Python,
    `uv` et les dépendances du cours (dont PyTorch) : comptez quelques
    minutes. VS Code s'ouvre ensuite dans le navigateur.
@@ -126,7 +124,7 @@ affiche un numéro de version.
 **2. Récupérez le dépôt du cours.** Avec [git](https://git-scm.com) :
 
 ```bash
-git clone <adresse du dépôt>
+git clone https://github.com/cjauvin/cours-agentique-teluq.git
 cd cours-agentique-teluq
 ```
 
