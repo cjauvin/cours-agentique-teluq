@@ -33,6 +33,66 @@ outils : tout ce qu'un agent fait, il le fait en produisant du texte, un
 morceau à la fois, en tirant chaque morceau dans une distribution de
 probabilités.
 
+::: {#fig-boucle}
+
+```{=html}
+<svg class="figure-boucle" viewBox="0 0 720 245" role="img"
+     aria-label="Le texte « Le chat dort sur le » entre dans le LLM, qui donne une probabilité à chaque mot suivant; on tire « lit », on l'ajoute au texte et on recommence."
+     style="width:100%;max-width:720px;display:block;margin:auto;font-size:17px">
+  <defs>
+    <marker id="fleche" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <g fill="currentColor" stroke="currentColor">
+    <!-- début de texte -->
+    <text x="95" y="50" text-anchor="middle" stroke="none" opacity="0.7" font-size="15">début de texte</text>
+    <rect x="10" y="60" width="170" height="44" rx="6" fill="none" stroke-width="1.5"/>
+    <text x="95" y="87" text-anchor="middle" stroke="none">Le chat dort sur le</text>
+    <line x1="182" y1="82" x2="222" y2="82" stroke-width="1.5" marker-end="url(#fleche)"/>
+    <!-- le modèle -->
+    <rect x="225" y="55" width="80" height="54" rx="8" fill="#3b82f6" fill-opacity="0.15" stroke="#3b82f6" stroke-width="2"/>
+    <text x="265" y="88" text-anchor="middle" stroke="none" font-weight="bold">LLM</text>
+    <line x1="307" y1="82" x2="345" y2="82" stroke-width="1.5" marker-end="url(#fleche)"/>
+    <!-- la distribution -->
+    <text x="475" y="14" text-anchor="middle" stroke="none" opacity="0.7" font-size="15">probabilité de chaque suite</text>
+    <g stroke="none">
+      <text x="398" y="40" text-anchor="end">sol</text>
+      <rect x="405" y="29" width="150" height="14" fill="#3b82f6"/>
+      <text x="561" y="40" font-size="15">5,2 %</text>
+      <text x="398" y="62" text-anchor="end">pont</text>
+      <rect x="405" y="51" width="69" height="14" fill="#3b82f6"/>
+      <text x="480" y="62" font-size="15">2,4 %</text>
+      <text x="398" y="84" text-anchor="end">dos</text>
+      <rect x="405" y="73" width="66" height="14" fill="#3b82f6"/>
+      <text x="477" y="84" font-size="15">2,3 %</text>
+      <text x="398" y="106" text-anchor="end" font-weight="bold">lit</text>
+      <rect x="405" y="95" width="63" height="14" fill="#f59e0b"/>
+      <text x="474" y="106" font-size="15">2,2 %</text>
+      <text x="398" y="128" text-anchor="end">bord</text>
+      <rect x="405" y="117" width="58" height="14" fill="#3b82f6"/>
+      <text x="469" y="128" font-size="15">2,0 %</text>
+      <text x="405" y="152" opacity="0.7" font-size="15">… et 151 660 autres suites</text>
+    </g>
+    <!-- le tirage -->
+    <line x1="522" y1="102" x2="618" y2="102" stroke-width="1.5" marker-end="url(#fleche)"/>
+    <text x="570" y="96" text-anchor="middle" stroke="none" opacity="0.7" font-size="15">tirage</text>
+    <rect x="621" y="82" width="90" height="40" rx="6" fill="#f59e0b" fill-opacity="0.2" stroke="#f59e0b" stroke-width="2"/>
+    <text x="666" y="107" text-anchor="middle" stroke="none" font-weight="bold">lit</text>
+    <!-- on recommence -->
+    <path d="M666,124 L666,200 L95,200 L95,108" fill="none" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#fleche)"/>
+    <text x="380" y="226" text-anchor="middle" stroke="none" font-size="16">on ajoute « lit » au texte, et on recommence : « Le chat dort sur le lit … »</text>
+  </g>
+</svg>
+```
+
+La seule opération d'un LLM : donner une probabilité à chaque suite possible.
+Les probabilités sont celles d'un vrai modèle, Qwen2.5-0.5B (semaine 3), pour
+les mots qui suivent « Le chat dort sur le » : même la plus probable, « sol »,
+ne dépasse pas 5 %. On tire une suite au hasard selon ces probabilités, on
+l'ajoute au texte, et on recommence.
+:::
+
 Cette semaine, on construit cette opération de zéro, avec le modèle le plus
 simple qui soit, le **bigramme**. Il est bien trop pauvre pour être utile,
 mais il possède déjà toute la structure d'un LLM : une distribution sur le mot
