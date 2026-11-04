@@ -36,6 +36,13 @@
           if (couleur) regles.push(`${regle.selectorText} { color: ${couleur} !important; }`);
         }
       }
+      if (!regles.length) return "";
+      // Le curseur (noir) et la sélection (mauve pâle) du thème clair. La
+      // sélection est dessinée sous le texte, que le fond opaque de l'éditeur
+      // cache en mode sombre : on la passe devant, translucide.
+      regles.push(".cm-cursor, .cm-dropCursor { border-left-color: #e9ecef !important; }");
+      regles.push(".cm-selectionBackground { background: rgba(97, 175, 239, 0.35) !important; }");
+      regles.push(".cm-selectionLayer { z-index: 1 !important; pointer-events: none; }");
       return regles.join("\n");
     };
 
