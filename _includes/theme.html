@@ -42,12 +42,12 @@
     const adapterEditeur = (hote, sombre) => {
       const racine = hote.shadowRoot;
       if (!racine || !racine.querySelector(".cm-editor")) return;
-      let style = racine.getElementById("c1-sombre");
+      let style = racine.getElementById("agentique-sombre");
       if (!style) {
         const css = reglesSombres(racine);
         if (!css) return;  // styles pas encore chargés : on réessaiera
         style = document.createElement("style");
-        style.id = "c1-sombre";
+        style.id = "agentique-sombre";
         style.textContent = css;
         racine.appendChild(style);
       }

@@ -1,4 +1,4 @@
-# C1 — IA agentique : fondements, conception et développement
+# IA agentique : fondements, conception et développement
 
 Cours de la TÉLUQ (programme court en développement logiciel assisté par l'IA).
 
@@ -8,7 +8,7 @@ Cours de la TÉLUQ (programme court en développement logiciel assisté par l'IA
 |---|---|
 | `index.qmd`, `mise-en-route.qmd`, `modules/` | le site du cours (livre Quarto, une page par semaine) |
 | `labos/` | les laboratoires (notebooks marimo), à exécuter dans un vrai Python |
-| `c1/` | la bibliothèque commune des laboratoires (`verif`, `llm`, `viz`) |
+| `agentique/` | la bibliothèque commune des laboratoires (`verif`, `llm`, `viz`) |
 | `.devcontainer/` | l'environnement GitHub Codespaces des laboratoires |
 | `_extensions/` | l'extension [quarto-marimo](https://github.com/marimo-team/quarto-marimo) |
 | `documents/` | dossiers de présentation et avant-projet |

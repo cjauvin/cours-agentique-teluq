@@ -12,9 +12,9 @@ def _():
 
     import marimo as mo
 
-    from c1.llm import appel_outil, modele_reel, modele_simule, reponse, configuration
-    from c1.verif import rapport, verifier
-    from c1.viz import afficher_trace
+    from agentique.llm import appel_outil, modele_reel, modele_simule, reponse, configuration
+    from agentique.verif import rapport, verifier
+    from agentique.viz import afficher_trace
     return (
         Path,
         afficher_trace,
@@ -185,7 +185,7 @@ def _(mo):
     ## 3. Un modèle simulé
 
     Pour comprendre la boucle, pas besoin de LLM : une fonction qui renvoie des
-    réponses **scriptées d'avance** suffit (`c1.llm.modele_simule`, dans la
+    réponses **scriptées d'avance** suffit (`agentique.llm.modele_simule`, dans la
     bibliothèque du cours). Elle a la même signature qu'un vrai
     modèle — elle reçoit les messages et les schémas, elle renvoie un message — mais
     elle est déterministe, gratuite et instantanée. Nous nous en servirons aussi pour
@@ -369,7 +369,7 @@ def _(mo):
     ## 5. Avec un vrai modèle
 
     Il suffit de remplacer le modèle simulé par une fonction qui appelle une API
-    compatible OpenAI (`c1.llm.modele_openai`). La boucle, elle, ne change pas
+    compatible OpenAI (`agentique.llm.modele_openai`). La boucle, elle, ne change pas
     d'une ligne.
 
     La configuration passe par trois variables d'environnement, ce qui permet
@@ -377,9 +377,9 @@ def _(mo):
 
     | Variable | Exemple (Groq) | Exemple (Ollama, local) |
     |---|---|---|
-    | `C1_BASE_URL` | `https://api.groq.com/openai/v1` | `http://localhost:11434/v1` |
-    | `C1_API_KEY` | votre clé | `ollama` |
-    | `C1_MODELE` | `openai/gpt-oss-120b` | `qwen2.5-coder:7b` |
+    | `AGENTIQUE_BASE_URL` | `https://api.groq.com/openai/v1` | `http://localhost:11434/v1` |
+    | `AGENTIQUE_API_KEY` | votre clé | `ollama` |
+    | `AGENTIQUE_MODELE` | `openai/gpt-oss-120b` | `qwen2.5-coder:7b` |
     """)
     return
 
@@ -419,8 +419,8 @@ def _(
     if MODELE_REEL is None:
         _sortie = mo.callout(
             mo.md(
-                "Aucun modèle configuré : définissez `C1_BASE_URL`, "
-                "`C1_API_KEY` et `C1_MODELE`, puis relancez le notebook."
+                "Aucun modèle configuré : définissez `AGENTIQUE_BASE_URL`, "
+                "`AGENTIQUE_API_KEY` et `AGENTIQUE_MODELE`, puis relancez le notebook."
             ),
             kind="warn",
         )

@@ -12,8 +12,8 @@ def _():
 
     import marimo as mo
 
-    from c1.verif import rapport, verifier
-    from c1.viz import barres
+    from agentique.verif import rapport, verifier
+    from agentique.viz import barres
     return Counter, barres, defaultdict, math, mo, random, rapport, verifier
 
 

@@ -9,7 +9,7 @@ def _():
     import marimo as mo
     import numpy as np
 
-    from c1.verif import rapport, verifier
+    from agentique.verif import rapport, verifier
     return mo, np, rapport, verifier
 
 

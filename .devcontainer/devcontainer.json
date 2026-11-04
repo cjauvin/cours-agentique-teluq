@@ -1,7 +1,7 @@
 {
   // Environnement GitHub Codespaces du cours : Python 3.12, uv, et toutes les
   // dépendances des laboratoires (dont PyTorch, en version CPU sous Linux).
-  "name": "C1 — IA agentique",
+  "name": "IA agentique",
   "image": "mcr.microsoft.com/devcontainers/python:1-3.12-bookworm",
   "onCreateCommand": "pipx install uv && uv sync",
   "forwardPorts": [2718],

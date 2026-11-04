@@ -203,9 +203,9 @@ d'environnement :
 
 | Variable | Exemple (Groq) | Exemple (Ollama, local) |
 |-------|---------|---------|
-| `C1_BASE_URL` | `https://api.groq.com/openai/v1` | `http://localhost:11434/v1` |
-| `C1_API_KEY` | votre clé | `ollama` |
-| `C1_MODELE` | `openai/gpt-oss-120b` | `qwen2.5-coder:7b` |
+| `AGENTIQUE_BASE_URL` | `https://api.groq.com/openai/v1` | `http://localhost:11434/v1` |
+| `AGENTIQUE_API_KEY` | votre clé | `ollama` |
+| `AGENTIQUE_MODELE` | `openai/gpt-oss-120b` | `qwen2.5-coder:7b` |
 
 Sans configuration, les laboratoires fonctionnent avec un **modèle simulé**.
 
@@ -213,18 +213,18 @@ Sans configuration, les laboratoires fonctionnent avec un **modèle simulé**.
 marimo depuis ce même terminal. Sous macOS et Linux :
 
 ```bash
-export C1_BASE_URL=https://api.groq.com/openai/v1
-export C1_API_KEY=votre-clé
-export C1_MODELE=openai/gpt-oss-120b
+export AGENTIQUE_BASE_URL=https://api.groq.com/openai/v1
+export AGENTIQUE_API_KEY=votre-clé
+export AGENTIQUE_MODELE=openai/gpt-oss-120b
 uv run marimo edit labos/s07_mini_pi_v0.py
 ```
 
 Sous Windows, dans PowerShell :
 
 ```powershell
-$env:C1_BASE_URL = "https://api.groq.com/openai/v1"
-$env:C1_API_KEY = "votre-clé"
-$env:C1_MODELE = "openai/gpt-oss-120b"
+$env:AGENTIQUE_BASE_URL = "https://api.groq.com/openai/v1"
+$env:AGENTIQUE_API_KEY = "votre-clé"
+$env:AGENTIQUE_MODELE = "openai/gpt-oss-120b"
 uv run marimo edit labos/s07_mini_pi_v0.py
 ```
 
@@ -240,12 +240,12 @@ ni dans un fichier du dépôt, et ne la partagez pas.
 
 ## La bibliothèque du cours
 
-Les laboratoires partagent un petit paquet Python, `c1`, qui fait partie du
+Les laboratoires partagent un petit paquet Python, `agentique`, qui fait partie du
 dépôt et que `uv sync` installe avec le reste :
 
-- `c1.verif` — les vérifications autocorrigées ✅/❌;
-- `c1.llm` — le modèle simulé et l'adaptateur pour une API compatible OpenAI;
-- `c1.viz` — les barres de probabilités et l'affichage des traces d'agent.
+- `agentique.verif` — les vérifications autocorrigées ✅/❌;
+- `agentique.llm` — le modèle simulé et l'adaptateur pour une API compatible OpenAI;
+- `agentique.viz` — les barres de probabilités et l'affichage des traces d'agent.
 
 Il est volontairement court : tout ce qui est au cœur du cours, on l'écrit
 soi-même, en laboratoire.

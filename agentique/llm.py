@@ -65,11 +65,11 @@ def modele_openai(client, modele):
 
 
 def configuration():
-    """Lit C1_BASE_URL, C1_API_KEY et C1_MODELE dans l'environnement."""
+    """Lit AGENTIQUE_BASE_URL, AGENTIQUE_API_KEY et AGENTIQUE_MODELE dans l'environnement."""
     return {
-        "base_url": os.environ.get("C1_BASE_URL"),
-        "api_key": os.environ.get("C1_API_KEY"),
-        "modele": os.environ.get("C1_MODELE"),
+        "base_url": os.environ.get("AGENTIQUE_BASE_URL"),
+        "api_key": os.environ.get("AGENTIQUE_API_KEY"),
+        "modele": os.environ.get("AGENTIQUE_MODELE"),
     }
 
 

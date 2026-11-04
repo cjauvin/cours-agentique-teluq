@@ -12,7 +12,7 @@ def _():
     import torch
     import torch.nn.functional as F
 
-    from c1.verif import rapport, verifier
+    from agentique.verif import rapport, verifier
     return F, math, mo, rapport, torch, verifier
 
 
