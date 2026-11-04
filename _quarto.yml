@@ -19,7 +19,10 @@ book:
     name: "Christian Jauvin"
     url: "https://www.teluq.ca/communaute/corps-professoral/cjauvin"
   favicon: images/logo.svg
-  search: true
+  # Pas de raccourcis clavier (« f », « s », « / ») : Quarto ne voit pas les
+  # champs des îles marimo (shadow DOM), et y taper ouvrait la recherche.
+  search:
+    keyboard-shortcut: []
   page-navigation: true
   sidebar:
     style: docked
