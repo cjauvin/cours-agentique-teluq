@@ -73,4 +73,5 @@ format:
     include-after-body:
       - _includes/coloration.html
       - _includes/theme.html
+      - _includes/liens.html
     number-depth: 1

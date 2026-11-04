@@ -1,0 +1,16 @@
+<!-- Les liens du contenu des pages s'ouvrent dans un nouvel onglet, sauf ceux
+     qui mènent ailleurs dans la même page (renvois, notes, références). La
+     navigation du site (barre latérale, table des matières, page suivante) n'est
+     pas touchée. On agit au clic plutôt qu'au chargement, pour couvrir aussi les
+     liens que les îles marimo ajoutent après coup. -->
+<script>
+  document.addEventListener("click", evenement => {
+    const lien = evenement.target.closest("#quarto-document-content a[href]");
+    if (!lien) return;
+    const cible = new URL(lien.href, location.href);
+    const memePage = cible.origin === location.origin && cible.pathname === location.pathname;
+    if (memePage && cible.hash) return;
+    lien.target = "_blank";
+    lien.rel = "noopener";
+  }, true);
+</script>
