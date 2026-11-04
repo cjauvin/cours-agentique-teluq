@@ -9,7 +9,7 @@ machine en trois commandes.
 | | Jouets | Laboratoires |
 |----|---------|---------|
 | Où | dans la page, dans votre navigateur | un notebook marimo, dans un vrai Python |
-| Installation | aucune | aucune (Codespaces) ou `uv` sur votre machine |
+| Installation | aucune | aucune (version navigateur, semaines 1-2; Codespaces) ou `uv` sur votre machine |
 | Pour quoi | comprendre un mécanisme en le manipulant | construire, tester et mesurer |
 | Votre travail | perdu au rechargement de la page | enregistré dans le fichier du laboratoire |
 
@@ -41,7 +41,16 @@ laboratoires ont besoin d'un vrai Python, avec ce que le navigateur ne peut
 pas offrir : PyTorch, un modèle de langue de 1 Go, de vrais processus, un
 système de fichiers, une clé d'API.
 
-Deux façons d'obtenir cet environnement, au choix :
+Les laboratoires des semaines 1 et 2 n'utilisent que Python et NumPy : ils
+existent aussi en **version navigateur**, comme les jouets, sans rien
+installer. Le lien est dans la section « Laboratoire » de la page de la
+semaine. Cliquez sur ▷, en bas à droite, pour tout exécuter. Cette version a
+une limite : votre travail n'est pas conservé quand vous fermez ou rechargez
+l'onglet. Avant de partir, téléchargez votre notebook (menu ☰ →
+**Export…** → **Python**), ou recopiez ailleurs le code que vous avez écrit.
+
+À partir de la semaine 3, il faut un vrai environnement Python. Deux façons
+de l'obtenir, au choix :
 
 | | GitHub Codespaces | Votre machine |
 |----|---------|---------|

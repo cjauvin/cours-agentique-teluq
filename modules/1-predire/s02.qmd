@@ -519,6 +519,12 @@ principale pour laquelle la fenêtre de contexte des modèles est limitée.
    causal, et les faire passer au vert.
 2. **Expérience** — modifier la matrice $M$ pour que « tapis » regarde
    « sur » plutôt que « le », et vérifier l'effet sur la carte d'attention.
+
+Pour l'ouvrir sans rien installer : [le laboratoire dans votre
+navigateur](../../labos/s02_attention.html){target="_blank"}, puis ▷ en bas à droite pour tout
+exécuter. Votre travail n'y est pas conservé : avant de fermer l'onglet,
+téléchargez votre notebook (menu ☰ → **Export…** → **Python**). Pour les autres façons de l'ouvrir, voir la [mise en
+route](../../mise-en-route.qmd).
 :::
 
 ## Limites

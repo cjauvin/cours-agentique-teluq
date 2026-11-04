@@ -521,7 +521,11 @@ tout au long du cours.
 2. **Expérience** — mesurer l'entropie de la distribution, la diversité et la
    longueur des phrases générées en fonction de la température.
 
-Voir la [mise en route](../../mise-en-route.qmd) pour l'ouvrir.
+Pour l'ouvrir sans rien installer : [le laboratoire dans votre
+navigateur](../../labos/s01_temperature.html){target="_blank"}, puis ▷ en bas à droite pour tout
+exécuter. Votre travail n'y est pas conservé : avant de fermer l'onglet,
+téléchargez votre notebook (menu ☰ → **Export…** → **Python**). Pour les autres façons de l'ouvrir, voir la [mise en
+route](../../mise-en-route.qmd).
 :::
 
 ## Limites

@@ -1,6 +1,8 @@
 project:
   type: book
   output-dir: _site
+  # Les laboratoires sans PyTorch, en version navigateur : _site/labos/*.html.
+  post-render: uv run python outils/exporter_labos_web.py
   render:
     - "*.qmd"
     - "modules/**/*.qmd"
