@@ -55,6 +55,11 @@ body.quarto-dark .marimo .markdown table tbody tr:nth-child(2n+1) {
   background: rgba(255, 255, 255, 0.05);
 }
 
+/* Même problème pour la ligne survolée (--yellow-4). */
+body.quarto-dark .marimo .markdown table tbody tr:hover {
+  background: rgba(250, 204, 21, 0.18);
+}
+
 /* Sélecteur de thème à trois états (système, clair, sombre), sous la
    recherche; il remplace l'interrupteur de Quarto. */
 .quarto-color-scheme-toggle {
