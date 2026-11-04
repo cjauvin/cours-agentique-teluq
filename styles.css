@@ -49,6 +49,12 @@ body.quarto-dark .callout-title-container code {
   background: rgba(255, 255, 255, 0.08);
 }
 
+/* Mode sombre : les tableaux des îles marimo gardent sinon une ligne sur deux
+   sur fond vert pâle (--lime-2), sous un texte blanc. */
+body.quarto-dark .marimo .markdown table tbody tr:nth-child(2n+1) {
+  background: rgba(255, 255, 255, 0.05);
+}
+
 /* Sélecteur de thème à trois états (système, clair, sombre), sous la
    recherche; il remplace l'interrupteur de Quarto. */
 .quarto-color-scheme-toggle {
