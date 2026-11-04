@@ -1,28 +1,28 @@
 # Mise en route {.unnumbered}
 
 Le code du cours s'exécute à deux endroits : dans les pages elles-mêmes (les
-*jouets*) et dans des notebooks à part (les *laboratoires*). Les jouets ne
-demandent rien. Les laboratoires demandent un environnement Python, que vous
-pouvez obtenir sans rien installer (GitHub Codespaces) ou installer sur votre
-machine en trois commandes.
+*figures interactives*) et dans des notebooks à part (les *laboratoires*). Les
+figures interactives ne demandent rien. Les laboratoires demandent un
+environnement Python, que vous pouvez obtenir sans rien installer (GitHub
+Codespaces) ou installer sur votre machine en trois commandes.
 
-| | Jouets | Laboratoires |
+| | Figures interactives | Laboratoires |
 |----|---------|---------|
 | Où | dans la page, dans votre navigateur | un notebook marimo, dans un vrai Python |
 | Installation | aucune | aucune (version navigateur, semaines 1-2; Codespaces) ou `uv` sur votre machine |
 | Pour quoi | comprendre un mécanisme en le manipulant | construire, tester et mesurer |
 | Votre travail | perdu au rechargement de la page | enregistré dans le fichier du laboratoire |
 
-## Les jouets, dans les pages
+## Les figures interactives, dans les pages
 
-Les jouets utilisent [Pyodide](https://pyodide.org), une version de Python
-compilée pour le navigateur. Ils fonctionnent dans tout navigateur récent
-(Chrome, Edge, Firefox, Safari), sur ordinateur; sur téléphone, ils
-fonctionnent aussi, mais à l'étroit.
+Les figures interactives utilisent [Pyodide](https://pyodide.org), une
+version de Python compilée pour le navigateur. Elles fonctionnent dans tout
+navigateur récent (Chrome, Edge, Firefox, Safari), sur ordinateur; sur
+téléphone, elles fonctionnent aussi, mais à l'étroit.
 
 Au premier chargement d'une page, le navigateur télécharge Python et numpy
-(quelques dizaines de Mo) : les jouets restent inertes pendant quelques
-secondes, parfois une minute sur une connexion lente. Les visites suivantes
+(quelques dizaines de Mo) : les figures interactives restent inertes pendant
+quelques secondes, parfois une minute sur une connexion lente. Les visites suivantes
 sont presque instantanées, le navigateur ayant tout gardé en cache.
 
 Tout le code affiché dans les pages est modifiable : changez-le, et la page
@@ -42,9 +42,9 @@ pas offrir : PyTorch, un modèle de langue de 1 Go, de vrais processus, un
 système de fichiers, une clé d'API.
 
 Les laboratoires des semaines 1 et 2 n'utilisent que Python et NumPy : ils
-existent aussi en **version navigateur**, comme les jouets, sans rien
-installer. Le lien est dans la section « Laboratoire » de la page de la
-semaine. Cliquez sur ▷, en bas à droite, pour tout exécuter. Cette version a
+existent aussi en **version navigateur**, comme les figures interactives,
+sans rien installer. Le lien est dans la section « Laboratoire » de la page
+de la semaine. Cliquez sur ▷, en bas à droite, pour tout exécuter. Cette version a
 une limite : votre travail n'est pas conservé quand vous fermez ou rechargez
 l'onglet. Avant de partir, téléchargez votre notebook (menu ☰ →
 **Export…** → **Python**), ou recopiez ailleurs le code que vous avez écrit.
@@ -262,6 +262,6 @@ cours. Placez-vous d'abord dedans (`cd cours-agentique-teluq`).
 machine manque probablement de mémoire. Fermez les autres applications, ou
 passez à Codespaces.
 
-**Un jouet reste inerte** : attendez la fin du premier chargement, puis
-rechargez la page. Certains bloqueurs de publicité empêchent le
-téléchargement de Pyodide; désactivez-les pour le site du cours.
+**Une figure interactive reste inerte** : attendez la fin du premier
+chargement, puis rechargez la page. Certains bloqueurs de publicité empêchent
+le téléchargement de Pyodide; désactivez-les pour le site du cours.

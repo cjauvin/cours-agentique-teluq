@@ -26,13 +26,13 @@ que font les outils qu'on utilise tous les jours.
 Chaque semaine suit le même rythme :
 
 1. **Explication** — le texte de la semaine, avec ses formules.
-2. **Jouet** — des cellules interactives, directement dans la page : on fait
-   bouger un curseur et on observe.
+2. **Figures interactives** — du code Python directement dans la page : on
+   fait bouger un curseur, on modifie le code, et on observe.
 3. **Laboratoire** — un notebook [marimo](https://marimo.io) à ouvrir à côté,
    avec un exercice autocorrigé (✅/❌) et une expérience à mener.
 4. **Limites** — quelques questions sur ce que le mécanisme ne sait pas faire,
    qui préparent la semaine suivante.
 
-Les jouets s'exécutent dans votre navigateur, sans rien installer. Les
+Les figures interactives s'exécutent dans votre navigateur, sans rien installer. Les
 laboratoires ont besoin d'un vrai Python : voir la [mise en
 route](mise-en-route.qmd).
