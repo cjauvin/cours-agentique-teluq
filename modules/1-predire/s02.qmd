@@ -625,6 +625,124 @@ l'exponentielle, puis divise par la somme pour que le total fasse 1 :
 
 $$\mathrm{softmax}(z)_i = \frac{e^{z_i}}{\sum_{j=1}^{V} e^{z_j}}$$
 
+::: {#fig-softmax}
+
+```{=html}
+<svg class="figure-softmax" viewBox="20 0 640 262" role="img"
+     aria-label="Le softmax sur cinq mots : les logits, qu'on peut modifier, passent par l'exponentielle, puis sont divisés par leur somme pour donner des probabilités dont le total fait 100 %."
+     style="width:100%;max-width:640px;display:block;margin:auto;font-size:17px">
+  <defs><marker id="fleche-softmax" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="10.5" markerHeight="10.5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+  <g fill="currentColor" stroke="currentColor">
+    <text x='168' y='22' text-anchor='middle' stroke='none' opacity='0.7' font-size='15'>logits <tspan font-style='italic'>z</tspan></text>
+    <text x='358' y='22' text-anchor='middle' stroke='none' opacity='0.7' font-size='15'><tspan font-style='italic'>e</tspan><tspan font-size='11' dy='-7' font-style='italic'>z</tspan></text>
+    <text x='547' y='22' text-anchor='middle' stroke='none' opacity='0.7' font-size='15'>probabilités</text>
+    <line x1='268' y1='44' x2='306' y2='44' stroke-width='1.5' marker-end='url(#fleche-softmax)'/>
+    <text x='287.0' y='37' text-anchor='middle' stroke='none' font-size='13'>exp</text>
+    <line x1='440' y1='44' x2='480' y2='44' stroke-width='1.5' marker-end='url(#fleche-softmax)'/>
+    <text id='s-div' x='460.0' y='37' text-anchor='middle' stroke='none' font-size='13'>÷ 11,59</text>
+    <line x1='150' y1='60' x2='150' y2='224' stroke='#94a3b8'/>
+    <text x='70' y='79' text-anchor='end' stroke='none' font-size='15'>dort</text>
+    <rect id='s-zb0' x='150.0' y='66' width='28.8' height='16' fill='#3b82f6' fill-opacity='0.75' stroke='none'/>
+    <text id='s-z0' x='230' y='79' stroke='none' fill='#3b82f6' font-size='15'>1,2</text>
+    <rect id='s-eb0' x='318' y='66' width='16.6' height='16' fill='currentColor' fill-opacity='0.45' stroke='none'/>
+    <text id='s-e0' x='339.6' y='79' stroke='none' font-size='13'>3,32</text>
+    <rect id='s-pb0' x='492' y='66' width='35.8' height='16' fill='#f59e0b' stroke='none'/>
+    <text id='s-p0' x='532.8' y='79' stroke='none' font-size='13'>29 %</text>
+    <text x='70' y='113' text-anchor='end' stroke='none' font-size='15'>mange</text>
+    <rect id='s-zb1' x='150.0' y='100' width='28.8' height='16' fill='#3b82f6' fill-opacity='0.75' stroke='none'/>
+    <text id='s-z1' x='230' y='113' stroke='none' fill='#3b82f6' font-size='15'>1,2</text>
+    <rect id='s-eb1' x='318' y='100' width='16.6' height='16' fill='currentColor' fill-opacity='0.45' stroke='none'/>
+    <text id='s-e1' x='339.6' y='113' stroke='none' font-size='13'>3,32</text>
+    <rect id='s-pb1' x='492' y='100' width='35.8' height='16' fill='#f59e0b' stroke='none'/>
+    <text id='s-p1' x='532.8' y='113' stroke='none' font-size='13'>29 %</text>
+    <text x='70' y='147' text-anchor='end' stroke='none' font-size='15'>.</text>
+    <rect id='s-zb2' x='150.0' y='134' width='12.0' height='16' fill='#3b82f6' fill-opacity='0.75' stroke='none'/>
+    <text id='s-z2' x='230' y='147' stroke='none' fill='#3b82f6' font-size='15'>0,5</text>
+    <rect id='s-eb2' x='318' y='134' width='8.2' height='16' fill='currentColor' fill-opacity='0.45' stroke='none'/>
+    <text id='s-e2' x='331.2' y='147' stroke='none' font-size='13'>1,65</text>
+    <rect id='s-pb2' x='492' y='134' width='17.8' height='16' fill='#f59e0b' stroke='none'/>
+    <text id='s-p2' x='514.8' y='147' stroke='none' font-size='13'>14 %</text>
+    <text x='70' y='181' text-anchor='end' stroke='none' font-size='15'>court</text>
+    <rect id='s-zb3' x='150.0' y='168' width='12.0' height='16' fill='#3b82f6' fill-opacity='0.75' stroke='none'/>
+    <text id='s-z3' x='230' y='181' stroke='none' fill='#3b82f6' font-size='15'>0,5</text>
+    <rect id='s-eb3' x='318' y='168' width='8.2' height='16' fill='currentColor' fill-opacity='0.45' stroke='none'/>
+    <text id='s-e3' x='331.2' y='181' stroke='none' font-size='13'>1,65</text>
+    <rect id='s-pb3' x='492' y='168' width='17.8' height='16' fill='#f59e0b' stroke='none'/>
+    <text id='s-p3' x='514.8' y='181' stroke='none' font-size='13'>14 %</text>
+    <text x='70' y='215' text-anchor='end' stroke='none' font-size='15'>regarde</text>
+    <rect id='s-zb4' x='150.0' y='202' width='12.0' height='16' fill='#3b82f6' fill-opacity='0.75' stroke='none'/>
+    <text id='s-z4' x='230' y='215' stroke='none' fill='#3b82f6' font-size='15'>0,5</text>
+    <rect id='s-eb4' x='318' y='202' width='8.2' height='16' fill='currentColor' fill-opacity='0.45' stroke='none'/>
+    <text id='s-e4' x='331.2' y='215' stroke='none' font-size='13'>1,65</text>
+    <rect id='s-pb4' x='492' y='202' width='17.8' height='16' fill='#f59e0b' stroke='none'/>
+    <text id='s-p4' x='514.8' y='215' stroke='none' font-size='13'>14 %</text>
+    <text x='150' y='250' text-anchor='middle' stroke='none' font-size='14' opacity='0.7'>de −3 à 3</text>
+    <text id='s-somme' x='318' y='250' stroke='none' font-size='14'>somme : 11,59</text>
+    <text x='492' y='250' stroke='none' font-size='14'>total : 100 %</text>
+  </g>
+</svg>
+<script>
+(() => {
+  const fmt = (v, d = 1) => (v < -1e-9 ? "−" : "") + Math.abs(v).toFixed(d).replace(".", ",");
+  const borner = v => Math.min(3, Math.max(-3, Math.round(v * 10) / 10));
+  // Une valeur qu'on modifie en la faisant glisser (ou avec les flèches du clavier).
+  const glisser = (el, lire, ecrire) => {
+    el.classList.add("valeur-glissable");
+    el.setAttribute("tabindex", "0");
+    let x0 = null, v0 = 0;
+    el.addEventListener("pointerdown", e => {
+      x0 = e.clientX; v0 = lire();
+      el.setPointerCapture(e.pointerId);
+      e.preventDefault();
+    });
+    el.addEventListener("pointermove", e => {
+      if (x0 !== null) ecrire(borner(v0 + (e.clientX - x0) / 40));
+    });
+    const fin = () => { x0 = null; };
+    el.addEventListener("pointerup", fin);
+    el.addEventListener("pointercancel", fin);
+    el.addEventListener("keydown", e => {
+      const d = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 }[e.key];
+      if (!d) return;
+      e.preventDefault();
+      ecrire(borner(lire() + d / 10));
+    });
+  };
+  const fig = document.querySelector("svg.figure-softmax");
+  const $ = id => fig.querySelector("#" + id);
+  const z = [1.2, 1.2, 0.5, 0.5, 0.5];
+  const maj = () => {
+    const e = z.map(Math.exp), somme = e.reduce((a, b) => a + b, 0);
+    z.forEach((zi, i) => {
+      const p = e[i] / somme;
+      $("s-zb" + i).setAttribute("x", (150 + Math.min(zi, 0) * 24).toFixed(1));
+      $("s-zb" + i).setAttribute("width", (Math.abs(zi) * 24).toFixed(1));
+      $("s-z" + i).textContent = fmt(zi);
+      $("s-eb" + i).setAttribute("width", (e[i] * 5).toFixed(1));
+      $("s-e" + i).setAttribute("x", (318 + e[i] * 5 + 5).toFixed(1));
+      $("s-e" + i).textContent = fmt(e[i], 2);
+      $("s-pb" + i).setAttribute("width", (p * 125).toFixed(1));
+      $("s-p" + i).setAttribute("x", (492 + p * 125 + 5).toFixed(1));
+      $("s-p" + i).textContent = Math.round(p * 100) + " %";
+    });
+    $("s-somme").textContent = "somme : " + fmt(somme, 2);
+    $("s-div").textContent = "÷ " + fmt(somme, 2);
+  };
+  z.forEach((_, i) => glisser($("s-z" + i), () => z[i], v => { z[i] = v; maj(); }));
+  maj();
+})();
+</script>
+```
+
+Le softmax, sur cinq mots seulement. Faites glisser les logits en bleu (ou
+utilisez les flèches du clavier) : l'exponentielle rend chaque score positif, et
+la division par leur somme donne des probabilités dont le total fait 100 %. Les
+logits de départ donnent, à peu près, la distribution après « chat » de la
+figure [-@fig-bigramme]. Essayez d'ajouter 1 à tous les logits : les
+probabilités ne bougent pas, car seuls comptent les écarts entre logits. Et un
+logit négatif ne donne pas une probabilité négative, seulement une petite.
+:::
+
 Plus un logit est grand par rapport aux autres, plus la probabilité du mot est
 élevée.
 
