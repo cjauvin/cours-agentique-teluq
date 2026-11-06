@@ -1,5 +1,5 @@
 ---
-title: "Jetons, plongements et attention"
+title: "Apprendre à prédire"
 engine: marimo
 pyproject: |
   requires-python = ">=3.10"
@@ -8,7 +8,7 @@ pyproject: |
 
 ```python {.marimo}
 import math
-from collections import Counter
+from collections import Counter, defaultdict
 
 import marimo as mo
 import numpy as np
@@ -31,47 +31,548 @@ def colorer(morceaux):
 def barres(etiquettes, valeurs, largeur=300, format="{:.0%}"):
     lignes = [
         f"<div style='display:flex;align-items:center;gap:.5em;margin:2px 0'>"
-        f"<code style='width:6em'>{e}</code>"
+        f"<code style='width:7em;white-space:pre'>{e}</code>"
         f"<div style='background:#3b82f6;height:1em;width:{max(v, 0) * largeur:.0f}px'></div>"
         f"<span>{format.format(v)}</span></div>"
         for e, v in zip(etiquettes, valeurs)
     ]
     return mo.Html("".join(lignes))
+
+
+def trace(xs, courbes, largeur=520, hauteur=240, ymin=-2.0, ymax=2.0):
+    """Courbes en SVG; chaque courbe est (valeurs, couleur, épaisseur, pointillé)."""
+    def px(v):
+        return 20 + (v - xs[0]) / (xs[-1] - xs[0]) * (largeur - 30)
+
+    def py(v):
+        return 10 + (ymax - min(max(v, ymin - 1), ymax + 1)) / (ymax - ymin) * (hauteur - 30)
+
+    axes = (
+        f"<line x1='{px(xs[0])}' y1='{py(0)}' x2='{px(xs[-1])}' y2='{py(0)}' stroke='#94a3b8'/>"
+        f"<line x1='{px(0)}' y1='10' x2='{px(0)}' y2='{hauteur - 20}' stroke='#94a3b8'/>"
+        + "".join(
+            f"<text x='{px(v)}' y='{hauteur - 5}' text-anchor='middle' font-size='11'>{v}</text>"
+            for v in range(int(xs[0]), int(xs[-1]) + 1)
+        )
+    )
+    traits = ""
+    for ys, couleur, epaisseur, pointille in courbes:
+        points = " ".join(f"{px(a):.1f},{py(b):.1f}" for a, b in zip(xs, ys))
+        tirets = " stroke-dasharray='6 4'" if pointille else ""
+        traits += (f"<polyline points='{points}' fill='none' stroke='{couleur}' "
+                   f"stroke-width='{epaisseur}'{tirets}/>")
+    return mo.Html(
+        f"<svg width='{largeur}' height='{hauteur}' fill='currentColor' "
+        f"style='overflow:hidden;font-family:sans-serif'>{axes}{traits}</svg>"
+    )
+
+
+def courbe(pertes, plancher, haut, largeur=520, hauteur=200):
+    """Courbe de perte en SVG, avec le plancher en pointillé."""
+    def px(i):
+        return 40 + i / max(len(pertes) - 1, 1) * (largeur - 50)
+
+    def py(v):
+        return 10 + (1 - min(v, haut) / haut) * (hauteur - 40)
+
+    trace = " ".join(f"{px(i):.1f},{py(v):.1f}" for i, v in enumerate(pertes))
+    graduations = "".join(
+        f"<text x='34' y='{py(v) + 4:.0f}' text-anchor='end' font-size='11'>{v}</text>"
+        for v in range(0, int(haut) + 1)
+    )
+    return mo.Html(
+        f"<svg width='{largeur}' height='{hauteur}' fill='currentColor' style='font-family:sans-serif'>"
+        f"<line x1='40' y1='{py(0)}' x2='{largeur - 10}' y2='{py(0)}' stroke='#94a3b8'/>"
+        f"<line x1='40' y1='10' x2='40' y2='{py(0)}' stroke='#94a3b8'/>{graduations}"
+        f"<text x='46' y='14' font-size='11'>bits</text>"
+        f"<line x1='40' y1='{py(plancher):.1f}' x2='{largeur - 10}' y2='{py(plancher):.1f}' "
+        f"stroke='#ef4444' stroke-dasharray='4 4'/>"
+        f"<text x='{largeur - 12}' y='{py(plancher) - 5:.1f}' text-anchor='end' font-size='11' "
+        f"fill='#ef4444'>plancher : {plancher:.2f} bits</text>"
+        f"<polyline points='{trace}' fill='none' stroke='#3b82f6' stroke-width='2'/>"
+        f"<text x='{largeur / 2}' y='{hauteur - 5}' text-anchor='middle' font-size='11'>"
+        f"pas d'entraînement</text></svg>"
+    )
+
+
+def nuage(points, etiquettes, largeur=520, hauteur=320):
+    """Nuage de points étiquetés en SVG."""
+    x, y = points[:, 0], points[:, 1]
+
+    def echelle(v, n):
+        etendue = v.max() - v.min()
+        return 30 + (v - v.min()) / (etendue if etendue > 1e-9 else 1) * (n - 60)
+
+    xs, ys = echelle(x, largeur), hauteur - echelle(y, hauteur)
+    # Les points très proches partagent une seule étiquette.
+    groupes = []
+    for a, b, e in zip(xs, ys, etiquettes):
+        for g in groupes:
+            if abs(g[0] - a) < 25 and abs(g[1] - b) < 12:
+                g[2].append(e)
+                break
+        else:
+            groupes.append((a, b, [e]))
+
+    def etiquette(a, b, es):
+        # Trois mots par ligne au plus; à gauche du point s'il déborderait à droite.
+        lignes = [", ".join(es[i:i + 3]) for i in range(0, len(es), 3)]
+        vers_gauche = a + 5 + 7.3 * max(map(len, lignes)) > largeur
+        x_texte, ancre = (a - 5, "end") if vers_gauche else (a + 5, "start")
+        tspans = "".join(
+            f"<tspan x='{x_texte:.1f}' dy='{0 if i == 0 else 14}'>{l}</tspan>"
+            for i, l in enumerate(lignes)
+        )
+        y_texte = b - 4 - 14 * (len(lignes) - 1)
+        return (f"<text y='{y_texte:.1f}' font-size='12' text-anchor='{ancre}'>"
+                f"{tspans}</text>")
+
+    marques = "".join(
+        f"<circle cx='{a:.1f}' cy='{b:.1f}' r='3' fill='#3b82f6'/>" + etiquette(a, b, es)
+        for a, b, es in groupes
+    )
+    return mo.Html(
+        f"<svg width='{largeur}' height='{hauteur}' fill='currentColor' style='font-family:monospace;"
+        f"border:1px solid rgba(127,127,127,.3);border-radius:4px'>{marques}</svg>"
+    )
 ```
 
 {{< include /_includes/code-modifiable.qmd >}}
 
-La semaine dernière, le bigramme nous a laissés devant trois défauts :
+La semaine dernière, le bigramme nous a laissés devant un mur. Compter ne
+**généralise** pas : pour lui, « chat » et « chien » sont deux symboles sans
+aucun rapport, et allonger le contexte fait exploser le nombre de paramètres,
+c'est le fléau de la dimension. Il ne connaît en plus que les mots de son
+corpus : un mot nouveau a une probabilité nulle.
 
-1. il ne connaît que les mots de son corpus : un mot nouveau a une probabilité
-   nulle;
-2. il ne **généralise** pas : pour lui, « chat » et « chien » sont deux
-   symboles sans aucun rapport;
-3. il ne voit qu'un mot en arrière, et allonger son contexte fait exploser le
-   nombre de paramètres.
-
-Les LLM répondent à chacun de ces défauts par une idée : les **jetons** pour le
-premier, les **plongements** pour le deuxième, l'**attention** pour le
-troisième. Ces trois idées, assemblées, forment le **transformeur**,
-l'architecture de tous les LLM actuels.
+Cette semaine, on remplace la table de comptes par une fonction qu'on
+**ajuste** aux données : un **réseau de neurones**. On verra ce qu'est un
+réseau, comment il apprend, et ce qu'il apprend au passage : un vecteur par
+mot, le **plongement**, qui permet enfin de généraliser. On terminera par les
+unités sur lesquelles travaillent les vrais modèles, les **jetons**, qui
+règlent le problème des mots inconnus. Le dernier défaut, un contexte trop
+court, attendra la semaine 3.
 
 À la fin de la semaine, vous saurez :
 
+- expliquer ce qu'est un réseau de neurones (neurones, couches, activation),
+  et pourquoi il lui faut une non-linéarité;
+- expliquer comment un réseau apprend à prédire le mot suivant : la perte
+  d'entropie croisée, le gradient, la descente de gradient;
+- expliquer ce qu'est un plongement, et pourquoi des vecteurs appris
+  permettent de généraliser;
 - expliquer comment un texte est découpé en jetons par l'algorithme BPE, et
-  pourquoi ce découpage a des conséquences pratiques pour un agent;
-- expliquer ce qu'est un plongement, et pourquoi des vecteurs permettent de
-  généraliser;
-- calculer une attention avec masque causal, et en interpréter les poids;
-- décrire, dans ses grandes lignes, l'architecture d'un transformeur.
+  pourquoi ce découpage a des conséquences pratiques pour un agent.
+
+## Qu'est-ce qu'un réseau de neurones?
+
+Un **neurone** artificiel est un calcul très simple. Il reçoit des nombres
+$x_1, \dots, x_n$, en fait une somme pondérée, ajoute un **biais**, puis
+applique une fonction non linéaire, son **activation** :
+
+$$h = f(w_1 x_1 + \dots + w_n x_n + c)$$
+
+Les poids $w_i$ et le biais $c$ sont ses **paramètres**. L'activation la plus
+courante, la **ReLU**, est aussi la plus simple : $f(z) = \max(0, z)$. Elle
+laisse passer les valeurs positives et remplace les négatives par zéro.
+
+Une **couche** est un groupe de neurones qui reçoivent les mêmes entrées. En
+rangeant les poids de chaque neurone dans une colonne d'une matrice $W$, et
+leurs biais dans un vecteur $c$, toute la couche se calcule d'un coup :
+$h = f(xW + c)$. Une couche, c'est donc un produit matriciel suivi d'une
+activation. Un **réseau** empile des couches : la sortie de l'une est l'entrée
+de la suivante. La dernière couche n'a souvent pas d'activation, ou alors un
+softmax, quand il faut une distribution de probabilités.
+
+Pourquoi l'activation? Sans elle, empiler des couches ne servirait à rien : deux
+produits matriciels de suite, $(xW_1)W_2 = x(W_1 W_2)$, n'en font qu'un, et un
+réseau de cent couches ne calculerait rien de plus qu'une seule. Avec elle,
+chaque neurone ajoute un « coude » à la fonction calculée, et une somme de
+coudes peut prendre presque n'importe quelle forme. Avec assez de neurones, un
+réseau peut approcher aussi près qu'on veut à peu près n'importe quelle
+fonction : c'est le **théorème d'approximation universelle**.
+
+Voici un minuscule réseau : une entrée $x$, une couche cachée de trois neurones
+ReLU, et un neurone de sortie, sans activation. Il a dix paramètres : une pente
+$w$, un biais $c$ et un poids de sortie $v$ par neurone caché, plus le biais
+$b$ de la sortie.
+
+```python {.marimo}
+code_reseau = code_modifiable(r"""
+def relu(z):
+    return np.maximum(z, 0)
+
+
+def reseau(x, w, c, v, b):
+    # la couche cachée : un neurone par élément de w
+    h = relu(np.outer(x, w) + c)
+    # la couche de sortie : un seul neurone
+    return h @ v + b
+""")
+code_reseau
+```
+
+```python {.marimo}
+(reseau,) = executer(code_reseau, {"np": np}, "reseau")
+```
+
+Réglez les dix paramètres pour que la sortie du réseau (en bleu) reproduise la
+courbe en pointillé. Les courbes orange montrent la contribution de chaque
+neurone caché : son activation, multipliée par son poids de sortie. Indice :
+chaque neurone fait son coude là où $wx + c$ s'annule.
+
+```python {.marimo}
+def _curseurs(valeurs):
+    return mo.ui.array(
+        [mo.ui.slider(-3, 3, step=0.1, value=v, show_value=True, full_width=True)
+         for v in valeurs]
+    )
+
+
+pentes = _curseurs([1, 1, 1])
+biais_caches = _curseurs([0, -1, 1])
+poids_sortie = _curseurs([0.5, 0, 0])
+biais_sortie = mo.ui.slider(-2, 2, step=0.1, value=0, show_value=True)
+_lignes = "".join(
+    f"<tr><td style='white-space:nowrap;padding-right:1em'>{nom}</td>"
+    + "".join(f"<td style='padding:0 .5em'>{curseurs[j]}</td>" for j in range(3)) + "</tr>"
+    for nom, curseurs in [("pente <i>w</i>", pentes), ("biais <i>c</i>", biais_caches),
+                          ("sortie <i>v</i>", poids_sortie)]
+)
+mo.vstack([
+    mo.Html(
+        "<table style='width:100%;table-layout:fixed'><colgroup><col style='width:6em'>"
+        "</colgroup><tr><th></th><th>neurone 1</th><th>neurone 2</th><th>neurone 3</th></tr>"
+        + _lignes + "</table>"
+    ),
+    mo.md(f"Biais de sortie $b$ : {biais_sortie}"),
+])
+
+```
+
+```python {.marimo}
+_xs = np.linspace(-2, 2, 201)
+_w, _c, _v = (np.array(a.value) for a in (pentes, biais_caches, poids_sortie))
+_cible = np.maximum(0, 1 - np.abs(_xs))
+_sortie = reseau(_xs, _w, _c, _v, biais_sortie.value)
+_parts = [reseau(_xs, _w, _c, _v * (np.arange(3) == j), 0) for j in range(3)]
+_ecart = float(np.mean((_sortie - _cible) ** 2))
+mo.vstack([
+    trace(_xs, [(p, "#f59e0b", 1, False) for p in _parts]
+          + [(_cible, "currentColor", 2, True), (_sortie, "#3b82f6", 2.5, False)]),
+    mo.md(f"Écart quadratique moyen : **{_ecart:.3f}**"
+          + (" — ✅ le réseau reproduit la courbe." if _ecart < 1e-3 else "")),
+])
+```
+
+Avec dix paramètres, on y arrive, mais à tâtons. Qwen2.5-0.5B, le modèle de la
+semaine 3, en a 494 millions : personne ne les règle à la main. Il faut une
+méthode pour trouver automatiquement les paramètres qui font coller le réseau
+aux données. C'est l'**entraînement**, l'objet du reste de cette semaine.
+(Essayez aussi de remplacer `np.maximum(z, 0)` par `z` dans le code : sans
+activation, quels que soient les curseurs, la sortie reste une droite.)
+
+## Le bigramme neuronal
+
+Revenons au bigramme de la semaine 1, et remplaçons sa table de comptes par un
+réseau. L'entrée est un mot, pas un nombre : il faut d'abord le changer en
+vecteur. Chaque mot $a$ du vocabulaire reçoit donc un **plongement**
+(*embedding*) $h = E_a$, un vecteur de $d$ nombres (une ligne de la matrice
+$E$). Pour prédire le mot qui suit $a$, le réseau multiplie ce vecteur par une
+seconde matrice $W$, ajoute un biais $b$, et obtient un score par mot du
+vocabulaire, les **logits**. Un softmax en fait une distribution :
+
+$$z = E_a W + b, \qquad P(\cdot \mid a) = \mathrm{softmax}(z)$$
+
+C'est le réseau le plus simple possible : une seule couche, sans couche cachée,
+terminée par un softmax. C'est aussi, en miniature, la fin de tout LLM : un
+vecteur projeté sur le vocabulaire, puis un softmax. Avec nos $V = 21$ mots et
+$d = 2$, le réseau a $21 \times 2 + 2 \times 21 + 21 = 105$ paramètres, contre
+$21 \times 21 = 441$ cases pour la table de comptes. Il doit donc
+**compresser** : impossible de retenir chaque paire séparément.
+
+C'est, en plus simple, le premier modèle de langue neuronal
+[@bengio2003neural]. Pour prédire un mot à partir des $n - 1$ précédents, il met
+bout à bout leurs plongements, les fait passer par une couche cachée, puis
+projette le résultat sur le vocabulaire. Ses paramètres croissent
+proportionnellement à $n$, et non plus comme $V^n$ : le fléau de la dimension
+de la figure 1.2 est contourné. Et surtout, comme on va le voir, des mots
+semblables y reçoivent des vecteurs proches.
+
+Voici les données : chaque position du corpus de la semaine 1 donne un exemple,
+le mot précédent `x` et le mot à prédire `y`.
+
+```python {.marimo}
+code_donnees = code_modifiable(r'''
+CORPUS = """
+le chat dort sur le tapis . le chien dort sur le canapé .
+le chat mange la souris . le chien mange le repas du chat .
+la souris dort dans le trou . le chat regarde le chien .
+le chien regarde la souris . la souris regarde le fromage .
+la souris mange le fromage . le chat dort dans le panier .
+le chien court dans le jardin . le chat court après la souris .
+la souris court dans le trou . le chien dort dans le jardin .
+le chat mange le fromage du chien . la souris dort sur le tapis .
+"""
+jetons = ["."] + CORPUS.split()
+vocabulaire = sorted(set(jetons))
+index = {m: i for i, m in enumerate(vocabulaire)}
+x = np.array([index[m] for m in jetons[:-1]])  # le mot précédent
+y = np.array([index[m] for m in jetons[1:]])   # le mot à prédire
+V, N = len(vocabulaire), len(x)
+''')
+code_donnees
+```
+
+```python {.marimo}
+jetons, vocabulaire, x, y, V, N = executer(
+    code_donnees, {"np": np}, "jetons", "vocabulaire", "x", "y", "V", "N"
+)
+```
+
+## La perte : l'entropie croisée
+
+Au départ, les paramètres sont tirés au hasard, et les prédictions ne valent
+rien. Pour les améliorer, il faut d'abord mesurer à quel point elles sont
+mauvaises. On reprend exactement la mesure de la semaine 1, l'**entropie
+croisée** : la moyenne, sur tous les exemples du corpus, de
+$-\log_2 P(y \mid x)$, la surprise du réseau devant le bon mot.
+
+$$\mathcal{L} = -\frac{1}{N} \sum_{t=1}^{N} \log_2 P(y_t \mid x_t)$$
+
+Entraîner le réseau, c'est chercher les paramètres qui rendent cette **perte**
+la plus petite possible. La semaine 1 nous dit jusqu'où elle peut descendre :
+les fréquences du bigramme par comptage sont, par définition, les
+probabilités qui rendent le corpus le plus probable (le maximum de
+vraisemblance). Aucun bigramme, neuronal ou non, ne peut faire mieux sur ce
+corpus. Leur entropie croisée est un **plancher**.
+
+```python {.marimo}
+_comptes = defaultdict(Counter)
+for _a, _b in zip(jetons, jetons[1:]):
+    _comptes[_a][_b] += 1
+plancher = -sum(
+    math.log2(_comptes[_a][_b] / sum(_comptes[_a].values()))
+    for _a, _b in zip(jetons, jetons[1:])
+) / N
+```
+
+## La descente de gradient
+
+Comment trouver ces paramètres? Pour chacun, on calcule le **gradient** : de
+combien la perte varierait si on l'augmentait un tout petit peu. On déplace
+alors chaque paramètre d'un petit pas dans la direction opposée, celle où la
+perte diminue, et on recommence. C'est la **descente de gradient**. La taille
+du pas est le **taux d'apprentissage**.
+
+Pour un softmax suivi de l'entropie croisée, le gradient par rapport aux
+logits est d'une simplicité remarquable : $p - y$, la distribution prédite
+moins la « bonne réponse » (1 pour le bon mot, 0 pour les autres). Le pas
+augmente donc le logit du bon mot, et diminue celui de chaque autre mot en
+proportion de la probabilité qu'on lui accordait à tort. La **règle de la
+chaîne** des dérivées propage ensuite ce gradient vers $W$, $b$ et $E$ : c'est
+la **rétropropagation**. Ici, nous l'écrivons à la main; en laboratoire, vous
+l'écrirez vous-même, et à partir de la semaine 3, PyTorch la calculera pour
+nous.
+
+```python {.marimo}
+code_entrainer = code_modifiable(r'''
+def entrainer(d, pas, taux, graine=0):
+    rng = np.random.default_rng(graine)
+    E = rng.normal(0, 0.1, (V, d))  # les plongements : une ligne par mot
+    W = rng.normal(0, 0.1, (d, V))  # la projection vers les logits
+    b = np.zeros(V)                 # le biais : un par mot
+    pertes = []
+    for _ in range(pas):
+        # Propagation : la distribution du mot suivant, pour chaque exemple
+        h = E[x]
+        z = h @ W + b
+        p = np.exp(z - z.max(axis=1, keepdims=True))
+        p /= p.sum(axis=1, keepdims=True)
+        pertes.append(-np.mean(np.log2(p[np.arange(N), y])))
+        if not np.isfinite(pertes[-1]):
+            break  # l'entraînement a divergé
+        # Rétropropagation : le gradient par rapport aux logits est p − y
+        g = p.copy()
+        g[np.arange(N), y] -= 1
+        g /= N
+        gW, gb, gh = h.T @ g, g.sum(axis=0), g @ W.T
+        gE = np.zeros_like(E)
+        np.add.at(gE, x, gh)
+        # Descente de gradient : un petit pas dans la direction opposée
+        E -= taux * gE
+        W -= taux * gW
+        b -= taux * gb
+    return E, W, b, pertes
+''')
+code_entrainer
+```
+
+```python {.marimo}
+(entrainer,) = executer(
+    code_entrainer, {"np": np, "x": x, "y": y, "V": V, "N": N}, "entrainer"
+)
+```
+
+Faites varier le nombre de pas, le taux d'apprentissage et la dimension $d$
+des plongements.
+
+```python {.marimo}
+n_pas = mo.ui.slider(0, 500, step=10, value=300, label="Pas d'entraînement", show_value=True)
+taux = mo.ui.slider(steps=[0.1, 0.5, 1, 2, 5, 10], value=2, label="Taux d'apprentissage", show_value=True)
+dimension = mo.ui.slider(steps=[1, 2, 3, 4, 8], value=2, label="Dimension d", show_value=True)
+mo.vstack([n_pas, taux, dimension])
+```
+
+```python {.marimo}
+E, _W, _b, pertes = entrainer(dimension.value, n_pas.value, taux.value)
+_haut = math.ceil(math.log2(V))
+if not pertes:
+    _bilan = mo.md(f"*Aucun pas : la perte d'un réseau non entraîné est d'environ {math.log2(V):.2f} bits.*")
+elif not np.isfinite(pertes[-1]):
+    _bilan = mo.callout(mo.md(
+        f"**L'entraînement a divergé** après {len(pertes) - 1} pas : le taux "
+        "d'apprentissage est trop grand, chaque pas dépasse la vallée au lieu d'y descendre."
+    ), kind="danger")
+else:
+    _bilan = mo.md(
+        f"Perte après {len(pertes)} pas : **{pertes[-1]:.2f} bits** "
+        f"(plancher : {plancher:.2f}; réseau non entraîné : {pertes[0]:.2f})."
+    )
+mo.vstack([courbe([p for p in pertes if np.isfinite(p)] or [0], plancher, _haut), _bilan])
+```
+
+Avec un taux de 0,1, la perte descend, mais lentement; à 10, elle diverge.
+Entre les deux, quelques centaines de pas suffisent pour s'approcher du
+plancher, même avec $d = 2$. Avec $d = 1$, en revanche, le réseau plafonne
+au-dessus : un seul nombre par mot ne suffit pas à résumer ce qui le suit.
+
+## Les plongements appris
+
+Le réseau a appris, au passage, un vecteur par mot. Le voici, dans le plan
+(au-delà de 2 dimensions, on projette sur les deux directions où les points
+s'étalent le plus).
+
+```python {.marimo}
+if E.shape[1] == 1:
+    _points = np.hstack([E, np.zeros_like(E)])
+else:
+    _centre = E - E.mean(axis=0)
+    _points = _centre @ np.linalg.svd(_centre, full_matrices=False)[2][:2].T
+nuage(_points, vocabulaire) if np.isfinite(_points).all() else mo.md("*Pas de plongements : l'entraînement a divergé.*")
+```
+
+Personne n'a dit au réseau ce qu'est un animal ou un lieu. Pourtant, après
+entraînement, « chat », « chien » et « souris » se regroupent, tout comme
+« tapis », « jardin », « trou » et les autres lieux, au point de se
+confondre; « dort » et « court » se rapprochent, loin de « mange » et
+« regarde ». La raison est instructive : dans un bigramme, le plongement d'un
+mot ne sert qu'à prédire **le mot qui le suit**. Les animaux sont suivis d'un
+verbe, les lieux d'un point, « dort » et « court » de « sur » ou « dans »,
+« mange » et « regarde » de « le » ou « la ». Le point lui-même, toujours suivi
+de « le » ou « la », se range à côté de « mange » et « regarde » : pour le
+réseau, ce n'est pas une ponctuation, c'est un mot qui annonce un déterminant.
+Le réseau range les mots selon ce qu'ils permettent de prédire.
+
+### L'hypothèse distributionnelle
+
+Ce que le réseau vient de faire obéit à un principe ancien, l'**hypothèse
+distributionnelle** : des mots qui apparaissent dans des contextes semblables
+ont des sens semblables. On reconnaît un mot à ses fréquentations. On peut voir
+ce principe à l'œuvre sans aucun apprentissage. Représentons chaque mot du
+corpus par un vecteur qui compte ses voisins immédiats : combien de fois chaque
+mot apparaît juste à sa gauche, et juste à sa droite. Puis mesurons la
+ressemblance de deux vecteurs par leur **similarité cosinus**, le cosinus de
+l'angle qu'ils forment (1 : même direction, 0 : rien en commun) :
+
+$$\cos(u, v) = \frac{u \cdot v}{\lVert u \rVert \, \lVert v \rVert}$$
+
+```python {.marimo}
+code_voisins = code_modifiable(r'''
+CORPUS = """
+le chat dort sur le tapis . le chien dort sur le canapé .
+le chat mange la souris . le chien mange le repas du chat .
+la souris dort dans le trou . le chat regarde le chien .
+le chien regarde la souris . la souris regarde le fromage .
+la souris mange le fromage . le chat dort dans le panier .
+le chien court dans le jardin . le chat court après la souris .
+la souris court dans le trou . le chien dort dans le jardin .
+le chat mange le fromage du chien . la souris dort sur le tapis .
+"""
+mots = CORPUS.split()
+vocabulaire = sorted(set(mots) - {"."})
+
+voisins = {m: Counter() for m in vocabulaire}
+for i, m in enumerate(mots):
+    if m == ".":
+        continue
+    if i > 0:
+        voisins[m]["← " + mots[i - 1]] += 1
+    if i + 1 < len(mots):
+        voisins[m][mots[i + 1] + " →"] += 1
+
+
+def cosinus(a, b):
+    u, v = voisins[a], voisins[b]
+    produit = sum(u[c] * v[c] for c in u)
+    normes = math.sqrt(sum(x * x for x in u.values()) * sum(x * x for x in v.values()))
+    return produit / normes
+''')
+code_voisins
+```
+
+
+```python {.marimo}
+mots_voisins, voisins, cosinus = executer(
+    code_voisins, {"Counter": Counter, "math": math}, "vocabulaire", "voisins", "cosinus"
+)
+```
+
+Choisissez un mot : les barres montrent les mots dont le vecteur lui ressemble
+le plus.
+
+```python {.marimo}
+mot_plongement = mo.ui.dropdown(
+    mots_voisins, value="chat" if "chat" in mots_voisins else mots_voisins[0], label="Mot"
+)
+mot_plongement
+```
+
+```python {.marimo}
+_proches = sorted(
+    ((cosinus(mot_plongement.value, m), m) for m in mots_voisins if m != mot_plongement.value),
+    reverse=True,
+)[:6]
+_vecteur = ", ".join(f"{c} : {n}" for c, n in voisins[mot_plongement.value].most_common())
+mo.vstack([
+    barres([m for _, m in _proches], [s for s, _ in _proches], format="{:.2f}"),
+    mo.md(f"Vecteur de « {mot_plongement.value} » (composantes non nulles) : {_vecteur}"),
+])
+```
+
+Ces comptes, eux aussi, regroupent « chat » et « chien », « mange » et
+« regarde », « sur » et « dans », et les lieux. Mais « souris » ressemble peu à
+« chat », parce qu'elle suit « la » et non « le » : les comptes de voisins
+tiennent compte de ce qui **précède** un mot, alors que le plongement du
+bigramme neuronal ne sert qu'à prédire ce qui le **suit**, et y range « souris »
+avec les autres animaux. Un plongement appris encode ce dont sa tâche a besoin,
+et rien d'autre. Ceux d'un LLM, appris pour prédire le jeton suivant à partir
+de tout le contexte, sont bien plus riches que les nôtres.
+
+Voilà ce qui manquait au bigramme par comptage. Si « chat » et « chien » ont des
+vecteurs proches, tout ce que le modèle apprend sur l'un profite à l'autre :
+avoir vu « le chien dort » rend « le chat dort » plus plausible. C'est la
+**généralisation**.
 
 ## Des mots aux jetons
 
-Sur quelles unités un modèle de langue doit-il travailler? Les **mots** posent
-deux problèmes : leur nombre est sans limite (noms propres, fautes de frappe,
-mots composés, conjugaisons), et un mot absent du vocabulaire est impossible à
-traiter. Les **caractères** règlent ce problème, puisqu'ils sont en nombre
-fini, mais les séquences deviennent très longues, et chaque caractère, pris
-isolément, ne porte presque aucun sens.
+Jusqu'ici, nos modèles travaillent sur des mots, et ne connaissent que ceux de
+leur corpus. Sur quelles unités un vrai modèle de langue doit-il travailler?
+Les **mots** posent deux problèmes : leur nombre est sans limite (noms propres,
+fautes de frappe, mots composés, conjugaisons), et un mot absent du vocabulaire
+est impossible à traiter. Les **caractères** règlent ce problème, puisqu'ils
+sont en nombre fini, mais les séquences deviennent très longues, et chaque
+caractère, pris isolément, ne porte presque aucun sens.
 
 Les LLM travaillent avec un compromis : des **jetons** (*tokens*), c'est-à-dire
 des morceaux de mots. Les mots fréquents sont des jetons entiers; les mots
@@ -208,275 +709,9 @@ source, est représentable. Quelques conséquences méritent d'être retenues.
   le modifier peut se tromper d'un espace; nous concevrons nos outils en
   conséquence (semaine 8).
 
-## Des jetons aux vecteurs : les plongements
-
-Un jeton est un numéro dans le vocabulaire. Pour le bigramme, deux numéros
-différents n'ont rien en commun. Les réseaux de neurones associent plutôt à
-chaque jeton un **vecteur** de nombres réels, son **plongement**
-(*embedding*). Concrètement, le modèle possède une matrice $E$ de $V$ lignes
-(une par jeton) et $d$ colonnes; le plongement du jeton numéro $i$ est
-simplement la ligne $i$ de $E$. La dimension $d$ va de quelques centaines à
-quelques milliers.
-
-Ces vecteurs ne sont pas choisis à la main : ils sont **appris** pendant
-l'entraînement, comme tous les autres paramètres (semaine 3). Et ce
-qu'ils apprennent obéit à un principe ancien, l'**hypothèse distributionnelle** :
-des mots qui apparaissent dans des contextes semblables ont des sens
-semblables. On reconnaît un mot à ses fréquentations.
-
-On peut voir ce principe à l'œuvre sans aucun apprentissage. Représentons
-chaque mot du corpus de la semaine 1 par un vecteur qui compte ses voisins
-immédiats : combien de fois chaque mot apparaît juste à sa gauche, et juste à
-sa droite. Puis mesurons la ressemblance de deux vecteurs par leur **similarité
-cosinus**, le cosinus de l'angle qu'ils forment (1 : même direction, 0 :
-rien en commun) :
-
-$$\cos(u, v) = \frac{u \cdot v}{\lVert u \rVert \, \lVert v \rVert}$$
-
-```python {.marimo}
-code_voisins = code_modifiable(r'''
-CORPUS = """
-le chat dort sur le tapis . le chien dort sur le canapé .
-le chat mange la souris . le chien mange le repas du chat .
-la souris dort dans le trou . le chat regarde le chien .
-le chien regarde la souris . la souris regarde le fromage .
-la souris mange le fromage . le chat dort dans le panier .
-le chien court dans le jardin . le chat court après la souris .
-la souris court dans le trou . le chien dort dans le jardin .
-le chat mange le fromage du chien . la souris dort sur le tapis .
-"""
-mots = CORPUS.split()
-vocabulaire = sorted(set(mots) - {"."})
-
-voisins = {m: Counter() for m in vocabulaire}
-for i, m in enumerate(mots):
-    if m == ".":
-        continue
-    if i > 0:
-        voisins[m]["← " + mots[i - 1]] += 1
-    if i + 1 < len(mots):
-        voisins[m][mots[i + 1] + " →"] += 1
-
-
-def cosinus(a, b):
-    u, v = voisins[a], voisins[b]
-    produit = sum(u[c] * v[c] for c in u)
-    normes = math.sqrt(sum(x * x for x in u.values()) * sum(x * x for x in v.values()))
-    return produit / normes
-''')
-code_voisins
-```
-
-```python {.marimo}
-vocabulaire, voisins, cosinus = executer(
-    code_voisins, {"Counter": Counter, "math": math}, "vocabulaire", "voisins", "cosinus"
-)
-```
-
-Choisissez un mot : les barres montrent les mots dont le vecteur lui ressemble
-le plus.
-
-```python {.marimo}
-mot_plongement = mo.ui.dropdown(
-    vocabulaire, value="chat" if "chat" in vocabulaire else vocabulaire[0], label="Mot"
-)
-mot_plongement
-```
-
-```python {.marimo}
-_proches = sorted(
-    ((cosinus(mot_plongement.value, m), m) for m in vocabulaire if m != mot_plongement.value),
-    reverse=True,
-)[:6]
-_vecteur = ", ".join(f"{c} : {n}" for c, n in voisins[mot_plongement.value].most_common())
-mo.vstack([
-    barres([m for _, m in _proches], [s for s, _ in _proches], format="{:.2f}"),
-    mo.md(f"Vecteur de « {mot_plongement.value} » (composantes non nulles) : {_vecteur}"),
-])
-```
-
-Sans qu'on lui ait rien dit, cette représentation regroupe « chat » et
-« chien », « mange » et « regarde », « sur » et « dans », et tous les lieux
-(« tapis », « trou », « jardin »…). Elle capte des **catégories** de mots. Et
-« souris »? Elle ressemble peu à « chat », parce qu'elle suit « la » et non
-« le » : le genre grammatical, lui aussi, se lit dans les contextes.
-
-Voilà ce qui manquait au bigramme. Si « chat » et « chien » ont des vecteurs
-proches, tout ce que le modèle apprend sur l'un profite à l'autre : avoir vu
-« le chien dort » rend « le chat dort » plus plausible. C'est la
-**généralisation**. Les plongements appris par un LLM sont plus riches que nos
-comptes de voisins (denses, de grande dimension, appris pour prédire le jeton
-suivant), mais le principe est le même. Ils servent aussi, tels quels, à la
-**recherche sémantique** : trouver les passages d'un document dont le sens est
-proche d'une question, une technique que nous retrouverons avec les agents.
-
-## L'attention
-
-Il reste le troisième défaut : le contexte. Pour prédire la suite de « le chat
-noir qui dormait sur le tapis s'est … », il faut se souvenir que le sujet est
-« chat », six mots plus tôt. Un n-gramme ne le peut pas. Il faudrait un
-mécanisme qui, pour chaque position, aille **chercher** dans tout le contexte
-les mots qui comptent, quelle que soit leur distance.
-
-C'est ce que fait l'**attention**. Pour chaque jeton, elle calcule une
-**distribution sur les jetons précédents** (des poids positifs qui somment à
-1), puis fait la moyenne de leurs vecteurs selon ces poids. Le résultat est un
-nouveau vecteur pour ce jeton, enrichi de ce qu'il a trouvé dans son contexte.
-
-### Requêtes, clés et valeurs
-
-Comment décider où regarder? Chaque jeton produit trois vecteurs, par trois
-multiplications matricielles de son plongement $x$ :
-
-- une **requête** $q = x W_Q$ : ce qu'il cherche;
-- une **clé** $k = x W_K$ : ce qu'il offre, ce sur quoi on peut le trouver;
-- une **valeur** $v = x W_V$ : ce qu'il transmet quand on le trouve.
-
-L'image est celle d'un dictionnaire où l'on chercherait par ressemblance plutôt
-que par égalité exacte. Le score entre le jeton $i$ et le jeton $j$ est le
-produit scalaire $q_i \cdot k_j$ : grand si ce que $i$ cherche ressemble à ce
-que $j$ offre. Un softmax transforme les scores en poids, et le résultat est la
-moyenne des valeurs pondérée par ces poids. Pour tous les jetons à la fois, en
-empilant les vecteurs en matrices :
-
-$$\mathrm{Attention}(Q, K, V) = \mathrm{softmax}\!\left(\frac{QK^\top}{\sqrt{d}}\right) V$$
-
-Deux détails. La division par $\sqrt{d}$ empêche les scores de grandir avec la
-dimension, ce qui rendrait le softmax trop pointu : c'est une température,
-exactement comme à la semaine 1. Et le **masque causal** interdit à chaque
-jeton de regarder les jetons qui le suivent, en mettant leur score à
-$-\infty$ avant le softmax : un modèle qui génère de gauche à droite ne doit
-pas apprendre à « tricher » en regardant l'avenir.
-
-```python {.marimo}
-code_softmax = code_modifiable(r'''
-def softmax(x):
-    e = np.exp(x - x.max(axis=-1, keepdims=True))
-    return e / e.sum(axis=-1, keepdims=True)
-
-
-def attention(Q, K, V, causal=True):
-    scores = Q @ K.T / np.sqrt(K.shape[1])
-    if causal:
-        scores = np.where(np.tri(len(Q), dtype=bool), scores, -np.inf)
-    poids = softmax(scores)
-    return poids @ V, poids
-''')
-code_softmax
-```
-
-```python {.marimo}
-(attention,) = executer(code_softmax, {"np": np}, "attention")
-```
-
-### Une attention construite à la main
-
-Dans un vrai modèle, les matrices $W_Q$, $W_K$ et $W_V$ sont apprises, et ce
-qu'elles encodent est difficile à lire. Construisons-en une à la main, pour
-voir le mécanisme. Chaque mot de la phrase « le chat noir dort sur le tapis »
-est codé par sa catégorie grammaticale (déterminant, nom, adjectif, verbe,
-préposition). Une matrice $M$ dit quelle catégorie en « cherche » quelle autre :
-un adjectif cherche un nom (pour s'accorder), un verbe cherche un nom (son
-sujet), un nom cherche un déterminant. Le score entre deux mots est alors
-$x_i M x_j^\top$, ce qui revient à prendre $W_Q = M$ et $W_K = I$.
-
-Ce code est **modifiable** : changez la phrase ou les valeurs de $M$, puis
-cliquez hors de l'éditeur, et observez l'effet sur l'attention plus bas.
-
-```python {.marimo}
-code_attention = code_modifiable(r'''
-CATEGORIES = ["dét", "nom", "adj", "verbe", "prép"]
-PHRASE = [("le", "dét"), ("chat", "nom"), ("noir", "adj"), ("dort", "verbe"),
-          ("sur", "prép"), ("le", "dét"), ("tapis", "nom")]
-
-X = np.array([[c == cat for c in CATEGORIES] for _, cat in PHRASE], dtype=float)
-
-M = np.zeros((5, 5))
-M[2, 1] = 4  # l'adjectif cherche un nom
-M[3, 1] = 4  # le verbe cherche un nom
-M[1, 0] = 3  # le nom cherche un déterminant
-M[4, 3] = 3  # la préposition cherche un verbe
-M[0, 4] = 2  # le déterminant cherche une préposition
-''')
-code_attention
-```
-
-```python {.marimo}
-CATEGORIES, PHRASE, X, M = executer(
-    code_attention, {"np": np}, "CATEGORIES", "PHRASE", "X", "M"
-)
-```
-
-Choisissez un mot : les barres montrent où il porte son attention. La
-**netteté** multiplie les scores avant le softmax; c'est l'inverse d'une
-température.
-
-```python {.marimo}
-_options = {f"{i + 1}. {mot}": i for i, (mot, _) in enumerate(PHRASE)}
-requete = mo.ui.dropdown(_options, value=list(_options)[min(3, len(_options) - 1)], label="Mot")
-nettete = mo.ui.slider(0.0, 3.0, step=0.1, value=1.0, label="Netteté", show_value=True)
-mo.vstack([requete, nettete])
-```
-
-```python {.marimo}
-_, _poids = attention(nettete.value * X @ M, X, X)
-_i = requete.value
-barres([m for m, _ in PHRASE[: _i + 1]], _poids[_i, : _i + 1])
-```
-
-À netteté 0, tous les scores sont nuls : l'attention est uniforme sur les mots
-précédents, et toute structure disparaît. En la montant, chaque mot se
-concentre sur celui qu'il cherche, **quelle que soit la distance**. « dort »
-trouve « chat » deux mots plus loin; il le trouverait aussi bien vingt mots
-plus loin. Et le coût ne dépend pas de la distance : contrairement au
-n-gramme, allonger le contexte n'ajoute aucun paramètre.
-
-Remarquez enfin les deux « le » : ils ont exactement le même vecteur, et
-l'attention, telle quelle, ne sait pas lequel vient en premier. Elle traite le
-contexte comme un **ensemble**, sans ordre. Les vrais modèles ajoutent donc une
-information de **position** à chaque jeton; nous verrons comment à la semaine 3.
-
-### Plusieurs têtes
-
-Une seule attention ne peut chercher qu'une chose à la fois. Un transformeur en
-calcule plusieurs en parallèle, avec des matrices différentes : ce sont les
-**têtes** d'attention. L'une peut suivre l'accord grammatical, une autre la
-référence d'un pronom, une autre encore la structure d'un bloc de code. Leurs
-résultats sont concaténés puis combinés.
-
-## Le transformeur, vue d'ensemble
-
-On peut maintenant assembler un **transformeur**, l'architecture de tous les
-LLM actuels. Le texte suit le chemin suivant.
-
-```
-texte ──► jetons ──► plongements + position
-                            │
-              ┌─────────────▼─────────────┐
-              │ attention multi-têtes     │
-              │ (masque causal)           │  × N blocs
-              │             ▼             │
-              │ réseau par jeton          │
-              └─────────────┬─────────────┘
-                            ▼
-      projection sur le vocabulaire : un logit par jeton
-                            ▼
-        softmax : P(jeton suivant)   ◄── semaine 1
-```
-
-Chaque **bloc** contient une attention, où les jetons échangent de
-l'information, suivie d'un petit réseau de neurones appliqué à chaque jeton
-séparément, où cette information est transformée. Des connexions résiduelles
-(on additionne l'entrée du bloc à sa sortie) et des normalisations rendent
-l'empilement stable. On empile des dizaines de blocs. À la sortie, le vecteur
-du **dernier** jeton est projeté sur le vocabulaire : on obtient un score par
-jeton possible, les logits, puis un softmax donne la distribution du jeton
-suivant. On retrouve exactement l'interface de la semaine 1, et tout ce qu'on
-y a vu (perplexité, température, top-p) s'applique tel quel.
-
-L'attention a un prix : chaque jeton se compare à tous les précédents, donc le
-calcul croît comme le **carré** de la longueur du contexte. C'est la raison
-principale pour laquelle la fenêtre de contexte des modèles est limitée.
+Tout ce qu'on a vu plus haut s'applique tel quel aux jetons : un vrai modèle a
+un plongement par jeton plutôt que par mot, et il prédit le jeton suivant
+plutôt que le mot suivant.
 
 ## Ce que ça change pour un agent
 
@@ -485,63 +720,66 @@ principale pour laquelle la fenêtre de contexte des modèles est limitée.
   fenêtre et coûte de l'argent et du temps. Un outil qui renvoie un fichier de
   10 000 lignes peut saturer le contexte à lui seul. Gérer le contexte sera
   l'un des enjeux du module 4.
-- **Tout le contexte n'est pas également bien utilisé.** L'attention peut, en
-  principe, atteindre n'importe quel jeton; en pratique, les modèles exploitent
-  moins bien l'information placée au milieu d'un long contexte qu'au début ou à
-  la fin [@liu2024lost]. Où l'on place une consigne importante n'est pas
-  indifférent.
 - **Le texte exact est fragile.** Parce que le modèle voit des jetons et non des
   caractères, reproduire exactement une chaîne (un chemin de fichier, un
   passage de code à remplacer) est une source d'erreurs fréquente. Les outils
   d'un agent doivent vérifier et signaler clairement ces erreurs.
+- **Les plongements servent à chercher par le sens.** Des textes de sens voisin
+  ont des plongements proches : on peut donc trouver les passages d'un document
+  qui répondent à une question, même sans aucun mot en commun avec elle. C'est
+  la **recherche sémantique**, que nous retrouverons avec les agents.
 
 ## Points clés
 
-- Les LLM travaillent sur des jetons, des morceaux de mots appris par BPE.
-  Aucun texte n'est hors vocabulaire, mais le modèle ne voit pas directement
-  les caractères.
-- Chaque jeton est représenté par un plongement, un vecteur appris. Des mots
-  employés dans des contextes semblables reçoivent des vecteurs proches, ce
-  qui permet de généraliser.
-- L'attention calcule, pour chaque jeton, une moyenne pondérée des jetons
-  précédents, avec des poids donnés par la ressemblance entre requêtes et clés.
-  Elle atteint n'importe quelle distance sans ajouter de paramètres, mais son
-  coût croît comme le carré du contexte.
-- Un transformeur empile des blocs d'attention et de réseaux par jeton, et se
-  termine par un softmax sur le vocabulaire : la distribution du jeton suivant.
+- Un réseau de neurones est une fonction à paramètres. Chaque couche fait un
+  produit matriciel suivi d'une activation non linéaire; sans cette
+  non-linéarité, l'empilement se réduirait à une seule couche.
+- Un réseau apprend en minimisant une perte, ici l'entropie croisée, par
+  descente de gradient. Le gradient par rapport aux logits est $p - y$; la
+  rétropropagation le transmet à tous les paramètres.
+- Un plongement est un vecteur appris par mot. Des mots qui jouent des rôles
+  semblables reçoivent des vecteurs proches, ce qui permet de généraliser et
+  contourne le fléau de la dimension.
+- Les vrais modèles travaillent sur des jetons, des morceaux de mots appris par
+  BPE. Aucun texte n'est hors vocabulaire, mais le modèle ne voit pas
+  directement les caractères.
 
 ## Laboratoire
 
 ::: {.callout-tip icon=false}
-## Laboratoire 2 — `labos/s02_attention.py`
+## Laboratoire 2 — `labos/s02_apprendre.py`
 
-1. **Exercice** — écrire `softmax` et `attention` en NumPy, avec le masque
-   causal, et les faire passer au vert.
-2. **Expérience** — modifier la matrice $M$ pour que « tapis » regarde
-   « sur » plutôt que « le », et vérifier l'effet sur la carte d'attention.
+1. **Exercice** — écrire `softmax` et l'entropie croisée à partir des logits,
+   en NumPy.
+2. **Exercice** — écrire la descente de gradient du bigramme neuronal (le
+   gradient $p - y$ et la mise à jour des paramètres), et la faire passer au
+   vert.
+3. **Expérience** — mesurer l'effet de la dimension $d$ et du taux
+   d'apprentissage sur la perte finale, et observer les plongements obtenus.
 
 Pour l'ouvrir sans rien installer : [le laboratoire dans votre
-navigateur](../../labos/s02_attention.html){target="_blank"}, puis ▷ en bas à droite pour tout
-exécuter. Votre travail n'y est pas conservé : avant de fermer l'onglet,
-téléchargez votre notebook (menu ☰ → **Export…** → **Python**). Pour les autres façons de l'ouvrir, voir la [mise en
-route](../../mise-en-route.qmd).
+navigateur](../../labos/s02_apprendre.html){target="_blank"}, puis ▷ en bas à
+droite pour tout exécuter. Votre travail n'y est pas conservé : avant de fermer
+l'onglet, téléchargez votre notebook (menu ☰ → **Export…** → **Python**). Pour
+les autres façons de l'ouvrir, voir la [mise en route](../../mise-en-route.qmd).
 :::
 
 ## Limites
 
-- Les deux « le » de la phrase ont le même vecteur. Le second peut-il savoir
-  qu'il vient après « sur »? Proposez une façon d'ajouter la position aux
-  vecteurs.
-- Le calcul de l'attention compare chaque jeton à tous les précédents. Combien
-  de comparaisons pour un contexte de 1 000 jetons? De 200 000?
+- Le bigramme neuronal ne descend pas sous le plancher du bigramme par
+  comptage. Pourquoi ne le peut-il pas, sur le corpus d'entraînement? Pourrait-il
+  faire mieux que lui sur des phrases nouvelles?
 - Nos vecteurs de voisins ont une composante par voisin possible. Combien de
   composantes auraient-ils avec un vocabulaire de 50 000 jetons? Pourquoi les
   plongements appris sont-ils plutôt de dimension quelques centaines?
-- Ici, la matrice $M$ a été écrite à la main. Dans un vrai modèle, d'où
-  vient-elle? (Semaine 3.)
+- Le modèle de Bengio et al. voit les $n - 1$ mots précédents. Pour accorder un
+  verbe avec un sujet placé trente mots plus tôt, faudrait-il $n = 31$? Que
+  deviendraient ses paramètres? (Semaine 3.)
+- Les tokeniseurs, entraînés surtout sur de l'anglais, découpent le français en
+  plus de jetons. Quelles conséquences pour un agent qui travaille en français?
 
 ## Pour aller plus loin
 
-Facultatif : les chapitres 2 (le texte, les jetons et les plongements) et 3
-(l'attention) de @raschka2024llm, qui construisent ces mêmes mécanismes en
-PyTorch.
+Facultatif : l'article de @bengio2003neural, qui a introduit les modèles de
+langue neuronaux; le chapitre « Neural Networks » de @jurafsky2026slp; le
+chapitre 2 de @raschka2024llm (le texte, les jetons et les plongements).
