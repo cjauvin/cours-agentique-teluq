@@ -520,6 +520,12 @@ trois cassures de la courbe cible. Réglez ensuite les poids de sortie, de gauch
 poids $v$.
 
 ```python {.marimo}
+# Les valeurs des curseurs au départ, et celles de la solution.
+DEPART_RESEAU = {"w": [1, 1, 1], "c": [0, -1, 1], "v": [0.5, 0, 0], "b": 0}
+SOLUTION_RESEAU = {"w": [1, 1, 1], "c": [1, 0, -1], "v": [1, -2, 1], "b": 0}
+```
+
+```python {.marimo}
 def _curseurs(valeurs):
     return mo.ui.array(
         [mo.ui.slider(-3, 3, step=0.1, value=v, show_value=True, full_width=True)
@@ -527,10 +533,14 @@ def _curseurs(valeurs):
     )
 
 
-pentes = _curseurs([1, 1, 1])
-biais_caches = _curseurs([0, -1, 1])
-poids_sortie = _curseurs([0.5, 0, 0])
-biais_sortie = mo.ui.slider(-2, 2, step=0.1, value=0, show_value=True)
+# Chaque bouton de la solution garde l'heure de son dernier clic : le plus
+# récent décide des valeurs avec lesquelles les curseurs sont recréés.
+_r = max([(bouton_depart.value or 0, DEPART_RESEAU),
+          (bouton_solution.value or 0, SOLUTION_RESEAU)], key=lambda p: p[0])[1]
+pentes = _curseurs(_r["w"])
+biais_caches = _curseurs(_r["c"])
+poids_sortie = _curseurs(_r["v"])
+biais_sortie = mo.ui.slider(-2, 2, step=0.1, value=_r["b"], show_value=True)
 _lignes = "".join(
     f"<tr><td style='white-space:nowrap;padding-right:1em'>{nom}</td>"
     + "".join(f"<td style='padding:0 .5em'>{curseurs[j]}</td>" for j in range(3)) + "</tr>"
@@ -578,6 +588,15 @@ coude : $+1$ après $-1$, donc $v_1 = 1$; $-1$ après $0$, donc
 $v_1 + v_2 = -1$ et $v_2 = -2$; $0$ après $1$, donc $v_1 + v_2 + v_3 = 0$ et
 $v_3 = 1$. Enfin, $b = 0$, puisque la sortie doit valoir 0 à gauche de tous les
 coudes.
+
+```python {.marimo}
+import time
+
+bouton_solution = mo.ui.button(label="Régler les curseurs sur la solution",
+                               on_click=lambda _: time.time())
+bouton_depart = mo.ui.button(label="Revenir au départ", on_click=lambda _: time.time())
+mo.hstack([bouton_solution, bouton_depart], justify="start")
+```
 :::
 
 Avec dix paramètres, on y arrive, mais il faut réfléchir, ou tâtonner longtemps. Qwen2.5-0.5B, le modèle de la
