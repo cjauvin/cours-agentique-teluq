@@ -96,3 +96,16 @@ body.quarto-dark .marimo .markdown table tbody tr:hover {
   background: rgba(127, 127, 127, 0.2);
   opacity: 1;
 }
+
+/* Figures interactives en SVG : nombres qu'on modifie en les faisant glisser. */
+svg .valeur-glissable {
+  cursor: ew-resize;
+  touch-action: none;
+  user-select: none;
+  font-weight: 600;
+}
+svg .valeur-glissable:hover,
+svg .valeur-glissable:focus {
+  outline: none;
+  font-weight: 800;
+}
