@@ -39,8 +39,9 @@ def barres(etiquettes, valeurs, largeur=300, format="{:.0%}"):
     return mo.Html("".join(lignes))
 
 
-def trace(xs, courbes, largeur=520, hauteur=240, ymin=-2.0, ymax=2.0):
-    """Courbes en SVG; chaque courbe est (valeurs, couleur, épaisseur, pointillé)."""
+def trace(xs, courbes, reperes=(), largeur=520, hauteur=240, ymin=-2.0, ymax=2.0):
+    """Courbes en SVG; chaque courbe est (valeurs, couleur, épaisseur, pointillé).
+    Les repères (x, couleur, étiquette) sont marqués sur l'axe horizontal."""
     def px(v):
         return 20 + (v - xs[0]) / (xs[-1] - xs[0]) * (largeur - 30)
 
@@ -61,9 +62,15 @@ def trace(xs, courbes, largeur=520, hauteur=240, ymin=-2.0, ymax=2.0):
         tirets = " stroke-dasharray='6 4'" if pointille else ""
         traits += (f"<polyline points='{points}' fill='none' stroke='{couleur}' "
                    f"stroke-width='{epaisseur}'{tirets}/>")
+    marques = "".join(
+        f"<circle cx='{px(a):.1f}' cy='{py(0):.1f}' r='4' fill='{couleur}'/>"
+        f"<text x='{px(a):.1f}' y='{py(0) + 18:.1f}' text-anchor='middle' font-size='11' "
+        f"fill='{couleur}'>{etiquette}</text>"
+        for a, couleur, etiquette in reperes
+    )
     return mo.Html(
         f"<svg width='{largeur}' height='{hauteur}' fill='currentColor' "
-        f"style='overflow:hidden;font-family:sans-serif'>{axes}{traits}</svg>"
+        f"style='overflow:hidden;font-family:sans-serif'>{axes}{traits}{marques}</svg>"
     )
 
 
@@ -503,8 +510,14 @@ code_reseau
 
 Réglez les dix paramètres pour que la sortie du réseau (en bleu) reproduise la
 courbe en pointillé. Les courbes orange montrent la contribution de chaque
-neurone caché : son activation, multipliée par son poids de sortie. Indice :
-chaque neurone fait son coude là où $wx + c$ s'annule.
+neurone caché : son activation, multipliée par son poids de sortie. Les
+points numérotés sur l'axe marquent le coude de chaque neurone, là où $wx + c$
+s'annule, en $x = -c/w$.
+
+Une démarche : laissez les trois pentes à 1, et placez les trois coudes aux
+trois cassures de la courbe cible. Réglez ensuite les poids de sortie, de gauche
+à droite : passé le coude d'un neurone, la pente de la sortie change de son
+poids $v$.
 
 ```python {.marimo}
 def _curseurs(valeurs):
@@ -542,15 +555,32 @@ _cible = np.maximum(0, 1 - np.abs(_xs))
 _sortie = reseau(_xs, _w, _c, _v, biais_sortie.value)
 _parts = [reseau(_xs, _w, _c, _v * (np.arange(3) == j), 0) for j in range(3)]
 _ecart = float(np.mean((_sortie - _cible) ** 2))
+_coudes = [(-_c[j] / _w[j], "#f59e0b", str(j + 1)) for j in range(3)
+           if _w[j] != 0 and abs(_c[j] / _w[j]) <= 2]
 mo.vstack([
     trace(_xs, [(p, "#f59e0b", 1, False) for p in _parts]
-          + [(_cible, "currentColor", 2, True), (_sortie, "#3b82f6", 2.5, False)]),
+          + [(_cible, "currentColor", 2, True), (_sortie, "#3b82f6", 2.5, False)],
+          _coudes),
     mo.md(f"Écart quadratique moyen : **{_ecart:.3f}**"
           + (" — ✅ le réseau reproduit la courbe." if _ecart < 1e-3 else "")),
 ])
 ```
 
-Avec dix paramètres, on y arrive, mais à tâtons. Qwen2.5-0.5B, le modèle de la
+::: {.callout-note collapse="true"}
+## Voir la solution
+
+La cible monte avec une pente de 1 entre $-1$ et $0$, redescend avec une pente
+de $-1$ entre $0$ et $1$, et vaut 0 ailleurs. Avec $w = 1$, le neurone $j$
+calcule $\max(0, x + c_j)$ : il est nul jusqu'à $x = -c_j$, puis monte avec une
+pente de 1. Pour placer les coudes en $-1$, $0$ et $1$, il faut donc
+$c = (1, 0, -1)$. Les poids de sortie fixent la pente de la sortie après chaque
+coude : $+1$ après $-1$, donc $v_1 = 1$; $-1$ après $0$, donc
+$v_1 + v_2 = -1$ et $v_2 = -2$; $0$ après $1$, donc $v_1 + v_2 + v_3 = 0$ et
+$v_3 = 1$. Enfin, $b = 0$, puisque la sortie doit valoir 0 à gauche de tous les
+coudes.
+:::
+
+Avec dix paramètres, on y arrive, mais il faut réfléchir, ou tâtonner longtemps. Qwen2.5-0.5B, le modèle de la
 semaine 3, en a 494 millions : personne ne les règle à la main. Il faut une
 méthode pour trouver automatiquement les paramètres qui font coller le réseau
 aux données. C'est l'**entraînement** (*training*), l'objet du reste de cette semaine.
