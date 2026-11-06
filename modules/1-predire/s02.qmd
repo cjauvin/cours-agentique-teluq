@@ -651,112 +651,278 @@ $$z = E_a W + b, \qquad P(\cdot \mid a) = \mathrm{softmax}(z)$$
 ::: {#fig-bigramme}
 
 ```{=html}
-<svg class="figure-bigramme" viewBox="20 0 600 338" role="img"
-     aria-label="Le bigramme neuronal : le mot chat entre sous forme de vecteur one-hot, choisit son plongement de deux nombres par la matrice E, et la matrice W donne un score par mot du vocabulaire; le softmax en fait les probabilités du mot suivant : dort et mange 29 %, point, court et regarde 14 %."
+<svg class="figure-bigramme" viewBox="20 0 600 504" role="img"
+     aria-label="Le bigramme neuronal : le mot d'entrée, sous forme de vecteur one-hot, choisit son plongement de deux nombres par la matrice E; la matrice W donne un score par mot du vocabulaire, et le softmax en fait les probabilités du mot suivant. Cliquez sur un mot d'entrée pour le changer."
      style="width:100%;max-width:600px;display:block;margin:auto;font-size:17px">
   <g fill="currentColor" stroke="currentColor">
-    <line x1='170.1' y1='74.3' x2='294.4' y2='127.3' stroke-width='0.8' opacity='0.18'/>
-    <line x1='168.4' y1='77.1' x2='297.1' y2='187.0' stroke-width='0.8' opacity='0.18'/>
-    <line x1='170.8' y1='104.3' x2='293.4' y2='130.5' stroke='#3b82f6' stroke-width='2'/>
-    <line x1='169.3' y1='107.9' x2='295.7' y2='188.8' stroke='#3b82f6' stroke-width='2'/>
-    <line x1='171.0' y1='134.0' x2='293.0' y2='134.0' stroke-width='0.8' opacity='0.18'/>
-    <line x1='170.1' y1='138.3' x2='294.4' y2='191.3' stroke-width='0.8' opacity='0.18'/>
-    <line x1='170.8' y1='163.7' x2='293.4' y2='137.5' stroke-width='0.8' opacity='0.18'/>
-    <line x1='170.8' y1='168.3' x2='293.4' y2='194.5' stroke-width='0.8' opacity='0.18'/>
-    <line x1='170.1' y1='193.7' x2='294.4' y2='140.7' stroke-width='0.8' opacity='0.18'/>
-    <line x1='171.0' y1='198.0' x2='293.0' y2='198.0' stroke-width='0.8' opacity='0.18'/>
-    <line x1='169.3' y1='224.1' x2='295.7' y2='143.2' stroke-width='0.8' opacity='0.18'/>
-    <line x1='170.8' y1='227.7' x2='293.4' y2='201.5' stroke-width='0.8' opacity='0.18'/>
-    <line x1='168.4' y1='254.9' x2='297.1' y2='145.0' stroke-width='0.8' opacity='0.18'/>
-    <line x1='170.1' y1='257.7' x2='294.4' y2='204.7' stroke-width='0.8' opacity='0.18'/>
-    <line x1='325.6' y1='127.3' x2='449.9' y2='74.3' stroke-width='1' opacity='0.4'/>
-    <line x1='326.6' y1='130.5' x2='449.2' y2='104.3' stroke-width='1' opacity='0.4'/>
-    <line x1='327.0' y1='134.0' x2='449.0' y2='134.0' stroke-width='1' opacity='0.4'/>
-    <line x1='326.6' y1='137.5' x2='449.2' y2='163.7' stroke-width='1' opacity='0.4'/>
-    <line x1='325.6' y1='140.7' x2='449.9' y2='193.7' stroke-width='1' opacity='0.4'/>
-    <line x1='324.3' y1='143.2' x2='450.7' y2='224.1' stroke-width='1' opacity='0.4'/>
-    <line x1='322.9' y1='145.0' x2='451.6' y2='254.9' stroke-width='1' opacity='0.4'/>
-    <line x1='322.9' y1='187.0' x2='451.6' y2='77.1' stroke-width='1' opacity='0.4'/>
-    <line x1='324.3' y1='188.8' x2='450.7' y2='107.9' stroke-width='1' opacity='0.4'/>
-    <line x1='325.6' y1='191.3' x2='449.9' y2='138.3' stroke-width='1' opacity='0.4'/>
-    <line x1='326.6' y1='194.5' x2='449.2' y2='168.3' stroke-width='1' opacity='0.4'/>
-    <line x1='327.0' y1='198.0' x2='449.0' y2='198.0' stroke-width='1' opacity='0.4'/>
-    <line x1='326.6' y1='201.5' x2='449.2' y2='227.7' stroke-width='1' opacity='0.4'/>
-    <line x1='325.6' y1='204.7' x2='449.9' y2='257.7' stroke-width='1' opacity='0.4'/>
-    <text x='120' y='22' text-anchor='middle' stroke='none' opacity='0.7' font-size='15'>entrée : un mot</text>
-    <text x='310' y='22' text-anchor='middle' stroke='none' opacity='0.7' font-size='15'>plongement</text>
-    <text x='520' y='22' text-anchor='middle' stroke='none' opacity='0.7' font-size='15'>sortie : le mot suivant</text>
-    <text x='235.0' y='52' text-anchor='middle' stroke='none' fill='#3b82f6'><tspan font-style='italic'>E</tspan></text>
-    <text x='385.0' y='52' text-anchor='middle' stroke='none' fill='#3b82f6'><tspan font-style='italic'>W</tspan>, <tspan font-style='italic'>b</tspan></text>
-    <circle cx='160' cy='70' r='11' fill='none' stroke-width='1.2'/>
-    <text x='160' y='74.5' text-anchor='middle' stroke='none' font-size='13' opacity='0.6'>0</text>
-    <text x='140' y='75' text-anchor='end' stroke='none' font-size='15'>.</text>
-    <circle cx='160' cy='102' r='11' fill='#3b82f6' fill-opacity='0.25' stroke='#3b82f6' stroke-width='2'/>
-    <text x='160' y='106.5' text-anchor='middle' stroke='none' font-size='13' font-weight='bold'>1</text>
-    <text x='140' y='107' text-anchor='end' stroke='none' font-size='15' font-weight='bold'>chat</text>
-    <circle cx='160' cy='134' r='11' fill='none' stroke-width='1.2'/>
-    <text x='160' y='138.5' text-anchor='middle' stroke='none' font-size='13' opacity='0.6'>0</text>
-    <text x='140' y='139' text-anchor='end' stroke='none' font-size='15'>chien</text>
-    <circle cx='160' cy='166' r='11' fill='none' stroke-width='1.2'/>
-    <text x='160' y='170.5' text-anchor='middle' stroke='none' font-size='13' opacity='0.6'>0</text>
-    <text x='140' y='171' text-anchor='end' stroke='none' font-size='15'>court</text>
-    <circle cx='160' cy='198' r='11' fill='none' stroke-width='1.2'/>
-    <text x='160' y='202.5' text-anchor='middle' stroke='none' font-size='13' opacity='0.6'>0</text>
-    <text x='140' y='203' text-anchor='end' stroke='none' font-size='15'>dort</text>
-    <circle cx='160' cy='230' r='11' fill='none' stroke-width='1.2'/>
-    <text x='160' y='234.5' text-anchor='middle' stroke='none' font-size='13' opacity='0.6'>0</text>
-    <text x='140' y='235' text-anchor='end' stroke='none' font-size='15'>mange</text>
-    <circle cx='160' cy='262' r='11' fill='none' stroke-width='1.2'/>
-    <text x='160' y='266.5' text-anchor='middle' stroke='none' font-size='13' opacity='0.6'>0</text>
-    <text x='140' y='267' text-anchor='end' stroke='none' font-size='15'>regarde</text>
-    <text x='160' y='296' text-anchor='middle' stroke='none'>⋮</text>
-    <text x='140' y='294' text-anchor='end' stroke='none' font-size='13' opacity='0.7'>14 autres</text>
-    <circle cx='310' cy='134' r='17' fill='#3b82f6' fill-opacity='0.12' stroke='#3b82f6' stroke-width='2'/>
-    <text x='310' y='139' text-anchor='middle' stroke='none' font-size='15' font-style='italic'>h<tspan font-style='normal' font-size='11' dy='3'>1</tspan></text>
-    <circle cx='310' cy='198' r='17' fill='#3b82f6' fill-opacity='0.12' stroke='#3b82f6' stroke-width='2'/>
-    <text x='310' y='203' text-anchor='middle' stroke='none' font-size='15' font-style='italic'>h<tspan font-style='normal' font-size='11' dy='3'>2</tspan></text>
-    <circle cx='460' cy='70' r='11' fill='#f59e0b' fill-opacity='0.15' stroke='#f59e0b' stroke-width='1.5'/>
-    <text x='480' y='75' stroke='none' font-size='15'>.</text>
-    <rect x='540' y='64' width='21.4' height='12' fill='#f59e0b' stroke='none'/>
-    <text x='566.4' y='75' stroke='none' font-size='13' opacity='0.8'>14 %</text>
-    <circle cx='460' cy='102' r='11' fill='#f59e0b' fill-opacity='0.15' stroke='#f59e0b' stroke-width='1.5'/>
-    <text x='480' y='107' stroke='none' font-size='15'>chat</text>
-    <text x='545.0' y='107' stroke='none' font-size='13' opacity='0.8'>0 %</text>
-    <circle cx='460' cy='134' r='11' fill='#f59e0b' fill-opacity='0.15' stroke='#f59e0b' stroke-width='1.5'/>
-    <text x='480' y='139' stroke='none' font-size='15'>chien</text>
-    <text x='545.0' y='139' stroke='none' font-size='13' opacity='0.8'>0 %</text>
-    <circle cx='460' cy='166' r='11' fill='#f59e0b' fill-opacity='0.15' stroke='#f59e0b' stroke-width='1.5'/>
-    <text x='480' y='171' stroke='none' font-size='15'>court</text>
-    <rect x='540' y='160' width='21.4' height='12' fill='#f59e0b' stroke='none'/>
-    <text x='566.4' y='171' stroke='none' font-size='13' opacity='0.8'>14 %</text>
-    <circle cx='460' cy='198' r='11' fill='#f59e0b' fill-opacity='0.15' stroke='#f59e0b' stroke-width='1.5'/>
-    <text x='480' y='203' stroke='none' font-size='15'>dort</text>
-    <rect x='540' y='192' width='42.9' height='12' fill='#f59e0b' stroke='none'/>
-    <text x='587.9' y='203' stroke='none' font-size='13' opacity='0.8'>29 %</text>
-    <circle cx='460' cy='230' r='11' fill='#f59e0b' fill-opacity='0.15' stroke='#f59e0b' stroke-width='1.5'/>
-    <text x='480' y='235' stroke='none' font-size='15'>mange</text>
-    <rect x='540' y='224' width='42.9' height='12' fill='#f59e0b' stroke='none'/>
-    <text x='587.9' y='235' stroke='none' font-size='13' opacity='0.8'>29 %</text>
-    <circle cx='460' cy='262' r='11' fill='#f59e0b' fill-opacity='0.15' stroke='#f59e0b' stroke-width='1.5'/>
-    <text x='480' y='267' stroke='none' font-size='15'>regarde</text>
-    <rect x='540' y='256' width='21.4' height='12' fill='#f59e0b' stroke='none'/>
-    <text x='566.4' y='267' stroke='none' font-size='13' opacity='0.8'>14 %</text>
-    <text x='460' y='296' text-anchor='middle' stroke='none'>⋮</text>
-    <text x='480' y='294' stroke='none' font-size='13' opacity='0.7'>14 autres : 0 %</text>
-    <text x='120' y='328' text-anchor='middle' stroke='none' font-size='14' opacity='0.7'><tspan font-style='italic'>V</tspan> = 21 neurones (one-hot)</text>
-    <text x='310' y='328' text-anchor='middle' stroke='none' font-size='14' opacity='0.7'><tspan font-style='italic'>d</tspan> = 2 neurones</text>
-    <text x='520' y='328' text-anchor='middle' stroke='none' font-size='14' opacity='0.7'><tspan font-style='italic'>V</tspan> = 21 logits, puis softmax</text>
+    <line id='b-e0-0' x1='165.4' y1='67.9' x2='298.6' y2='215.4' stroke='currentColor' stroke-width='0.7' opacity='0.15'/>
+    <line id='b-e0-1' x1='164.3' y1='68.7' x2='300.8' y2='281.7' stroke='currentColor' stroke-width='0.7' opacity='0.15'/>
+    <line id='b-e1-0' x1='165.7' y1='87.6' x2='297.8' y2='216.1' stroke='currentColor' stroke-width='0.7' opacity='0.15'/>
+    <line id='b-e1-1' x1='164.6' y1='88.6' x2='300.2' y2='282.1' stroke='currentColor' stroke-width='0.7' opacity='0.15'/>
+    <line id='b-e2-0' x1='166.1' y1='107.1' x2='297.0' y2='217.1' stroke='currentColor' stroke-width='0.7' opacity='0.15'/>
+    <line id='b-e2-1' x1='164.9' y1='108.3' x2='299.6' y2='282.6' stroke='currentColor' stroke-width='0.7' opacity='0.15'/>
+    <line id='b-e3-0' x1='166.5' y1='126.6' x2='296.1' y2='218.2' stroke='#3b82f6' stroke-width='2' opacity='1'/>
+    <line id='b-e3-1' x1='165.2' y1='128.1' x2='298.9' y2='283.1' stroke='#3b82f6' stroke-width='2' opacity='1'/>
+    <line id='b-e4-0' x1='166.9' y1='146.0' x2='295.3' y2='219.5' stroke='currentColor' stroke-width='0.7' opacity='0.15'/>
+    <line id='b-e4-1' x1='165.6' y1='147.7' x2='298.1' y2='283.8' stroke='currentColor' stroke-width='0.7' opacity='0.15'/>
+    <line id='b-e5-0' x1='167.3' y1='165.2' x2='294.4' y2='221.2' stroke='currentColor' stroke-width='0.7' opacity='0.15'/>
+    <line id='b-e5-1' x1='166.0' y1='167.3' x2='297.3' y2='284.7' stroke='currentColor' stroke-width='0.7' opacity='0.15'/>
+    <line id='b-e6-0' x1='167.6' y1='184.3' x2='293.7' y2='223.0' stroke='currentColor' stroke-width='0.7' opacity='0.15'/>
+    <line id='b-e6-1' x1='166.4' y1='186.8' x2='296.5' y2='285.7' stroke='currentColor' stroke-width='0.7' opacity='0.15'/>
+    <line id='b-e7-0' x1='167.9' y1='203.4' x2='293.2' y2='225.1' stroke='currentColor' stroke-width='0.7' opacity='0.15'/>
+    <line id='b-e7-1' x1='166.8' y1='206.2' x2='295.6' y2='287.0' stroke='currentColor' stroke-width='0.7' opacity='0.15'/>
+    <line id='b-e8-0' x1='168.0' y1='222.3' x2='293.0' y2='227.3' stroke='currentColor' stroke-width='0.7' opacity='0.15'/>
+    <line id='b-e8-1' x1='167.2' y1='225.5' x2='294.8' y2='288.5' stroke='currentColor' stroke-width='0.7' opacity='0.15'/>
+    <line id='b-e9-0' x1='168.0' y1='241.3' x2='293.1' y2='229.6' stroke='currentColor' stroke-width='0.7' opacity='0.15'/>
+    <line id='b-e9-1' x1='167.5' y1='244.7' x2='294.0' y2='290.2' stroke='currentColor' stroke-width='0.7' opacity='0.15'/>
+    <line id='b-e10-0' x1='167.8' y1='260.2' x2='293.4' y2='231.8' stroke='currentColor' stroke-width='0.7' opacity='0.15'/>
+    <line id='b-e10-1' x1='167.8' y1='263.8' x2='293.4' y2='292.2' stroke='currentColor' stroke-width='0.7' opacity='0.15'/>
+    <line id='b-e11-0' x1='167.5' y1='279.3' x2='294.0' y2='233.8' stroke='currentColor' stroke-width='0.7' opacity='0.15'/>
+    <line id='b-e11-1' x1='168.0' y1='282.7' x2='293.1' y2='294.4' stroke='currentColor' stroke-width='0.7' opacity='0.15'/>
+    <line id='b-e12-0' x1='167.2' y1='298.5' x2='294.8' y2='235.5' stroke='currentColor' stroke-width='0.7' opacity='0.15'/>
+    <line id='b-e12-1' x1='168.0' y1='301.7' x2='293.0' y2='296.7' stroke='currentColor' stroke-width='0.7' opacity='0.15'/>
+    <line id='b-e13-0' x1='166.8' y1='317.8' x2='295.6' y2='237.0' stroke='currentColor' stroke-width='0.7' opacity='0.15'/>
+    <line id='b-e13-1' x1='167.9' y1='320.6' x2='293.2' y2='298.9' stroke='currentColor' stroke-width='0.7' opacity='0.15'/>
+    <line id='b-e14-0' x1='166.4' y1='337.2' x2='296.5' y2='238.3' stroke='currentColor' stroke-width='0.7' opacity='0.15'/>
+    <line id='b-e14-1' x1='167.6' y1='339.7' x2='293.7' y2='301.0' stroke='currentColor' stroke-width='0.7' opacity='0.15'/>
+    <line id='b-e15-0' x1='166.0' y1='356.7' x2='297.3' y2='239.3' stroke='currentColor' stroke-width='0.7' opacity='0.15'/>
+    <line id='b-e15-1' x1='167.3' y1='358.8' x2='294.4' y2='302.8' stroke='currentColor' stroke-width='0.7' opacity='0.15'/>
+    <line id='b-e16-0' x1='165.6' y1='376.3' x2='298.1' y2='240.2' stroke='currentColor' stroke-width='0.7' opacity='0.15'/>
+    <line id='b-e16-1' x1='166.9' y1='378.0' x2='295.3' y2='304.5' stroke='currentColor' stroke-width='0.7' opacity='0.15'/>
+    <line id='b-e17-0' x1='165.2' y1='395.9' x2='298.9' y2='240.9' stroke='currentColor' stroke-width='0.7' opacity='0.15'/>
+    <line id='b-e17-1' x1='166.5' y1='397.4' x2='296.1' y2='305.8' stroke='currentColor' stroke-width='0.7' opacity='0.15'/>
+    <line id='b-e18-0' x1='164.9' y1='415.7' x2='299.6' y2='241.4' stroke='currentColor' stroke-width='0.7' opacity='0.15'/>
+    <line id='b-e18-1' x1='166.1' y1='416.9' x2='297.0' y2='306.9' stroke='currentColor' stroke-width='0.7' opacity='0.15'/>
+    <line id='b-e19-0' x1='164.6' y1='435.4' x2='300.2' y2='241.9' stroke='currentColor' stroke-width='0.7' opacity='0.15'/>
+    <line id='b-e19-1' x1='165.7' y1='436.4' x2='297.8' y2='307.9' stroke='currentColor' stroke-width='0.7' opacity='0.15'/>
+    <line id='b-e20-0' x1='164.3' y1='455.3' x2='300.8' y2='242.3' stroke='currentColor' stroke-width='0.7' opacity='0.15'/>
+    <line id='b-e20-1' x1='165.4' y1='456.1' x2='298.6' y2='308.6' stroke='currentColor' stroke-width='0.7' opacity='0.15'/>
+    <line x1='321.4' y1='215.4' x2='454.6' y2='67.9' stroke-width='0.7' opacity='0.3'/>
+    <line x1='322.2' y1='216.1' x2='454.3' y2='87.6' stroke-width='0.7' opacity='0.3'/>
+    <line x1='323.0' y1='217.1' x2='453.9' y2='107.1' stroke-width='0.7' opacity='0.3'/>
+    <line x1='323.9' y1='218.2' x2='453.5' y2='126.6' stroke-width='0.7' opacity='0.3'/>
+    <line x1='324.7' y1='219.5' x2='453.1' y2='146.0' stroke-width='0.7' opacity='0.3'/>
+    <line x1='325.6' y1='221.2' x2='452.7' y2='165.2' stroke-width='0.7' opacity='0.3'/>
+    <line x1='326.3' y1='223.0' x2='452.4' y2='184.3' stroke-width='0.7' opacity='0.3'/>
+    <line x1='326.8' y1='225.1' x2='452.1' y2='203.4' stroke-width='0.7' opacity='0.3'/>
+    <line x1='327.0' y1='227.3' x2='452.0' y2='222.3' stroke-width='0.7' opacity='0.3'/>
+    <line x1='326.9' y1='229.6' x2='452.0' y2='241.3' stroke-width='0.7' opacity='0.3'/>
+    <line x1='326.6' y1='231.8' x2='452.2' y2='260.2' stroke-width='0.7' opacity='0.3'/>
+    <line x1='326.0' y1='233.8' x2='452.5' y2='279.3' stroke-width='0.7' opacity='0.3'/>
+    <line x1='325.2' y1='235.5' x2='452.8' y2='298.5' stroke-width='0.7' opacity='0.3'/>
+    <line x1='324.4' y1='237.0' x2='453.2' y2='317.8' stroke-width='0.7' opacity='0.3'/>
+    <line x1='323.5' y1='238.3' x2='453.6' y2='337.2' stroke-width='0.7' opacity='0.3'/>
+    <line x1='322.7' y1='239.3' x2='454.0' y2='356.7' stroke-width='0.7' opacity='0.3'/>
+    <line x1='321.9' y1='240.2' x2='454.4' y2='376.3' stroke-width='0.7' opacity='0.3'/>
+    <line x1='321.1' y1='240.9' x2='454.8' y2='395.9' stroke-width='0.7' opacity='0.3'/>
+    <line x1='320.4' y1='241.4' x2='455.1' y2='415.7' stroke-width='0.7' opacity='0.3'/>
+    <line x1='319.8' y1='241.9' x2='455.4' y2='435.4' stroke-width='0.7' opacity='0.3'/>
+    <line x1='319.2' y1='242.3' x2='455.7' y2='455.3' stroke-width='0.7' opacity='0.3'/>
+    <line x1='319.2' y1='281.7' x2='455.7' y2='68.7' stroke-width='0.7' opacity='0.3'/>
+    <line x1='319.8' y1='282.1' x2='455.4' y2='88.6' stroke-width='0.7' opacity='0.3'/>
+    <line x1='320.4' y1='282.6' x2='455.1' y2='108.3' stroke-width='0.7' opacity='0.3'/>
+    <line x1='321.1' y1='283.1' x2='454.8' y2='128.1' stroke-width='0.7' opacity='0.3'/>
+    <line x1='321.9' y1='283.8' x2='454.4' y2='147.7' stroke-width='0.7' opacity='0.3'/>
+    <line x1='322.7' y1='284.7' x2='454.0' y2='167.3' stroke-width='0.7' opacity='0.3'/>
+    <line x1='323.5' y1='285.7' x2='453.6' y2='186.8' stroke-width='0.7' opacity='0.3'/>
+    <line x1='324.4' y1='287.0' x2='453.2' y2='206.2' stroke-width='0.7' opacity='0.3'/>
+    <line x1='325.2' y1='288.5' x2='452.8' y2='225.5' stroke-width='0.7' opacity='0.3'/>
+    <line x1='326.0' y1='290.2' x2='452.5' y2='244.7' stroke-width='0.7' opacity='0.3'/>
+    <line x1='326.6' y1='292.2' x2='452.2' y2='263.8' stroke-width='0.7' opacity='0.3'/>
+    <line x1='326.9' y1='294.4' x2='452.0' y2='282.7' stroke-width='0.7' opacity='0.3'/>
+    <line x1='327.0' y1='296.7' x2='452.0' y2='301.7' stroke-width='0.7' opacity='0.3'/>
+    <line x1='326.8' y1='298.9' x2='452.1' y2='320.6' stroke-width='0.7' opacity='0.3'/>
+    <line x1='326.3' y1='301.0' x2='452.4' y2='339.7' stroke-width='0.7' opacity='0.3'/>
+    <line x1='325.6' y1='302.8' x2='452.7' y2='358.8' stroke-width='0.7' opacity='0.3'/>
+    <line x1='324.7' y1='304.5' x2='453.1' y2='378.0' stroke-width='0.7' opacity='0.3'/>
+    <line x1='323.9' y1='305.8' x2='453.5' y2='397.4' stroke-width='0.7' opacity='0.3'/>
+    <line x1='323.0' y1='306.9' x2='453.9' y2='416.9' stroke-width='0.7' opacity='0.3'/>
+    <line x1='322.2' y1='307.9' x2='454.3' y2='436.4' stroke-width='0.7' opacity='0.3'/>
+    <line x1='321.4' y1='308.6' x2='454.6' y2='456.1' stroke-width='0.7' opacity='0.3'/>
+    <text x='120' y='20' text-anchor='middle' stroke='none' opacity='0.7' font-size='15'>entrée : un mot</text>
+    <text x='310' y='20' text-anchor='middle' stroke='none' opacity='0.7' font-size='15'>plongement</text>
+    <text x='520' y='20' text-anchor='middle' stroke='none' opacity='0.7' font-size='15'>sortie : le mot suivant</text>
+    <text x='225.0' y='44' text-anchor='middle' stroke='none' fill='#3b82f6' font-style='italic'>E</text>
+    <text x='395.0' y='44' text-anchor='middle' stroke='none' fill='#3b82f6'><tspan font-style='italic'>W</tspan>, <tspan font-style='italic'>b</tspan></text>
+    <g id='b-in0' class='b-entree' tabindex='-1' role='radio' aria-checked='false' aria-label='.' style='cursor:pointer;outline:none'><rect x='85' y='52.0' width='87' height='20' fill='transparent' stroke='none'/><circle cx='160' cy='62' r='8' fill='#3b82f6' fill-opacity='0' stroke='currentColor' stroke-width='1'/><text x='160' y='65.5' text-anchor='middle' stroke='none' font-size='10' font-weight='normal' opacity='0.55'>0</text><text x='146' y='66.5' text-anchor='end' stroke='none' font-size='13' font-weight='normal' fill='currentColor'>.</text></g>
+    <g id='b-in1' class='b-entree' tabindex='-1' role='radio' aria-checked='false' aria-label='après' style='cursor:pointer;outline:none'><rect x='85' y='72.0' width='87' height='20' fill='transparent' stroke='none'/><circle cx='160' cy='82' r='8' fill='#3b82f6' fill-opacity='0' stroke='currentColor' stroke-width='1'/><text x='160' y='85.5' text-anchor='middle' stroke='none' font-size='10' font-weight='normal' opacity='0.55'>0</text><text x='146' y='86.5' text-anchor='end' stroke='none' font-size='13' font-weight='normal' fill='currentColor'>après</text></g>
+    <g id='b-in2' class='b-entree' tabindex='-1' role='radio' aria-checked='false' aria-label='canapé' style='cursor:pointer;outline:none'><rect x='85' y='92.0' width='87' height='20' fill='transparent' stroke='none'/><circle cx='160' cy='102' r='8' fill='#3b82f6' fill-opacity='0' stroke='currentColor' stroke-width='1'/><text x='160' y='105.5' text-anchor='middle' stroke='none' font-size='10' font-weight='normal' opacity='0.55'>0</text><text x='146' y='106.5' text-anchor='end' stroke='none' font-size='13' font-weight='normal' fill='currentColor'>canapé</text></g>
+    <g id='b-in3' class='b-entree' tabindex='0' role='radio' aria-checked='true' aria-label='chat' style='cursor:pointer;outline:none'><rect x='85' y='112.0' width='87' height='20' fill='transparent' stroke='none'/><circle cx='160' cy='122' r='8' fill='#3b82f6' fill-opacity='0.3' stroke='#3b82f6' stroke-width='2'/><text x='160' y='125.5' text-anchor='middle' stroke='none' font-size='10' font-weight='bold' opacity='1'>1</text><text x='146' y='126.5' text-anchor='end' stroke='none' font-size='13' font-weight='bold' fill='#3b82f6'>chat</text></g>
+    <g id='b-in4' class='b-entree' tabindex='-1' role='radio' aria-checked='false' aria-label='chien' style='cursor:pointer;outline:none'><rect x='85' y='132.0' width='87' height='20' fill='transparent' stroke='none'/><circle cx='160' cy='142' r='8' fill='#3b82f6' fill-opacity='0' stroke='currentColor' stroke-width='1'/><text x='160' y='145.5' text-anchor='middle' stroke='none' font-size='10' font-weight='normal' opacity='0.55'>0</text><text x='146' y='146.5' text-anchor='end' stroke='none' font-size='13' font-weight='normal' fill='currentColor'>chien</text></g>
+    <g id='b-in5' class='b-entree' tabindex='-1' role='radio' aria-checked='false' aria-label='court' style='cursor:pointer;outline:none'><rect x='85' y='152.0' width='87' height='20' fill='transparent' stroke='none'/><circle cx='160' cy='162' r='8' fill='#3b82f6' fill-opacity='0' stroke='currentColor' stroke-width='1'/><text x='160' y='165.5' text-anchor='middle' stroke='none' font-size='10' font-weight='normal' opacity='0.55'>0</text><text x='146' y='166.5' text-anchor='end' stroke='none' font-size='13' font-weight='normal' fill='currentColor'>court</text></g>
+    <g id='b-in6' class='b-entree' tabindex='-1' role='radio' aria-checked='false' aria-label='dans' style='cursor:pointer;outline:none'><rect x='85' y='172.0' width='87' height='20' fill='transparent' stroke='none'/><circle cx='160' cy='182' r='8' fill='#3b82f6' fill-opacity='0' stroke='currentColor' stroke-width='1'/><text x='160' y='185.5' text-anchor='middle' stroke='none' font-size='10' font-weight='normal' opacity='0.55'>0</text><text x='146' y='186.5' text-anchor='end' stroke='none' font-size='13' font-weight='normal' fill='currentColor'>dans</text></g>
+    <g id='b-in7' class='b-entree' tabindex='-1' role='radio' aria-checked='false' aria-label='dort' style='cursor:pointer;outline:none'><rect x='85' y='192.0' width='87' height='20' fill='transparent' stroke='none'/><circle cx='160' cy='202' r='8' fill='#3b82f6' fill-opacity='0' stroke='currentColor' stroke-width='1'/><text x='160' y='205.5' text-anchor='middle' stroke='none' font-size='10' font-weight='normal' opacity='0.55'>0</text><text x='146' y='206.5' text-anchor='end' stroke='none' font-size='13' font-weight='normal' fill='currentColor'>dort</text></g>
+    <g id='b-in8' class='b-entree' tabindex='-1' role='radio' aria-checked='false' aria-label='du' style='cursor:pointer;outline:none'><rect x='85' y='212.0' width='87' height='20' fill='transparent' stroke='none'/><circle cx='160' cy='222' r='8' fill='#3b82f6' fill-opacity='0' stroke='currentColor' stroke-width='1'/><text x='160' y='225.5' text-anchor='middle' stroke='none' font-size='10' font-weight='normal' opacity='0.55'>0</text><text x='146' y='226.5' text-anchor='end' stroke='none' font-size='13' font-weight='normal' fill='currentColor'>du</text></g>
+    <g id='b-in9' class='b-entree' tabindex='-1' role='radio' aria-checked='false' aria-label='fromage' style='cursor:pointer;outline:none'><rect x='85' y='232.0' width='87' height='20' fill='transparent' stroke='none'/><circle cx='160' cy='242' r='8' fill='#3b82f6' fill-opacity='0' stroke='currentColor' stroke-width='1'/><text x='160' y='245.5' text-anchor='middle' stroke='none' font-size='10' font-weight='normal' opacity='0.55'>0</text><text x='146' y='246.5' text-anchor='end' stroke='none' font-size='13' font-weight='normal' fill='currentColor'>fromage</text></g>
+    <g id='b-in10' class='b-entree' tabindex='-1' role='radio' aria-checked='false' aria-label='jardin' style='cursor:pointer;outline:none'><rect x='85' y='252.0' width='87' height='20' fill='transparent' stroke='none'/><circle cx='160' cy='262' r='8' fill='#3b82f6' fill-opacity='0' stroke='currentColor' stroke-width='1'/><text x='160' y='265.5' text-anchor='middle' stroke='none' font-size='10' font-weight='normal' opacity='0.55'>0</text><text x='146' y='266.5' text-anchor='end' stroke='none' font-size='13' font-weight='normal' fill='currentColor'>jardin</text></g>
+    <g id='b-in11' class='b-entree' tabindex='-1' role='radio' aria-checked='false' aria-label='la' style='cursor:pointer;outline:none'><rect x='85' y='272.0' width='87' height='20' fill='transparent' stroke='none'/><circle cx='160' cy='282' r='8' fill='#3b82f6' fill-opacity='0' stroke='currentColor' stroke-width='1'/><text x='160' y='285.5' text-anchor='middle' stroke='none' font-size='10' font-weight='normal' opacity='0.55'>0</text><text x='146' y='286.5' text-anchor='end' stroke='none' font-size='13' font-weight='normal' fill='currentColor'>la</text></g>
+    <g id='b-in12' class='b-entree' tabindex='-1' role='radio' aria-checked='false' aria-label='le' style='cursor:pointer;outline:none'><rect x='85' y='292.0' width='87' height='20' fill='transparent' stroke='none'/><circle cx='160' cy='302' r='8' fill='#3b82f6' fill-opacity='0' stroke='currentColor' stroke-width='1'/><text x='160' y='305.5' text-anchor='middle' stroke='none' font-size='10' font-weight='normal' opacity='0.55'>0</text><text x='146' y='306.5' text-anchor='end' stroke='none' font-size='13' font-weight='normal' fill='currentColor'>le</text></g>
+    <g id='b-in13' class='b-entree' tabindex='-1' role='radio' aria-checked='false' aria-label='mange' style='cursor:pointer;outline:none'><rect x='85' y='312.0' width='87' height='20' fill='transparent' stroke='none'/><circle cx='160' cy='322' r='8' fill='#3b82f6' fill-opacity='0' stroke='currentColor' stroke-width='1'/><text x='160' y='325.5' text-anchor='middle' stroke='none' font-size='10' font-weight='normal' opacity='0.55'>0</text><text x='146' y='326.5' text-anchor='end' stroke='none' font-size='13' font-weight='normal' fill='currentColor'>mange</text></g>
+    <g id='b-in14' class='b-entree' tabindex='-1' role='radio' aria-checked='false' aria-label='panier' style='cursor:pointer;outline:none'><rect x='85' y='332.0' width='87' height='20' fill='transparent' stroke='none'/><circle cx='160' cy='342' r='8' fill='#3b82f6' fill-opacity='0' stroke='currentColor' stroke-width='1'/><text x='160' y='345.5' text-anchor='middle' stroke='none' font-size='10' font-weight='normal' opacity='0.55'>0</text><text x='146' y='346.5' text-anchor='end' stroke='none' font-size='13' font-weight='normal' fill='currentColor'>panier</text></g>
+    <g id='b-in15' class='b-entree' tabindex='-1' role='radio' aria-checked='false' aria-label='regarde' style='cursor:pointer;outline:none'><rect x='85' y='352.0' width='87' height='20' fill='transparent' stroke='none'/><circle cx='160' cy='362' r='8' fill='#3b82f6' fill-opacity='0' stroke='currentColor' stroke-width='1'/><text x='160' y='365.5' text-anchor='middle' stroke='none' font-size='10' font-weight='normal' opacity='0.55'>0</text><text x='146' y='366.5' text-anchor='end' stroke='none' font-size='13' font-weight='normal' fill='currentColor'>regarde</text></g>
+    <g id='b-in16' class='b-entree' tabindex='-1' role='radio' aria-checked='false' aria-label='repas' style='cursor:pointer;outline:none'><rect x='85' y='372.0' width='87' height='20' fill='transparent' stroke='none'/><circle cx='160' cy='382' r='8' fill='#3b82f6' fill-opacity='0' stroke='currentColor' stroke-width='1'/><text x='160' y='385.5' text-anchor='middle' stroke='none' font-size='10' font-weight='normal' opacity='0.55'>0</text><text x='146' y='386.5' text-anchor='end' stroke='none' font-size='13' font-weight='normal' fill='currentColor'>repas</text></g>
+    <g id='b-in17' class='b-entree' tabindex='-1' role='radio' aria-checked='false' aria-label='souris' style='cursor:pointer;outline:none'><rect x='85' y='392.0' width='87' height='20' fill='transparent' stroke='none'/><circle cx='160' cy='402' r='8' fill='#3b82f6' fill-opacity='0' stroke='currentColor' stroke-width='1'/><text x='160' y='405.5' text-anchor='middle' stroke='none' font-size='10' font-weight='normal' opacity='0.55'>0</text><text x='146' y='406.5' text-anchor='end' stroke='none' font-size='13' font-weight='normal' fill='currentColor'>souris</text></g>
+    <g id='b-in18' class='b-entree' tabindex='-1' role='radio' aria-checked='false' aria-label='sur' style='cursor:pointer;outline:none'><rect x='85' y='412.0' width='87' height='20' fill='transparent' stroke='none'/><circle cx='160' cy='422' r='8' fill='#3b82f6' fill-opacity='0' stroke='currentColor' stroke-width='1'/><text x='160' y='425.5' text-anchor='middle' stroke='none' font-size='10' font-weight='normal' opacity='0.55'>0</text><text x='146' y='426.5' text-anchor='end' stroke='none' font-size='13' font-weight='normal' fill='currentColor'>sur</text></g>
+    <g id='b-in19' class='b-entree' tabindex='-1' role='radio' aria-checked='false' aria-label='tapis' style='cursor:pointer;outline:none'><rect x='85' y='432.0' width='87' height='20' fill='transparent' stroke='none'/><circle cx='160' cy='442' r='8' fill='#3b82f6' fill-opacity='0' stroke='currentColor' stroke-width='1'/><text x='160' y='445.5' text-anchor='middle' stroke='none' font-size='10' font-weight='normal' opacity='0.55'>0</text><text x='146' y='446.5' text-anchor='end' stroke='none' font-size='13' font-weight='normal' fill='currentColor'>tapis</text></g>
+    <g id='b-in20' class='b-entree' tabindex='-1' role='radio' aria-checked='false' aria-label='trou' style='cursor:pointer;outline:none'><rect x='85' y='452.0' width='87' height='20' fill='transparent' stroke='none'/><circle cx='160' cy='462' r='8' fill='#3b82f6' fill-opacity='0' stroke='currentColor' stroke-width='1'/><text x='160' y='465.5' text-anchor='middle' stroke='none' font-size='10' font-weight='normal' opacity='0.55'>0</text><text x='146' y='466.5' text-anchor='end' stroke='none' font-size='13' font-weight='normal' fill='currentColor'>trou</text></g>
+    <circle cx='310' cy='228.0' r='17' fill='#3b82f6' fill-opacity='0.12' stroke='#3b82f6' stroke-width='2'/>
+    <text x='310' y='233.0' text-anchor='middle' stroke='none' font-size='15' font-style='italic'>h<tspan font-style='normal' font-size='11' dy='3'>1</tspan></text>
+    <circle cx='310' cy='296.0' r='17' fill='#3b82f6' fill-opacity='0.12' stroke='#3b82f6' stroke-width='2'/>
+    <text x='310' y='301.0' text-anchor='middle' stroke='none' font-size='15' font-style='italic'>h<tspan font-style='normal' font-size='11' dy='3'>2</tspan></text>
+    <circle cx='460' cy='62' r='8' fill='#f59e0b' fill-opacity='0.15' stroke='#f59e0b' stroke-width='1.3'/>
+    <text x='474' y='66.5' stroke='none' font-size='13'>.</text>
+    <rect id='b-barre0' x='540' y='57' width='21.4' height='10' fill='#f59e0b' stroke='none'/>
+    <text id='b-pct0' x='566.4' y='66' stroke='none' font-size='11' opacity='0.8'>14 %</text>
+    <circle cx='460' cy='82' r='8' fill='#f59e0b' fill-opacity='0.15' stroke='#f59e0b' stroke-width='1.3'/>
+    <text x='474' y='86.5' stroke='none' font-size='13'>après</text>
+    <rect id='b-barre1' x='540' y='77' width='0.0' height='10' fill='#f59e0b' stroke='none'/>
+    <text id='b-pct1' x='545.0' y='86' stroke='none' font-size='11' opacity='0.8'></text>
+    <circle cx='460' cy='102' r='8' fill='#f59e0b' fill-opacity='0.15' stroke='#f59e0b' stroke-width='1.3'/>
+    <text x='474' y='106.5' stroke='none' font-size='13'>canapé</text>
+    <rect id='b-barre2' x='540' y='97' width='0.0' height='10' fill='#f59e0b' stroke='none'/>
+    <text id='b-pct2' x='545.0' y='106' stroke='none' font-size='11' opacity='0.8'></text>
+    <circle cx='460' cy='122' r='8' fill='#f59e0b' fill-opacity='0.15' stroke='#f59e0b' stroke-width='1.3'/>
+    <text x='474' y='126.5' stroke='none' font-size='13'>chat</text>
+    <rect id='b-barre3' x='540' y='117' width='0.0' height='10' fill='#f59e0b' stroke='none'/>
+    <text id='b-pct3' x='545.0' y='126' stroke='none' font-size='11' opacity='0.8'></text>
+    <circle cx='460' cy='142' r='8' fill='#f59e0b' fill-opacity='0.15' stroke='#f59e0b' stroke-width='1.3'/>
+    <text x='474' y='146.5' stroke='none' font-size='13'>chien</text>
+    <rect id='b-barre4' x='540' y='137' width='0.0' height='10' fill='#f59e0b' stroke='none'/>
+    <text id='b-pct4' x='545.0' y='146' stroke='none' font-size='11' opacity='0.8'></text>
+    <circle cx='460' cy='162' r='8' fill='#f59e0b' fill-opacity='0.15' stroke='#f59e0b' stroke-width='1.3'/>
+    <text x='474' y='166.5' stroke='none' font-size='13'>court</text>
+    <rect id='b-barre5' x='540' y='157' width='21.4' height='10' fill='#f59e0b' stroke='none'/>
+    <text id='b-pct5' x='566.4' y='166' stroke='none' font-size='11' opacity='0.8'>14 %</text>
+    <circle cx='460' cy='182' r='8' fill='#f59e0b' fill-opacity='0.15' stroke='#f59e0b' stroke-width='1.3'/>
+    <text x='474' y='186.5' stroke='none' font-size='13'>dans</text>
+    <rect id='b-barre6' x='540' y='177' width='0.0' height='10' fill='#f59e0b' stroke='none'/>
+    <text id='b-pct6' x='545.0' y='186' stroke='none' font-size='11' opacity='0.8'></text>
+    <circle cx='460' cy='202' r='8' fill='#f59e0b' fill-opacity='0.15' stroke='#f59e0b' stroke-width='1.3'/>
+    <text x='474' y='206.5' stroke='none' font-size='13'>dort</text>
+    <rect id='b-barre7' x='540' y='197' width='42.9' height='10' fill='#f59e0b' stroke='none'/>
+    <text id='b-pct7' x='587.9' y='206' stroke='none' font-size='11' opacity='0.8'>29 %</text>
+    <circle cx='460' cy='222' r='8' fill='#f59e0b' fill-opacity='0.15' stroke='#f59e0b' stroke-width='1.3'/>
+    <text x='474' y='226.5' stroke='none' font-size='13'>du</text>
+    <rect id='b-barre8' x='540' y='217' width='0.0' height='10' fill='#f59e0b' stroke='none'/>
+    <text id='b-pct8' x='545.0' y='226' stroke='none' font-size='11' opacity='0.8'></text>
+    <circle cx='460' cy='242' r='8' fill='#f59e0b' fill-opacity='0.15' stroke='#f59e0b' stroke-width='1.3'/>
+    <text x='474' y='246.5' stroke='none' font-size='13'>fromage</text>
+    <rect id='b-barre9' x='540' y='237' width='0.0' height='10' fill='#f59e0b' stroke='none'/>
+    <text id='b-pct9' x='545.0' y='246' stroke='none' font-size='11' opacity='0.8'></text>
+    <circle cx='460' cy='262' r='8' fill='#f59e0b' fill-opacity='0.15' stroke='#f59e0b' stroke-width='1.3'/>
+    <text x='474' y='266.5' stroke='none' font-size='13'>jardin</text>
+    <rect id='b-barre10' x='540' y='257' width='0.0' height='10' fill='#f59e0b' stroke='none'/>
+    <text id='b-pct10' x='545.0' y='266' stroke='none' font-size='11' opacity='0.8'></text>
+    <circle cx='460' cy='282' r='8' fill='#f59e0b' fill-opacity='0.15' stroke='#f59e0b' stroke-width='1.3'/>
+    <text x='474' y='286.5' stroke='none' font-size='13'>la</text>
+    <rect id='b-barre11' x='540' y='277' width='0.0' height='10' fill='#f59e0b' stroke='none'/>
+    <text id='b-pct11' x='545.0' y='286' stroke='none' font-size='11' opacity='0.8'></text>
+    <circle cx='460' cy='302' r='8' fill='#f59e0b' fill-opacity='0.15' stroke='#f59e0b' stroke-width='1.3'/>
+    <text x='474' y='306.5' stroke='none' font-size='13'>le</text>
+    <rect id='b-barre12' x='540' y='297' width='0.0' height='10' fill='#f59e0b' stroke='none'/>
+    <text id='b-pct12' x='545.0' y='306' stroke='none' font-size='11' opacity='0.8'></text>
+    <circle cx='460' cy='322' r='8' fill='#f59e0b' fill-opacity='0.15' stroke='#f59e0b' stroke-width='1.3'/>
+    <text x='474' y='326.5' stroke='none' font-size='13'>mange</text>
+    <rect id='b-barre13' x='540' y='317' width='42.9' height='10' fill='#f59e0b' stroke='none'/>
+    <text id='b-pct13' x='587.9' y='326' stroke='none' font-size='11' opacity='0.8'>29 %</text>
+    <circle cx='460' cy='342' r='8' fill='#f59e0b' fill-opacity='0.15' stroke='#f59e0b' stroke-width='1.3'/>
+    <text x='474' y='346.5' stroke='none' font-size='13'>panier</text>
+    <rect id='b-barre14' x='540' y='337' width='0.0' height='10' fill='#f59e0b' stroke='none'/>
+    <text id='b-pct14' x='545.0' y='346' stroke='none' font-size='11' opacity='0.8'></text>
+    <circle cx='460' cy='362' r='8' fill='#f59e0b' fill-opacity='0.15' stroke='#f59e0b' stroke-width='1.3'/>
+    <text x='474' y='366.5' stroke='none' font-size='13'>regarde</text>
+    <rect id='b-barre15' x='540' y='357' width='21.4' height='10' fill='#f59e0b' stroke='none'/>
+    <text id='b-pct15' x='566.4' y='366' stroke='none' font-size='11' opacity='0.8'>14 %</text>
+    <circle cx='460' cy='382' r='8' fill='#f59e0b' fill-opacity='0.15' stroke='#f59e0b' stroke-width='1.3'/>
+    <text x='474' y='386.5' stroke='none' font-size='13'>repas</text>
+    <rect id='b-barre16' x='540' y='377' width='0.0' height='10' fill='#f59e0b' stroke='none'/>
+    <text id='b-pct16' x='545.0' y='386' stroke='none' font-size='11' opacity='0.8'></text>
+    <circle cx='460' cy='402' r='8' fill='#f59e0b' fill-opacity='0.15' stroke='#f59e0b' stroke-width='1.3'/>
+    <text x='474' y='406.5' stroke='none' font-size='13'>souris</text>
+    <rect id='b-barre17' x='540' y='397' width='0.0' height='10' fill='#f59e0b' stroke='none'/>
+    <text id='b-pct17' x='545.0' y='406' stroke='none' font-size='11' opacity='0.8'></text>
+    <circle cx='460' cy='422' r='8' fill='#f59e0b' fill-opacity='0.15' stroke='#f59e0b' stroke-width='1.3'/>
+    <text x='474' y='426.5' stroke='none' font-size='13'>sur</text>
+    <rect id='b-barre18' x='540' y='417' width='0.0' height='10' fill='#f59e0b' stroke='none'/>
+    <text id='b-pct18' x='545.0' y='426' stroke='none' font-size='11' opacity='0.8'></text>
+    <circle cx='460' cy='442' r='8' fill='#f59e0b' fill-opacity='0.15' stroke='#f59e0b' stroke-width='1.3'/>
+    <text x='474' y='446.5' stroke='none' font-size='13'>tapis</text>
+    <rect id='b-barre19' x='540' y='437' width='0.0' height='10' fill='#f59e0b' stroke='none'/>
+    <text id='b-pct19' x='545.0' y='446' stroke='none' font-size='11' opacity='0.8'></text>
+    <circle cx='460' cy='462' r='8' fill='#f59e0b' fill-opacity='0.15' stroke='#f59e0b' stroke-width='1.3'/>
+    <text x='474' y='466.5' stroke='none' font-size='13'>trou</text>
+    <rect id='b-barre20' x='540' y='457' width='0.0' height='10' fill='#f59e0b' stroke='none'/>
+    <text id='b-pct20' x='545.0' y='466' stroke='none' font-size='11' opacity='0.8'></text>
+    <text x='120' y='494' text-anchor='middle' stroke='none' font-size='14' opacity='0.7'><tspan font-style='italic'>V</tspan> = 21 neurones (one-hot)</text>
+    <text x='310' y='494' text-anchor='middle' stroke='none' font-size='14' opacity='0.7'><tspan font-style='italic'>d</tspan> = 2 neurones</text>
+    <text x='520' y='494' text-anchor='middle' stroke='none' font-size='14' opacity='0.7'><tspan font-style='italic'>V</tspan> = 21 logits, puis softmax</text>
   </g>
 </svg>
+<script>
+(() => {
+  const fig = document.querySelector("svg.figure-bigramme");
+  const $ = id => fig.querySelector("#" + id);
+  const P = [[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.3125,0.6875,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],[1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],[0.1429,0.0,0.0,0.0,0.0,0.1429,0.0,0.2857,0.0,0.0,0.0,0.0,0.0,0.2857,0.0,0.1429,0.0,0.0,0.0,0.0,0.0],[0.2857,0.0,0.0,0.0,0.0,0.1429,0.0,0.2857,0.0,0.0,0.0,0.0,0.0,0.1429,0.0,0.1429,0.0,0.0,0.0,0.0,0.0],[0.0,0.3333,0.0,0.0,0.0,0.0,0.6667,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0,0.5,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.5,0.0,0.0],[0.0,0.0,0.0,0.5,0.5,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],[0.6667,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.3333,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],[1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0],[0.0,0.0,0.0417,0.25,0.25,0.0,0.0,0.0,0.0,0.125,0.0833,0.0,0.0,0.0,0.0417,0.0,0.0417,0.0,0.0,0.0833,0.0833],[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.25,0.75,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],[1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.3333,0.6667,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],[0.375,0.0,0.0,0.0,0.0,0.125,0.0,0.25,0.0,0.0,0.0,0.0,0.0,0.125,0.0,0.125,0.0,0.0,0.0,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],[1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],[1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]];
+  const V = P.length, BARRE = 540, ECHELLE = 150;
+  let choisi = 3;
+  const choisir = i => {
+    choisi = i;
+    for (let a = 0; a < V; a++) {
+      const actif = a === i, g = $("b-in" + a);
+      const [cercle, valeur, mot] = [g.querySelector("circle"), ...g.querySelectorAll("text")];
+      g.setAttribute("tabindex", actif ? 0 : -1);
+      g.setAttribute("aria-checked", actif);
+      cercle.setAttribute("fill-opacity", actif ? 0.3 : 0);
+      cercle.setAttribute("stroke", actif ? "#3b82f6" : "currentColor");
+      cercle.setAttribute("stroke-width", actif ? 2 : 1);
+      valeur.textContent = actif ? 1 : 0;
+      valeur.setAttribute("font-weight", actif ? "bold" : "normal");
+      valeur.setAttribute("opacity", actif ? 1 : 0.55);
+      mot.setAttribute("font-weight", actif ? "bold" : "normal");
+      mot.setAttribute("fill", actif ? "#3b82f6" : "currentColor");
+      for (let k = 0; k < 2; k++) {
+        const e = $(`b-e${a}-${k}`);
+        e.setAttribute("stroke", actif ? "#3b82f6" : "currentColor");
+        e.setAttribute("stroke-width", actif ? 2 : 0.7);
+        e.setAttribute("opacity", actif ? 1 : 0.15);
+      }
+    }
+    // Les arêtes du mot choisi passent devant les autres.
+    for (let k = 0; k < 2; k++) {
+      const e = $(`b-e${i}-${k}`);
+      e.parentNode.insertBefore(e, $("b-in0"));
+    }
+    P[i].forEach((p, j) => {
+      $("b-barre" + j).setAttribute("width", (p * ECHELLE).toFixed(1));
+      const t = $("b-pct" + j);
+      t.setAttribute("x", (BARRE + p * ECHELLE + 5).toFixed(1));
+      t.textContent = p ? Math.round(p * 100) + " %" : "";
+    });
+  };
+  for (let a = 0; a < V; a++) {
+    const g = $("b-in" + a);
+    g.addEventListener("click", () => { choisir(a); g.focus(); });
+    g.addEventListener("keydown", e => {
+      const d = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 }[e.key];
+      if (!d) return;
+      e.preventDefault();
+      const b = (choisi + d + V) % V;
+      choisir(b);
+      $("b-in" + b).focus();
+    });
+  }
+  choisir(choisi);
+})();
+</script>
 ```
 
-Le bigramme neuronal, pour le mot d'entrée « chat ». Le vecteur one-hot n'a
-qu'un 1, à la position de « chat » : seules ses connexions (en bleu) comptent,
-et elles apportent la ligne de « chat » de la matrice $E$, son plongement
-$(h_1, h_2)$. La couche de sortie a un neurone par mot du vocabulaire, et le
-softmax change leurs scores en probabilités. Celles-ci sont les fréquences
-du corpus après « chat », vers lesquelles l'entraînement pousse le réseau.
-Seuls 7 des 21 mots sont dessinés.
+Le bigramme neuronal. Le vecteur one-hot n'a qu'un 1, à la position du mot
+d'entrée : seules ses connexions (en bleu) comptent, et elles apportent la
+ligne de ce mot dans la matrice $E$, son plongement $(h_1, h_2)$. La couche de
+sortie a un neurone par mot du vocabulaire, et le softmax change leurs scores
+en probabilités. Celles-ci sont les fréquences du corpus après le mot d'entrée,
+vers lesquelles l'entraînement pousse le réseau. Cliquez sur un autre mot
+d'entrée (ou utilisez les flèches du clavier) pour le changer.
 :::
 
 C'est un réseau très simple : pas de couche cachée avec activation, seulement
