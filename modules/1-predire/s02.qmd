@@ -1091,6 +1091,11 @@ jetons, vocabulaire, x, y, V, N = executer(
 )
 ```
 
+Ce corpus est modifiable, lui aussi. Ajoutez-y des phrases, ou de nouveaux
+mots : le plancher, la courbe d'entraînement et le nuage des plongements, plus
+bas, se recalculent à partir de lui. Les figures précédentes, elles, restent
+calculées sur le corpus d'origine.
+
 ## La perte : l'entropie croisée
 
 Au départ, les paramètres sont tirés au hasard, et les prédictions ne valent
