@@ -164,8 +164,9 @@ court, attendra la semaine 3.
 
 - expliquer ce qu'est un réseau de neurones (neurones, couches, activation),
   et pourquoi il lui faut une non-linéarité;
-- expliquer comment un réseau apprend à prédire le mot suivant : la perte
-  d'entropie croisée, le gradient, la descente de gradient;
+- expliquer comment un réseau apprend : la perte, la descente de gradient et
+  la rétropropagation, puis la perte d'entropie croisée pour prédire le mot
+  suivant;
 - expliquer ce qu'est un plongement, et pourquoi des vecteurs appris
   permettent de généraliser;
 - expliquer comment un texte est découpé en jetons par l'algorithme BPE, et
@@ -523,31 +524,60 @@ poids $v$.
 # Les valeurs des curseurs au départ, et celles de la solution.
 DEPART_RESEAU = {"w": [1, 1, 1], "c": [0, -1, 1], "v": [0.5, 0, 0], "b": 0}
 SOLUTION_RESEAU = {"w": [1, 1, 1], "c": [1, 0, -1], "v": [1, -2, 1], "b": 0}
+# Les valeurs actuelles des curseurs, tenues à jour par la figure, pour le
+# bouton de descente de gradient.
+CURSEURS_RESEAU = dict(DEPART_RESEAU)
+
+
+def descendre(r, pas=200, taux=0.1):
+    """Fait `pas` pas de descente de gradient sur l'écart quadratique moyen."""
+    xs = np.linspace(-2, 2, 201)
+    cible = np.maximum(0, 1 - np.abs(xs))
+    w, c, v = (np.array(r[k], dtype=float) for k in "wcv")
+    b = float(r["b"])
+    for _ in range(pas):
+        z = np.outer(xs, w) + c
+        h = np.maximum(z, 0)
+        g = 2 * (h @ v + b - cible) / len(xs)   # dérivée de la perte par rapport à la sortie
+        gh = np.outer(g, v) * (z > 0)           # rétropropagée à travers la ReLU
+        w -= taux * (gh * xs[:, None]).sum(axis=0)
+        c -= taux * gh.sum(axis=0)
+        v -= taux * (h.T @ g)
+        b -= taux * g.sum()
+
+    def borner(a, m):
+        return [float(np.clip(round(u, 2), -m, m)) + 0.0 for u in a]
+
+    return {"w": borner(w, 3), "c": borner(c, 3), "v": borner(v, 3), "b": borner([b], 2)[0]}
 ```
 
 ```python {.marimo}
 def _curseurs(valeurs):
     return mo.ui.array(
-        [mo.ui.slider(-3, 3, step=0.1, value=v, show_value=True, full_width=True)
+        [mo.ui.slider(-3, 3, step=0.01, value=v, show_value=True, full_width=True)
          for v in valeurs]
     )
 
 
-# Chaque bouton de la solution garde l'heure de son dernier clic : le plus
-# récent décide des valeurs avec lesquelles les curseurs sont recréés.
-_r = max([(bouton_depart.value or 0, DEPART_RESEAU),
-          (bouton_solution.value or 0, SOLUTION_RESEAU)], key=lambda p: p[0])[1]
+# Chaque bouton garde l'heure de son dernier clic (et, pour la descente de
+# gradient, les valeurs obtenues) : le plus récent décide des valeurs avec
+# lesquelles les curseurs sont recréés.
+_choix = [(bouton_depart.value or 0, DEPART_RESEAU),
+          (bouton_solution.value or 0, SOLUTION_RESEAU)]
+if bouton_descente.value:
+    _choix.append(bouton_descente.value)
+_r = max(_choix, key=lambda p: p[0])[1]
 pentes = _curseurs(_r["w"])
 biais_caches = _curseurs(_r["c"])
 poids_sortie = _curseurs(_r["v"])
-biais_sortie = mo.ui.slider(-2, 2, step=0.1, value=_r["b"], show_value=True)
+biais_sortie = mo.ui.slider(-2, 2, step=0.01, value=_r["b"], show_value=True)
 _lignes = "".join(
     f"<tr><td style='white-space:nowrap;padding-right:1em'>{nom}</td>"
     + "".join(f"<td style='padding:0 .5em'>{curseurs[j]}</td>" for j in range(3)) + "</tr>"
     for nom, curseurs in [("pente <i>w</i>", pentes), ("biais <i>c</i>", biais_caches),
                           ("sortie <i>v</i>", poids_sortie)]
 )
-mo.vstack([
+tableau_curseurs = mo.vstack([
     mo.Html(
         "<table style='width:100%;table-layout:fixed'><colgroup><col style='width:6em'>"
         "</colgroup><tr><th></th><th>neurone 1</th><th>neurone 2</th><th>neurone 3</th></tr>"
@@ -555,6 +585,7 @@ mo.vstack([
     ),
     mo.md(f"Biais de sortie $b$ : {biais_sortie}"),
 ])
+tableau_curseurs
 
 ```
 
@@ -567,13 +598,15 @@ _parts = [reseau(_xs, _w, _c, _v * (np.arange(3) == j), 0) for j in range(3)]
 _ecart = float(np.mean((_sortie - _cible) ** 2))
 _coudes = [(-_c[j] / _w[j], "#f59e0b", str(j + 1)) for j in range(3)
            if _w[j] != 0 and abs(_c[j] / _w[j]) <= 2]
-mo.vstack([
+CURSEURS_RESEAU.update(w=list(_w), c=list(_c), v=list(_v), b=biais_sortie.value)
+graphique_reseau = mo.vstack([
     trace(_xs, [(p, "#f59e0b", 1, False) for p in _parts]
           + [(_cible, "currentColor", 2, True), (_sortie, "#3b82f6", 2.5, False)],
           _coudes),
     mo.md(f"Écart quadratique moyen : **{_ecart:.3f}**"
           + (" — ✅ le réseau reproduit la courbe." if _ecart < 1e-3 else "")),
 ])
+graphique_reseau
 ```
 
 ::: {.callout-note collapse="true"}
@@ -599,12 +632,216 @@ mo.hstack([bouton_solution, bouton_depart], justify="start")
 ```
 :::
 
-Avec dix paramètres, on y arrive, mais il faut réfléchir, ou tâtonner longtemps. Qwen2.5-0.5B, le modèle de la
-semaine 3, en a 494 millions : personne ne les règle à la main. Il faut une
-méthode pour trouver automatiquement les paramètres qui font coller le réseau
-aux données. C'est l'**entraînement** (*training*), l'objet du reste de cette semaine.
-(Essayez aussi de remplacer `np.maximum(z, 0)` par `z` dans le code : sans
-activation, quels que soient les curseurs, la sortie reste une droite.)
+Essayez aussi de remplacer `np.maximum(z, 0)` par `z` dans le code : sans
+activation, quels que soient les curseurs, la sortie reste une droite.
+
+Avec dix paramètres, on y arrive, mais il faut réfléchir, ou tâtonner
+longtemps. Qwen2.5-0.5B, le modèle de la semaine 3, en a 494 millions :
+personne ne les règle à la main. Il faut une méthode pour trouver
+automatiquement de bons paramètres. C'est l'**entraînement** (*training*).
+
+## Apprendre : la perte et la descente de gradient
+
+### La perte
+
+Pendant l'exercice, vous aviez un guide : l'écart quadratique moyen, affiché
+sous la figure. Il mesure à quel point la sortie $s$ du réseau s'éloigne de la
+cible $y$ : c'est la moyenne, sur les $N$ points $x_t$ du graphique, du carré de
+l'écart entre les deux.
+
+$$\mathcal{L} = \frac{1}{N} \sum_{t=1}^{N} \big(s(x_t) - y(x_t)\big)^2$$
+
+Un tel nombre, qui mesure l'erreur d'un réseau sur ses données, s'appelle une
+**perte** (*loss*). Les données sont fixes : la perte ne dépend que des
+paramètres. Entraîner un réseau, c'est chercher les paramètres qui rendent sa
+perte la plus petite possible. C'est ce que vous faisiez en bougeant les
+curseurs; reste à l'automatiser.
+
+### La descente de gradient
+
+Imaginez la perte comme un paysage : chaque réglage des paramètres est un
+endroit, et la perte y est l'altitude. On cherche le fond d'une vallée, dans le
+brouillard : on ne voit que la pente sous ses pieds. La stratégie la plus simple
+consiste à faire un pas vers le bas, puis à recommencer.
+
+Pour chaque paramètre $\theta$, on calcule le **gradient** : de combien la perte
+varierait si on augmentait $\theta$ d'un tout petit peu, c'est-à-dire la pente
+du paysage dans sa direction (la dérivée $\partial \mathcal{L} / \partial \theta$).
+On déplace alors chaque paramètre d'un petit pas dans la direction opposée, celle
+où la perte diminue :
+
+$$\theta \leftarrow \theta - \eta \, \frac{\partial \mathcal{L}}{\partial \theta}$$
+
+C'est la **descente de gradient** (*gradient descent*). Le nombre $\eta$, le
+**taux d'apprentissage** (*learning rate*), règle la taille des pas. La figure
+suivante la montre sur un paysage à un seul paramètre; un vrai réseau fait la
+même chose, mais dans autant de directions qu'il a de paramètres.
+
+::: {#fig-descente}
+
+```{=html}
+<svg class="figure-descente" viewBox="0 0 610 342" role="img"
+     aria-label="La descente de gradient : un point sur une courbe de perte à deux vallées descend pas à pas selon la pente; on règle le point de départ et le taux d'apprentissage."
+     style="width:100%;max-width:610px;display:block;margin:auto;font-size:17px">
+  <g fill="currentColor" stroke="currentColor">
+    <line x1='50' y1='250' x2='590' y2='250' stroke='#94a3b8'/>
+    <line x1='50' y1='30' x2='50' y2='250' stroke='#94a3b8'/>
+    <text x='42' y='38' text-anchor='end' stroke='none' font-size='14' opacity='0.7'>perte</text>
+    <text x='590' y='272' text-anchor='end' stroke='none' font-size='14' opacity='0.7'>paramètre <tspan font-style='italic'>θ</tspan></text>
+    <polyline points='50.0,137.1 52.7,144.3 55.4,151.1 58.1,157.6 60.8,163.8 63.5,169.7 66.2,175.3 68.9,180.6 71.6,185.6 74.3,190.4 77.0,194.9 79.7,199.1 82.4,203.1 85.1,206.8 87.8,210.2 90.5,213.5 93.2,216.5 95.9,219.3 98.6,221.9 101.3,224.2 104.0,226.4 106.7,228.4 109.4,230.2 112.1,231.8 114.8,233.2 117.5,234.4 120.2,235.5 122.9,236.4 125.6,237.2 128.3,237.8 131.0,238.3 133.7,238.6 136.4,238.8 139.1,238.9 141.8,238.8 144.5,238.7 147.2,238.4 149.9,238.0 152.6,237.5 155.3,236.9 158.0,236.3 160.7,235.5 163.4,234.6 166.1,233.7 168.8,232.7 171.5,231.6 174.2,230.5 176.9,229.3 179.6,228.0 182.3,226.7 185.0,225.3 187.7,223.9 190.4,222.5 193.1,221.0 195.8,219.4 198.5,217.9 201.2,216.3 203.9,214.7 206.6,213.1 209.3,211.4 212.0,209.7 214.7,208.1 217.4,206.4 220.1,204.7 222.8,203.0 225.5,201.3 228.2,199.6 230.9,197.9 233.6,196.3 236.3,194.6 239.0,192.9 241.7,191.3 244.4,189.7 247.1,188.1 249.8,186.5 252.5,184.9 255.2,183.4 257.9,181.9 260.6,180.5 263.3,179.0 266.0,177.6 268.7,176.2 271.4,174.9 274.1,173.6 276.8,172.4 279.5,171.1 282.2,170.0 284.9,168.8 287.6,167.7 290.3,166.7 293.0,165.7 295.7,164.7 298.4,163.8 301.1,163.0 303.8,162.2 306.5,161.4 309.2,160.7 311.9,160.0 314.6,159.4 317.3,158.8 320.0,158.3 322.7,157.9 325.4,157.5 328.1,157.1 330.8,156.8 333.5,156.5 336.2,156.3 338.9,156.1 341.6,156.0 344.3,155.9 347.0,155.9 349.7,155.9 352.4,156.0 355.1,156.1 357.8,156.3 360.5,156.5 363.2,156.7 365.9,157.0 368.6,157.3 371.3,157.7 374.0,158.1 376.7,158.5 379.4,158.9 382.1,159.4 384.8,160.0 387.5,160.5 390.2,161.1 392.9,161.7 395.6,162.3 398.3,162.9 401.0,163.6 403.7,164.3 406.4,165.0 409.1,165.7 411.8,166.4 414.5,167.1 417.2,167.8 419.9,168.5 422.6,169.2 425.3,169.9 428.0,170.6 430.7,171.3 433.4,172.0 436.1,172.6 438.8,173.3 441.5,173.9 444.2,174.5 446.9,175.0 449.6,175.5 452.3,176.0 455.0,176.4 457.7,176.8 460.4,177.2 463.1,177.5 465.8,177.7 468.5,177.8 471.2,177.9 473.9,178.0 476.6,177.9 479.3,177.8 482.0,177.6 484.7,177.3 487.4,176.9 490.1,176.4 492.8,175.8 495.5,175.1 498.2,174.3 500.9,173.4 503.6,172.3 506.3,171.1 509.0,169.8 511.7,168.4 514.4,166.8 517.1,165.0 519.8,163.1 522.5,161.1 525.2,158.9 527.9,156.5 530.6,153.9 533.3,151.1 536.0,148.2 538.7,145.0 541.4,141.7 544.1,138.1 546.8,134.4 549.5,130.4 552.2,126.2 554.9,121.7 557.6,117.0 560.3,112.1 563.0,106.9 565.7,101.4 568.4,95.7 571.1,89.7 573.8,83.4 576.5,76.8 579.2,70.0 581.9,62.8 584.6,55.3 587.3,47.5 590.0,39.4' fill='none' stroke='currentColor' stroke-width='2'/>
+    <line id='d-tangente' stroke='#f59e0b' stroke-width='2'/>
+    <polyline id='d-trace' fill='none' stroke='#3b82f6' stroke-width='1.2' stroke-dasharray='3 3'/>
+    <g id='d-points'></g>
+    <circle id='d-point' r='7' fill='#3b82f6' stroke='none'/>
+    <text x='60' y='302' stroke='none' font-size='15'>départ <tspan font-style='italic'>θ</tspan>₀ =</text>
+    <text id='d-t0' x='152' y='302' stroke='none' font-size='15' fill='#3b82f6'>0</text>
+    <text x='240' y='302' stroke='none' font-size='15'>taux d'apprentissage <tspan font-style='italic'>η</tspan> =</text>
+    <text id='d-eta' x='433' y='302' stroke='none' font-size='15' fill='#3b82f6'>0</text>
+    <text id='d-etat' x='60' y='330' stroke='none' font-size='14'></text>
+  </g>
+</svg>
+<div style="display:flex;gap:.4rem;justify-content:center;margin-top:.3rem">
+  <button type="button" class="btn btn-sm btn-outline-secondary" id="d-un">Un pas</button>
+  <button type="button" class="btn btn-sm btn-outline-secondary" id="d-dix">Dix pas</button>
+  <button type="button" class="btn btn-sm btn-outline-secondary" id="d-zero">Recommencer</button>
+</div>
+<script>
+(() => {
+  const fmt = (v, d = 1) => (v < -1e-9 ? "−" : "") + Math.abs(v).toFixed(d).replace(".", ",");
+  // Une valeur qu'on modifie en la faisant glisser (ou avec les flèches du clavier).
+  const glisser = (el, lire, ecrire, pas, min, max) => {
+    el.classList.add("valeur-glissable");
+    el.setAttribute("tabindex", "0");
+    const borner = v => Math.min(max, Math.max(min, Math.round(v / pas) * pas));
+    let x0 = null, v0 = 0;
+    el.addEventListener("pointerdown", e => {
+      x0 = e.clientX; v0 = lire();
+      el.setPointerCapture(e.pointerId);
+      e.preventDefault();
+    });
+    el.addEventListener("pointermove", e => {
+      if (x0 !== null) ecrire(borner(v0 + (e.clientX - x0) / 8 * pas));
+    });
+    const fin = () => { x0 = null; };
+    el.addEventListener("pointerup", fin);
+    el.addEventListener("pointercancel", fin);
+    el.addEventListener("keydown", e => {
+      const d = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 }[e.key];
+      if (!d) return;
+      e.preventDefault();
+      ecrire(borner(lire() + d * pas));
+    });
+  };
+  const fig = document.querySelector("svg.figure-descente");
+  const $ = id => fig.querySelector("#" + id);
+  const L = t => 0.05 * t ** 4 - 0.4 * t ** 2 + 0.25 * t + 1.5;
+  const dL = t => 0.2 * t ** 3 - 0.8 * t + 0.25;
+  const [TMIN, TMAX, LMIN, LMAX, X0, X1, Y0, Y1] = [-3.2, 3.2, 0, 3.6, 50, 590, 30, 250];
+  const px = t => X0 + (t - TMIN) / (TMAX - TMIN) * (X1 - X0);
+  const py = v => Y1 - (v - LMIN) / (LMAX - LMIN) * (Y1 - Y0);
+  let t0 = 2.8, eta = 0.3, chemin = [t0];
+  const dedans = t => t >= TMIN && t <= TMAX;
+  const maj = () => {
+    const t = chemin[chemin.length - 1];
+    const echappe = !dedans(t);
+    $("d-t0").textContent = fmt(t0);
+    $("d-eta").textContent = fmt(eta, 2);
+    const visibles = chemin.filter(dedans);
+    $("d-trace").setAttribute("points", visibles.map(u => `${px(u).toFixed(1)},${py(L(u)).toFixed(1)}`).join(" "));
+    $("d-points").innerHTML = visibles.slice(0, -1).map(u =>
+      `<circle cx="${px(u).toFixed(1)}" cy="${py(L(u)).toFixed(1)}" r="3" fill="#3b82f6" fill-opacity="0.5" stroke="none"/>`).join("");
+    const p = $("d-point"), tg = $("d-tangente");
+    if (echappe) {
+      p.setAttribute("visibility", "hidden");
+      tg.setAttribute("visibility", "hidden");
+      $("d-etat").textContent = `pas ${chemin.length - 1} : le point s'est échappé du graphique (θ = ${fmt(t, 1)}) — le taux est trop grand.`;
+      return;
+    }
+    p.setAttribute("visibility", "visible");
+    tg.setAttribute("visibility", "visible");
+    p.setAttribute("cx", px(t).toFixed(1));
+    p.setAttribute("cy", py(L(t)).toFixed(1));
+    // La tangente : la pente de la perte au point courant.
+    const pente = dL(t), demi = 0.6;
+    tg.setAttribute("x1", px(t - demi).toFixed(1));
+    tg.setAttribute("y1", py(L(t) - pente * demi).toFixed(1));
+    tg.setAttribute("x2", px(t + demi).toFixed(1));
+    tg.setAttribute("y2", py(L(t) + pente * demi).toFixed(1));
+    $("d-etat").textContent = `pas ${chemin.length - 1} : θ = ${fmt(t, 2)}, perte = ${fmt(L(t), 3)}, pente = ${fmt(pente, 3)}`;
+  };
+  const avancer = n => {
+    for (let k = 0; k < n; k++) {
+      const t = chemin[chemin.length - 1];
+      if (!dedans(t) || Math.abs(t) > 1e3) break;
+      chemin.push(t - eta * dL(t));
+    }
+    maj();
+  };
+  glisser($("d-t0"), () => t0, v => { t0 = v; chemin = [t0]; maj(); }, 0.1, -3.1, 3.1);
+  glisser($("d-eta"), () => eta, v => { eta = v; chemin = [chemin[0]]; maj(); }, 0.05, 0.05, 1.5);
+  document.getElementById("d-un").addEventListener("click", () => avancer(1));
+  document.getElementById("d-dix").addEventListener("click", () => avancer(10));
+  document.getElementById("d-zero").addEventListener("click", () => { chemin = [t0]; maj(); });
+  maj();
+})();
+</script>
+```
+
+La descente de gradient, sur un paysage à un seul paramètre $\theta$. À chaque
+pas, le point recule d'une distance proportionnelle à la pente (la tangente, en
+orange) et au taux d'apprentissage $\eta$. Faites des pas, puis changez le point
+de départ et le taux (les nombres en bleu). Un taux trop petit avance lentement;
+trop grand, le point saute d'un versant à l'autre, ou s'échappe. Et parti de la
+droite, le point s'arrête dans la vallée de droite : un **minimum local**
+(*local minimum*), moins profond que celui de gauche, d'où la pente ne permet
+pas de sortir.
+:::
+
+### La rétropropagation
+
+Reste à calculer le gradient de chaque paramètre. La sortie d'un réseau est une
+suite de calculs simples (produits, sommes, ReLU), et la dérivée d'une suite de
+calculs s'obtient en enchaînant leurs dérivées : c'est la règle de dérivation en
+chaîne, qu'on a vue en analyse (sans rapport avec la règle de la chaîne des
+probabilités de la semaine 1). On part de la perte, on calcule sa dérivée par
+rapport à la sortie, puis on remonte couche par couche vers l'entrée : chaque
+couche reçoit le gradient de la suivante, en déduit celui de ses propres
+paramètres, et transmet à la couche précédente celui de son entrée. C'est la
+**rétropropagation** (*backpropagation*). Un seul passage à rebours donne le
+gradient de tous les paramètres à la fois, qu'il y en ait dix ou 494 millions.
+
+Le résultat est souvent intuitif. Pour notre petit réseau, le gradient du poids
+de sortie $v_j$ est la moyenne de $2\,(s - y)\,h_j$ : ce poids change d'autant plus
+que le neurone $j$ était actif ($h_j > 0$) là où la sortie se trompait. Un
+neurone éteint par la ReLU ne reçoit, lui, aucun gradient : là où il vaut 0, le
+modifier un peu ne change rien.
+
+### Le réseau s'entraîne
+
+Revoici la figure des curseurs (ce sont les mêmes : modifier l'une modifie
+l'autre), avec un bouton qui fait 200 pas de descente de gradient à partir des
+valeurs actuelles, avec $\eta = 0{,}1$. Cliquez plusieurs fois, et regardez les
+curseurs bouger tout seuls et l'écart diminuer.
+
+```python {.marimo}
+bouton_descente = mo.ui.button(
+    label="Faire 200 pas de descente de gradient",
+    on_click=lambda _: (time.time(), descendre(CURSEURS_RESEAU)),
+)
+```
+
+```python {.marimo}
+mo.vstack([tableau_curseurs, graphique_reseau, bouton_descente])
+```
+
+Partie des valeurs de départ, la descente s'arrête vers 0,011 : la courbe
+ressemble à la tente, mais ses coudes ne sont pas tout à fait à leur place.
+Elle trouve une bonne solution, pas la meilleure : c'est le minimum local de la
+figure [-@fig-descente], en dix dimensions. Partie d'autres réglages, elle peut
+rester bloquée plus haut, par exemple si un neurone est éteint partout et ne
+reçoit plus de gradient. Les vrais réseaux contournent en bonne partie ce
+problème en ayant beaucoup plus de neurones et de paramètres que le strict
+nécessaire.
 
 ## Le bigramme neuronal
 
@@ -1096,18 +1333,22 @@ mots : le plancher, la courbe d'entraînement et le nuage des plongements, plus
 bas, se recalculent à partir de lui. Les figures précédentes, elles, restent
 calculées sur le corpus d'origine.
 
-## La perte : l'entropie croisée
+## Même recette, autre perte : l'entropie croisée
 
-Au départ, les paramètres sont tirés au hasard, et les prédictions ne valent
-rien. Pour les améliorer, il faut d'abord mesurer à quel point elles sont
-mauvaises. On reprend exactement la mesure de la semaine 1, l'**entropie
-croisée** : la moyenne, sur tous les exemples du corpus, de
-$-\log_2 P(y \mid x)$, la surprise du réseau devant le bon mot.
+Pour entraîner le bigramme neuronal, on suit la même recette que pour le petit
+réseau : une perte, puis la descente de gradient. Seule la perte change. La
+sortie n'est plus un nombre à rapprocher d'une cible, c'est une distribution de
+probabilités, et la bonne réponse est un mot. L'écart quadratique n'a plus de
+sens; la perte naturelle est la mesure de la semaine 1, l'**entropie croisée** :
+la moyenne, sur tous les exemples du corpus, de $-\log_2 P(y \mid x)$, la
+surprise du réseau devant le bon mot.
 
 $$\mathcal{L} = -\frac{1}{N} \sum_{t=1}^{N} \log_2 P(y_t \mid x_t)$$
 
-Entraîner le réseau, c'est chercher les paramètres qui rendent cette **perte** (*loss*)
-la plus petite possible. La semaine 1 nous dit jusqu'où elle peut descendre :
+Elle est petite quand le réseau donne une forte probabilité au mot qui suit
+vraiment, et grande quand il le juge improbable. Au départ, les paramètres sont
+tirés au hasard, et la perte est élevée. La semaine 1 nous dit jusqu'où elle
+peut descendre :
 les fréquences du bigramme par comptage sont, par définition, les
 probabilités qui rendent le corpus le plus probable (le maximum de
 vraisemblance). Aucun bigramme, neuronal ou non, ne peut faire mieux sur ce
@@ -1123,23 +1364,17 @@ plancher = -sum(
 ) / N
 ```
 
-## La descente de gradient
+## L'entraînement du bigramme
 
-Comment trouver ces paramètres? Pour chacun, on calcule le **gradient** : de
-combien la perte varierait si on l'augmentait un tout petit peu. On déplace
-alors chaque paramètre d'un petit pas dans la direction opposée, celle où la
-perte diminue, et on recommence. C'est la **descente de gradient** (*gradient descent*). La taille
-du pas est le **taux d'apprentissage** (*learning rate*).
-
-Pour un softmax suivi de l'entropie croisée, le gradient par rapport aux
-logits est d'une simplicité remarquable : $p - y$, la distribution prédite
-moins la « bonne réponse » (1 pour le bon mot, 0 pour les autres). Le pas
-augmente donc le logit du bon mot, et diminue celui de chaque autre mot en
-proportion de la probabilité qu'on lui accordait à tort. La **règle de la
-chaîne** des dérivées propage ensuite ce gradient vers $W$, $b$ et $E$ : c'est
-la **rétropropagation** (*backpropagation*). Ici, nous l'écrivons à la main; en laboratoire, vous
-l'écrirez vous-même, et à partir de la semaine 3, PyTorch la calculera pour
-nous.
+La descente de gradient s'applique telle quelle. Une seule chose est nouvelle :
+le gradient de la perte par rapport aux logits. Pour un softmax suivi de
+l'entropie croisée, il est d'une simplicité remarquable : $p - y$, la
+distribution prédite moins la « bonne réponse » (1 pour le bon mot, 0 pour les
+autres). Le pas augmente donc le logit du bon mot, et diminue celui de chaque
+autre mot en proportion de la probabilité qu'on lui accordait à tort. La
+rétropropagation transmet ensuite ce gradient à $W$, $b$ et $E$. Ici, nous
+l'écrivons à la main; en laboratoire, vous l'écrirez vous-même, et à partir de
+la semaine 3, PyTorch la calculera pour nous.
 
 ```python {.marimo}
 code_entrainer = code_modifiable(r'''
