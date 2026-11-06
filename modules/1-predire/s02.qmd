@@ -176,6 +176,52 @@ Les poids $w_i$ et le biais $c$ sont ses **paramètres**. L'activation la plus
 courante, la **ReLU**, est aussi la plus simple : $f(z) = \max(0, z)$. Elle
 laisse passer les valeurs positives et remplace les négatives par zéro.
 
+::: {#fig-neurone}
+
+```{=html}
+<svg class="figure-neurone" viewBox="30 0 590 275" role="img"
+     aria-label="Un neurone : trois entrées x1, x2, x3, pondérées par w1, w2, w3, entrent dans un cercle qui fait leur somme plus le biais c, puis applique la ReLU; il en sort h."
+     style="width:100%;max-width:590px;display:block;margin:auto;font-size:17px">
+  <defs>
+    <marker id="fleche-neurone" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <g fill="currentColor" stroke="currentColor">
+    <text x='70' y='22' text-anchor='middle' stroke='none' opacity='0.7' font-size='15'>entrées</text>
+    <circle cx='70' cy='60' r='22' fill='none' stroke-width='1.5'/>
+    <text x='70' y='66' text-anchor='middle' stroke='none' font-style='italic'>x₁</text>
+    <line x1='92' y1='60' x2='323.9' y2='118.4' stroke-width='1.5' marker-end='url(#fleche-neurone)'/>
+    <text x='205' y='79.4' text-anchor='middle' stroke='none' fill='#3b82f6' font-style='italic'>w₁</text>
+    <circle cx='70' cy='135' r='22' fill='none' stroke-width='1.5'/>
+    <text x='70' y='141' text-anchor='middle' stroke='none' font-style='italic'>x₂</text>
+    <line x1='92' y1='135' x2='322.0' y2='135.0' stroke-width='1.5' marker-end='url(#fleche-neurone)'/>
+    <text x='205' y='126.0' text-anchor='middle' stroke='none' fill='#3b82f6' font-style='italic'>w₂</text>
+    <circle cx='70' cy='210' r='22' fill='none' stroke-width='1.5'/>
+    <text x='70' y='216' text-anchor='middle' stroke='none' font-style='italic'>x₃</text>
+    <line x1='92' y1='210' x2='323.9' y2='151.6' stroke-width='1.5' marker-end='url(#fleche-neurone)'/>
+    <text x='205' y='172.6' text-anchor='middle' stroke='none' fill='#3b82f6' font-style='italic'>w₃</text>
+    <line x1='358' y1='22' x2='358' y2='75.6' stroke-width='1.5' marker-end='url(#fleche-neurone)'/>
+    <text x='348' y='30' text-anchor='end' stroke='none' fill='#3b82f6'><tspan font-style='italic'>c</tspan> (biais)</text>
+    <circle cx='390' cy='135' r='64' fill='#3b82f6' fill-opacity='0.12' stroke='#3b82f6' stroke-width='2'/>
+    <line x1='390' y1='71' x2='390' y2='199' stroke='#3b82f6' stroke-width='1.5'/>
+    <text x='358' y='147' text-anchor='middle' stroke='none' font-size='34'>Σ</text>
+    <g stroke='#f59e0b'><polyline points='406.0,138.7 420.0,138.7 434.0,120.5' fill='none' stroke-width='2'/></g>
+    <text x='420' y='165' text-anchor='middle' stroke='none' font-size='13' opacity='0.8'>ReLU</text>
+    <text x='358' y='221' text-anchor='middle' stroke='none' font-size='14' opacity='0.7'>somme</text>
+    <text x='422' y='221' text-anchor='middle' stroke='none' font-size='14' opacity='0.7'>activation</text>
+    <line x1='454' y1='135' x2='560' y2='135' stroke-width='1.5' marker-end='url(#fleche-neurone)'/>
+    <text x='580' y='142' text-anchor='middle' stroke='none' font-weight='bold' font-style='italic'>h</text>
+    <text x='580' y='111' text-anchor='middle' stroke='none' opacity='0.7' font-size='15'>sortie</text>
+    <text x='325' y='262' text-anchor='middle' stroke='none'><tspan font-style='italic'>h</tspan> = max(0, <tspan font-style='italic'>w</tspan>₁<tspan font-style='italic'>x</tspan>₁ + <tspan font-style='italic'>w</tspan>₂<tspan font-style='italic'>x</tspan>₂ + <tspan font-style='italic'>w</tspan>₃<tspan font-style='italic'>x</tspan>₃ + <tspan font-style='italic'>c</tspan>)</text>
+  </g>
+</svg>
+```
+
+Un neurone artificiel : il pondère ses entrées, ajoute son biais (la somme
+$\Sigma$), puis applique son activation, ici la ReLU.
+:::
+
 Une **couche** est un groupe de neurones qui reçoivent les mêmes entrées. En
 rangeant les poids de chaque neurone dans une colonne d'une matrice $W$, et
 leurs biais dans un vecteur $c$, toute la couche se calcule d'un coup :
@@ -183,6 +229,83 @@ $h = f(xW + c)$. Une couche, c'est donc un produit matriciel suivi d'une
 activation. Un **réseau** empile des couches : la sortie de l'une est l'entrée
 de la suivante. La dernière couche n'a souvent pas d'activation, ou alors un
 softmax, quand il faut une distribution de probabilités.
+
+::: {#fig-reseau}
+
+```{=html}
+<svg class="figure-reseau" viewBox="60 0 600 300" role="img"
+     aria-label="Un réseau de neurones : trois entrées, une couche cachée de cinq neurones ReLU, une couche de sortie de deux neurones; chaque neurone d'une couche est relié à tous ceux de la suivante."
+     style="width:100%;max-width:600px;display:block;margin:auto;font-size:17px">
+  <defs>
+    <marker id="fleche-reseau" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <g fill="currentColor" stroke="currentColor">
+    <line x1='186.4' y1='95.7' x2='343.6' y2='54.3' stroke-width='1' opacity='0.45'/>
+    <line x1='187.0' y1='100.0' x2='343.0' y2='100.0' stroke-width='1' opacity='0.45'/>
+    <line x1='186.4' y1='104.3' x2='343.6' y2='145.7' stroke-width='1' opacity='0.45'/>
+    <line x1='185.0' y1='107.9' x2='345.0' y2='192.1' stroke-width='1' opacity='0.45'/>
+    <line x1='183.3' y1='110.5' x2='346.7' y2='239.5' stroke-width='1' opacity='0.45'/>
+    <line x1='185.0' y1='142.1' x2='345.0' y2='57.9' stroke-width='1' opacity='0.45'/>
+    <line x1='186.4' y1='145.7' x2='343.6' y2='104.3' stroke-width='1' opacity='0.45'/>
+    <line x1='187.0' y1='150.0' x2='343.0' y2='150.0' stroke-width='1' opacity='0.45'/>
+    <line x1='186.4' y1='154.3' x2='343.6' y2='195.7' stroke-width='1' opacity='0.45'/>
+    <line x1='185.0' y1='157.9' x2='345.0' y2='242.1' stroke-width='1' opacity='0.45'/>
+    <line x1='183.3' y1='189.5' x2='346.7' y2='60.5' stroke-width='1' opacity='0.45'/>
+    <line x1='185.0' y1='192.1' x2='345.0' y2='107.9' stroke-width='1' opacity='0.45'/>
+    <line x1='186.4' y1='195.7' x2='343.6' y2='154.3' stroke-width='1' opacity='0.45'/>
+    <line x1='187.0' y1='200.0' x2='343.0' y2='200.0' stroke-width='1' opacity='0.45'/>
+    <line x1='186.4' y1='204.3' x2='343.6' y2='245.7' stroke-width='1' opacity='0.45'/>
+    <line x1='375.8' y1='56.2' x2='534.2' y2='118.8' stroke-width='1' opacity='0.45'/>
+    <line x1='374.2' y1='59.3' x2='535.8' y2='165.7' stroke-width='1' opacity='0.45'/>
+    <line x1='376.9' y1='102.2' x2='533.1' y2='122.8' stroke-width='1' opacity='0.45'/>
+    <line x1='375.8' y1='106.2' x2='534.2' y2='168.8' stroke-width='1' opacity='0.45'/>
+    <line x1='376.9' y1='147.8' x2='533.1' y2='127.2' stroke-width='1' opacity='0.45'/>
+    <line x1='376.9' y1='152.2' x2='533.1' y2='172.8' stroke-width='1' opacity='0.45'/>
+    <line x1='375.8' y1='193.8' x2='534.2' y2='131.2' stroke-width='1' opacity='0.45'/>
+    <line x1='376.9' y1='197.8' x2='533.1' y2='177.2' stroke-width='1' opacity='0.45'/>
+    <line x1='374.2' y1='240.7' x2='535.8' y2='134.3' stroke-width='1' opacity='0.45'/>
+    <line x1='375.8' y1='243.8' x2='534.2' y2='181.2' stroke-width='1' opacity='0.45'/>
+    <text x='265' y='22' text-anchor='middle' stroke='none' fill='#3b82f6'><tspan font-style='italic'>W</tspan>₁, <tspan font-style='italic'>c</tspan>₁</text>
+    <text x='455' y='22' text-anchor='middle' stroke='none' fill='#3b82f6'><tspan font-style='italic'>W</tspan>₂, <tspan font-style='italic'>c</tspan>₂</text>
+    <circle cx='170' cy='100.0' r='17' fill='none' stroke-width='1.5'/>
+    <circle cx='170' cy='150.0' r='17' fill='none' stroke-width='1.5'/>
+    <circle cx='170' cy='200.0' r='17' fill='none' stroke-width='1.5'/>
+    <line x1='100' y1='100.0' x2='149' y2='100.0' stroke-width='1.5' marker-end='url(#fleche-reseau)'/>
+    <text x='90' y='106.0' text-anchor='end' stroke='none' font-style='italic'>x₁</text>
+    <line x1='100' y1='150.0' x2='149' y2='150.0' stroke-width='1.5' marker-end='url(#fleche-reseau)'/>
+    <text x='90' y='156.0' text-anchor='end' stroke='none' font-style='italic'>x₂</text>
+    <line x1='100' y1='200.0' x2='149' y2='200.0' stroke-width='1.5' marker-end='url(#fleche-reseau)'/>
+    <text x='90' y='206.0' text-anchor='end' stroke='none' font-style='italic'>x₃</text>
+    <circle cx='360' cy='50.0' r='17' fill='#3b82f6' fill-opacity='0.12' stroke='#3b82f6' stroke-width='2'/>
+    <g stroke='#f59e0b'><polyline points='352.0,54.4 360.0,54.4 368.0,44.0' fill='none' stroke-width='2'/></g>
+    <circle cx='360' cy='100.0' r='17' fill='#3b82f6' fill-opacity='0.12' stroke='#3b82f6' stroke-width='2'/>
+    <g stroke='#f59e0b'><polyline points='352.0,104.4 360.0,104.4 368.0,94.0' fill='none' stroke-width='2'/></g>
+    <circle cx='360' cy='150.0' r='17' fill='#3b82f6' fill-opacity='0.12' stroke='#3b82f6' stroke-width='2'/>
+    <g stroke='#f59e0b'><polyline points='352.0,154.4 360.0,154.4 368.0,144.0' fill='none' stroke-width='2'/></g>
+    <circle cx='360' cy='200.0' r='17' fill='#3b82f6' fill-opacity='0.12' stroke='#3b82f6' stroke-width='2'/>
+    <g stroke='#f59e0b'><polyline points='352.0,204.4 360.0,204.4 368.0,194.0' fill='none' stroke-width='2'/></g>
+    <circle cx='360' cy='250.0' r='17' fill='#3b82f6' fill-opacity='0.12' stroke='#3b82f6' stroke-width='2'/>
+    <g stroke='#f59e0b'><polyline points='352.0,254.4 360.0,254.4 368.0,244.0' fill='none' stroke-width='2'/></g>
+    <circle cx='550' cy='125.0' r='17' fill='#f59e0b' fill-opacity='0.15' stroke='#f59e0b' stroke-width='2'/>
+    <line x1='567' y1='125.0' x2='616' y2='125.0' stroke-width='1.5' marker-end='url(#fleche-reseau)'/>
+    <text x='626' y='131.0' stroke='none' font-style='italic'>y₁</text>
+    <circle cx='550' cy='175.0' r='17' fill='#f59e0b' fill-opacity='0.15' stroke='#f59e0b' stroke-width='2'/>
+    <line x1='567' y1='175.0' x2='616' y2='175.0' stroke-width='1.5' marker-end='url(#fleche-reseau)'/>
+    <text x='626' y='181.0' stroke='none' font-style='italic'>y₂</text>
+    <text x='170' y='292' text-anchor='middle' stroke='none' opacity='0.7' font-size='15'>couche d'entrée</text>
+    <text x='360' y='292' text-anchor='middle' stroke='none' opacity='0.7' font-size='15'>couche cachée</text>
+    <text x='550' y='292' text-anchor='middle' stroke='none' opacity='0.7' font-size='15'>couche de sortie</text>
+  </g>
+</svg>
+```
+
+Un réseau de neurones à une couche cachée. Chaque neurone d'une couche reçoit
+toutes les sorties de la couche précédente; les poids d'une couche forment une
+matrice ($W_1$, puis $W_2$). Les neurones cachés appliquent la ReLU; ceux de
+sortie, souvent, aucune activation (ou un softmax).
+:::
 
 Pourquoi l'activation? Sans elle, empiler des couches ne servirait à rien : deux
 produits matriciels de suite, $(xW_1)W_2 = x(W_1 W_2)$, n'en font qu'un, et un
