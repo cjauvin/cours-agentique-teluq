@@ -146,10 +146,10 @@ c'est le fléau de la dimension. Il ne connaît en plus que les mots de son
 corpus : un mot nouveau a une probabilité nulle.
 
 Cette semaine, on remplace la table de comptes par une fonction qu'on
-**ajuste** aux données : un **réseau de neurones**. On verra ce qu'est un
+**ajuste** aux données : un **réseau de neurones** (*neural network*). On verra ce qu'est un
 réseau, comment il apprend, et ce qu'il apprend au passage : un vecteur par
-mot, le **plongement**, qui permet enfin de généraliser. On terminera par les
-unités sur lesquelles travaillent les vrais modèles, les **jetons**, qui
+mot, le **plongement** (*embedding*), qui permet enfin de généraliser. On terminera par les
+unités sur lesquelles travaillent les vrais modèles, les **jetons** (*tokens*), qui
 règlent le problème des mots inconnus. Le dernier défaut, un contexte trop
 court, attendra la semaine 3.
 
@@ -292,12 +292,16 @@ montre ce qu'elle apporte à la somme, en pointillé si c'est négatif. Quand la
 somme $z$ devient négative, la ReLU donne $h = 0$.
 :::
 
-Une **couche** est un groupe de neurones qui reçoivent les mêmes entrées. En
+Une **couche** (*layer*) est un groupe de neurones qui reçoivent les mêmes entrées. En
 rangeant les poids de chaque neurone dans une colonne d'une matrice $W$, et
 leurs biais dans un vecteur $c$, toute la couche se calcule d'un coup :
 $h = f(xW + c)$. Une couche, c'est donc un produit matriciel suivi d'une
 activation. Un **réseau** empile des couches : la sortie de l'une est l'entrée
-de la suivante. La dernière couche n'a souvent pas d'activation, ou alors un
+de la suivante. Les couches intermédiaires, dont on ne voit pas directement
+les sorties, sont dites **cachées** (*hidden layers*). Quand chaque neurone
+d'une couche est relié à tous ceux de la suivante, comme dans la
+figure [-@fig-reseau], on parle de **perceptron multicouche** (*multilayer perceptron*,
+MLP). La dernière couche n'a souvent pas d'activation, ou alors un
 softmax, quand il faut une distribution de probabilités.
 
 ::: {#fig-reseau}
@@ -470,7 +474,8 @@ réseau de cent couches ne calculerait rien de plus qu'une seule. Avec elle,
 chaque neurone ajoute un « coude » à la fonction calculée, et une somme de
 coudes peut prendre presque n'importe quelle forme. Avec assez de neurones, un
 réseau peut approcher aussi près qu'on veut à peu près n'importe quelle
-fonction : c'est le **théorème d'approximation universelle**.
+fonction : c'est le **théorème d'approximation universelle** (*universal approximation
+theorem*).
 
 Voici un minuscule réseau : une entrée $x$, une couche cachée de trois neurones
 ReLU, et un neurone de sortie, sans activation. Il a dix paramètres : une pente
@@ -548,7 +553,7 @@ mo.vstack([
 Avec dix paramètres, on y arrive, mais à tâtons. Qwen2.5-0.5B, le modèle de la
 semaine 3, en a 494 millions : personne ne les règle à la main. Il faut une
 méthode pour trouver automatiquement les paramètres qui font coller le réseau
-aux données. C'est l'**entraînement**, l'objet du reste de cette semaine.
+aux données. C'est l'**entraînement** (*training*), l'objet du reste de cette semaine.
 (Essayez aussi de remplacer `np.maximum(z, 0)` par `z` dans le code : sans
 activation, quels que soient les curseurs, la sortie reste une droite.)
 
@@ -557,7 +562,7 @@ activation, quels que soient les curseurs, la sortie reste une droite.)
 Revenons au bigramme de la semaine 1, et remplaçons sa table de comptes par un
 réseau. L'entrée est un mot, pas un nombre : il faut d'abord le changer en
 vecteur. Chaque mot $a$ du vocabulaire reçoit donc un **plongement**
-(*embedding*) $h = E_a$, un vecteur de $d$ nombres (une ligne de la matrice
+$h = E_a$, un vecteur de $d$ nombres (une ligne de la matrice
 $E$). Pour prédire le mot qui suit $a$, le réseau multiplie ce vecteur par une
 seconde matrice $W$, ajoute un biais $b$, et obtient un score par mot du
 vocabulaire, les **logits**. Un softmax en fait une distribution :
@@ -620,7 +625,7 @@ $-\log_2 P(y \mid x)$, la surprise du réseau devant le bon mot.
 
 $$\mathcal{L} = -\frac{1}{N} \sum_{t=1}^{N} \log_2 P(y_t \mid x_t)$$
 
-Entraîner le réseau, c'est chercher les paramètres qui rendent cette **perte**
+Entraîner le réseau, c'est chercher les paramètres qui rendent cette **perte** (*loss*)
 la plus petite possible. La semaine 1 nous dit jusqu'où elle peut descendre :
 les fréquences du bigramme par comptage sont, par définition, les
 probabilités qui rendent le corpus le plus probable (le maximum de
@@ -642,8 +647,8 @@ plancher = -sum(
 Comment trouver ces paramètres? Pour chacun, on calcule le **gradient** : de
 combien la perte varierait si on l'augmentait un tout petit peu. On déplace
 alors chaque paramètre d'un petit pas dans la direction opposée, celle où la
-perte diminue, et on recommence. C'est la **descente de gradient**. La taille
-du pas est le **taux d'apprentissage**.
+perte diminue, et on recommence. C'est la **descente de gradient** (*gradient descent*). La taille
+du pas est le **taux d'apprentissage** (*learning rate*).
 
 Pour un softmax suivi de l'entropie croisée, le gradient par rapport aux
 logits est d'une simplicité remarquable : $p - y$, la distribution prédite
@@ -651,7 +656,7 @@ moins la « bonne réponse » (1 pour le bon mot, 0 pour les autres). Le pas
 augmente donc le logit du bon mot, et diminue celui de chaque autre mot en
 proportion de la probabilité qu'on lui accordait à tort. La **règle de la
 chaîne** des dérivées propage ensuite ce gradient vers $W$, $b$ et $E$ : c'est
-la **rétropropagation**. Ici, nous l'écrivons à la main; en laboratoire, vous
+la **rétropropagation** (*backpropagation*). Ici, nous l'écrivons à la main; en laboratoire, vous
 l'écrirez vous-même, et à partir de la semaine 3, PyTorch la calculera pour
 nous.
 
@@ -757,12 +762,12 @@ Le réseau range les mots selon ce qu'ils permettent de prédire.
 ### L'hypothèse distributionnelle
 
 Ce que le réseau vient de faire obéit à un principe ancien, l'**hypothèse
-distributionnelle** : des mots qui apparaissent dans des contextes semblables
+distributionnelle** (*distributional hypothesis*) : des mots qui apparaissent dans des contextes semblables
 ont des sens semblables. On reconnaît un mot à ses fréquentations. On peut voir
 ce principe à l'œuvre sans aucun apprentissage. Représentons chaque mot du
 corpus par un vecteur qui compte ses voisins immédiats : combien de fois chaque
 mot apparaît juste à sa gauche, et juste à sa droite. Puis mesurons la
-ressemblance de deux vecteurs par leur **similarité cosinus**, le cosinus de
+ressemblance de deux vecteurs par leur **similarité cosinus** (*cosine similarity*), le cosinus de
 l'angle qu'ils forment (1 : même direction, 0 : rien en commun) :
 
 $$\cos(u, v) = \frac{u \cdot v}{\lVert u \rVert \, \lVert v \rVert}$$
@@ -854,7 +859,7 @@ est impossible à traiter. Les **caractères** règlent ce problème, puisqu'ils
 sont en nombre fini, mais les séquences deviennent très longues, et chaque
 caractère, pris isolément, ne porte presque aucun sens.
 
-Les LLM travaillent avec un compromis : des **jetons** (*tokens*), c'est-à-dire
+Les LLM travaillent avec un compromis : des **jetons**, c'est-à-dire
 des morceaux de mots. Les mots fréquents sont des jetons entiers; les mots
 rares se découpent en plusieurs morceaux plus courants; dans le pire des cas,
 on retombe sur les caractères. Le vocabulaire est fixe, typiquement de
@@ -969,7 +974,8 @@ anglais.
 
 ### Les jetons en pratique
 
-Les tokeniseurs réels appliquent BPE aux **octets** du texte encodé en UTF-8
+Les **tokeniseurs** (*tokenizers*) réels, les programmes qui découpent le texte
+en jetons, appliquent BPE aux **octets** (*bytes*) du texte encodé en UTF-8
 plutôt qu'aux caractères : les 256 octets possibles forment le vocabulaire de
 départ, si bien que tout texte, dans toutes les langues, avec emojis et code
 source, est représentable. Quelques conséquences méritent d'être retenues.
@@ -1007,7 +1013,7 @@ plutôt que le mot suivant.
 - **Les plongements servent à chercher par le sens.** Des textes de sens voisin
   ont des plongements proches : on peut donc trouver les passages d'un document
   qui répondent à une question, même sans aucun mot en commun avec elle. C'est
-  la **recherche sémantique**, que nous retrouverons avec les agents.
+  la **recherche sémantique** (*semantic search*), que nous retrouverons avec les agents.
 
 ## Points clés
 

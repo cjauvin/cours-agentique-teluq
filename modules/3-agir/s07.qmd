@@ -11,9 +11,9 @@ import marimo as mo
 
 {{< include /_includes/code-modifiable.qmd >}}
 
-Un **agent**, c'est un LLM placé dans une **boucle**, avec des **outils**. Le
+Un **agent**, c'est un LLM placé dans une **boucle** (*loop*), avec des **outils** (*tools*). Le
 modèle ne fait toujours qu'une chose — produire la suite d'une conversation —
-mais cette suite peut maintenant être une *demande d'outil*. Le programme qui
+mais cette suite peut maintenant être une *demande d'outil* (*tool call*). Le programme qui
 entoure le modèle exécute l'outil, ajoute le résultat à la conversation, et
 redonne la main au modèle. On recommence jusqu'à ce que le modèle réponde sans
 rien demander.
@@ -73,7 +73,7 @@ code_schema
 
 ## Rejouer une trace
 
-Pour comprendre la boucle, pas besoin de LLM : un **modèle simulé**, qui joue
+Pour comprendre la boucle, pas besoin de LLM : un **modèle simulé** (*mock*), qui joue
 des réponses écrites d'avance, suffit. Voici la trace d'une boucle où le modèle
 lit `calcul.py` avant de répondre. Avancez message par message : qui parle, et
 qui exécute quoi?
