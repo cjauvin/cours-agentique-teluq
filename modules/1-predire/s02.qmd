@@ -525,11 +525,18 @@ autre, $y$. Le schéma montre les valeurs actuelles des dix paramètres :
 l'épaisseur d'une connexion suit la taille de son poids (pointillé : négatif).
 Le graphique, à droite, trace la sortie $y$ du réseau pour chaque $x$ entre
 $-2$ et $2$ (en bleu). Le but : réglez les dix paramètres pour que cette
-courbe reproduise la cible, en pointillé, une « tente » qui monte de $-1$ à $0$
-puis redescend jusqu'à $1$. Les courbes orange montrent la part de chaque
+courbe reproduise la cible $f$, en pointillé, une « tente » qui monte de $-1$ à
+$0$ puis redescend jusqu'à $1$. Les courbes orange montrent la part de chaque
 neurone caché : son activation, multipliée par son poids de sortie. Les points
 numérotés sur l'axe marquent le coude de chaque neurone, là où $wx + c$
 s'annule, en $x = -c/w$.
+
+Pour vous guider, vous avez deux indices. D'abord, la forme de la courbe bleue :
+on voit où elle s'écarte de la cible, et de combien. Ensuite, l'**erreur**,
+affichée sous le graphique : l'écart quadratique moyen entre la sortie du réseau
+et la cible, qui résume cette distance en un seul nombre. Plus il est petit,
+plus la courbe est proche; il vaut 0 quand elle coïncide exactement avec la
+cible.
 
 Une démarche : laissez les trois pentes à 1, et placez les trois coudes aux
 trois cassures de la courbe cible. Réglez ensuite les poids de sortie, de gauche
@@ -686,7 +693,7 @@ def _echantillon(trait, texte):
 _legende = mo.Html(
     "<div style='font-weight:600'>Le but : la fonction à reproduire</div>"
     "<div style='font-size:.85em;display:flex;flex-wrap:wrap;gap:.3em 1.2em;margin-top:.2em'>"
-    + _echantillon("2px dashed currentColor", "la cible")
+    + _echantillon("2px dashed currentColor", "la cible <i>f</i>")
     + _echantillon("3px solid #3b82f6", "la sortie <i>y</i> du réseau")
     + _echantillon("1.5px solid #f59e0b", "la part de chaque neurone")
     + "</div>"
@@ -698,7 +705,7 @@ graphique_reseau = mo.hstack([
         trace(_xs, [(p, "#f59e0b", 1, False) for p in _parts]
               + [(_cible, "currentColor", 2, True), (_sortie, "#3b82f6", 2.5, False)],
               _coudes),
-        mo.md(f"Écart quadratique moyen : **{_ecart:.3f}**"
+        mo.md(f"Erreur (écart quadratique moyen) : **{_ecart:.3f}**".replace(".", ",")
               + (" — ✅ le réseau reproduit la courbe." if _ecart < 1e-3 else "")),
     ], gap=0.4),
 ], justify="start", align="center", gap=1.5, wrap=True)
@@ -740,18 +747,21 @@ automatiquement de bons paramètres. C'est l'**entraînement** (*training*).
 
 ### La perte
 
-Pendant l'exercice, vous aviez un guide : l'écart quadratique moyen, affiché
-sous la figure. Il mesure à quel point la sortie $s$ du réseau s'éloigne de la
-cible $y$ : c'est la moyenne, sur les $N$ points $x_t$ du graphique, du carré de
-l'écart entre les deux.
+Pendant l'exercice, vous aviez deux guides : la forme de la courbe, et l'erreur
+affichée sous le graphique, l'écart quadratique moyen. Celle-ci mesure à quel
+point la sortie $y$ du réseau s'éloigne de la cible $f$ : c'est la moyenne, sur
+les $N$ points $x_t$ du graphique, du carré de l'écart entre les deux.
 
-$$\mathcal{L} = \frac{1}{N} \sum_{t=1}^{N} \big(s(x_t) - y(x_t)\big)^2$$
+$$\mathcal{L} = \frac{1}{N} \sum_{t=1}^{N} \big(y(x_t) - f(x_t)\big)^2$$
+
+Un programme, lui, ne regarde pas la courbe : pour automatiser le réglage, il ne
+reste que ce nombre.
 
 Un tel nombre, qui mesure l'erreur d'un réseau sur ses données, s'appelle une
 **perte** (*loss*). Les données sont fixes : la perte ne dépend que des
 paramètres. Entraîner un réseau, c'est chercher les paramètres qui rendent sa
 perte la plus petite possible. C'est ce que vous faisiez en bougeant les
-curseurs; reste à l'automatiser.
+curseurs, à l'œil; reste à l'automatiser.
 
 ### La descente de gradient
 
@@ -907,7 +917,7 @@ paramètres, et transmet à la couche précédente celui de son entrée. C'est l
 gradient de tous les paramètres à la fois, qu'il y en ait dix ou 494 millions.
 
 Le résultat est souvent intuitif. Pour notre petit réseau, le gradient du poids
-de sortie $v_j$ est la moyenne de $2\,(s - y)\,h_j$ : ce poids change d'autant plus
+de sortie $v_j$ est la moyenne de $2\,(y - f)\,h_j$ : ce poids change d'autant plus
 que le neurone $j$ était actif ($h_j > 0$) là où la sortie se trompait. Un
 neurone éteint par la ReLU ne reçoit, lui, aucun gradient : là où il vaut 0, le
 modifier un peu ne change rien.
@@ -917,7 +927,7 @@ modifier un peu ne change rien.
 Revoici la figure des curseurs (ce sont les mêmes : modifier l'une modifie
 l'autre), avec un bouton qui fait 200 pas de descente de gradient à partir des
 valeurs actuelles, avec $\eta = 0{,}1$. Cliquez plusieurs fois, et regardez les
-curseurs bouger tout seuls et l'écart diminuer.
+curseurs bouger tout seuls et l'erreur diminuer.
 
 ```python {.marimo}
 bouton_descente = mo.ui.button(
