@@ -513,7 +513,9 @@ Réglez les dix paramètres pour que la sortie du réseau (en bleu) reproduise l
 courbe en pointillé. Les courbes orange montrent la contribution de chaque
 neurone caché : son activation, multipliée par son poids de sortie. Les
 points numérotés sur l'axe marquent le coude de chaque neurone, là où $wx + c$
-s'annule, en $x = -c/w$.
+s'annule, en $x = -c/w$. À côté du graphique, le schéma du réseau montre les
+valeurs actuelles des dix paramètres : l'épaisseur d'une connexion suit la
+taille de son poids (pointillé : négatif).
 
 Une démarche : laissez les trois pentes à 1, et placez les trois coudes aux
 trois cassures de la courbe cible. Réglez ensuite les poids de sortie, de gauche
@@ -549,6 +551,65 @@ def descendre(r, pas=200, taux=0.1):
         return [float(np.clip(round(u, 2), -m, m)) + 0.0 for u in a]
 
     return {"w": borner(w, 3), "c": borner(c, 3), "v": borner(v, 3), "b": borner([b], 2)[0]}
+
+
+def schema_reseau(w, c, v, b):
+    """Le réseau de l'exercice en SVG, avec ses dix paramètres actuels.
+    L'épaisseur d'une connexion suit la taille de son poids (pointillé : négatif)."""
+    def fmt(u):
+        u = round(float(u), 2) + 0.0
+        return ("−" if u < 0 else "") + f"{abs(u):g}".replace(".", ",")
+
+    xe, xc, xs, ym = 45, 190, 335, 135
+    ys = [60, 135, 210]
+    halo = ("paint-order='stroke' stroke='var(--bs-body-bg, white)' stroke-width='5' "
+            "stroke-linejoin='round'")
+
+    def arete(x1, y1, r1, x2, y2, r2, poids, nom, cote):
+        dx, dy = x2 - x1, y2 - y1
+        n = (dx * dx + dy * dy) ** 0.5
+        a = (x1 + r1 * dx / n, y1 + r1 * dy / n)
+        z = (x2 - r2 * dx / n, y2 - r2 * dy / n)
+        epaisseur = 0.8 + 1.4 * min(abs(poids), 3)
+        style = (f"stroke='currentColor' stroke-width='{epaisseur:.1f}' "
+                 f"opacity='{0.25 if abs(poids) < 0.005 else 0.8}'"
+                 + (" stroke-dasharray='5 3'" if poids < 0 else ""))
+        # L'étiquette, au milieu de l'arête, du côté extérieur (au-dessus ou en dessous).
+        lx, ly = (a[0] + z[0]) / 2, (a[1] + z[1]) / 2 + (-8 if cote < 0 else 17)
+        return (f"<line x1='{a[0]:.1f}' y1='{a[1]:.1f}' x2='{z[0]:.1f}' y2='{z[1]:.1f}' {style}/>"
+                f"<text x='{lx:.1f}' y='{ly:.1f}' text-anchor='middle' font-size='12' {halo}>"
+                f"<tspan font-style='italic'>{nom}</tspan> = {fmt(poids)}</text>")
+
+    s = []
+    for j, y in enumerate(ys):
+        cote = 1 if j == 2 else -1
+        s.append(arete(xe, ym, 18, xc, y, 24, w[j], "w", cote))
+        s.append(arete(xc, y, 24, xs, ym, 20, v[j], "v", cote))
+    s.append(f"<circle cx='{xe}' cy='{ym}' r='18' fill='none' stroke='currentColor' stroke-width='1.5'/>"
+             f"<text x='{xe}' y='{ym + 5}' text-anchor='middle' font-size='15' font-style='italic'>x</text>")
+    for j, y in enumerate(ys):
+        allume = "#f59e0b"
+        s.append(f"<circle cx='{xc}' cy='{y}' r='24' fill='{allume}' fill-opacity='0.12' "
+                 f"stroke='{allume}' stroke-width='1.5'/>"
+                 f"<text x='{xc}' y='{y - 4}' text-anchor='middle' font-size='12' font-weight='bold' "
+                 f"fill='{allume}'>{j + 1}</text>"
+                 f"<polyline points='{xc - 10},{y + 12} {xc},{y + 12} {xc + 10},{y + 2}' fill='none' "
+                 f"stroke='currentColor' stroke-width='1.5'/>"
+                 f"<text x='{xc}' y='{y + 38}' text-anchor='middle' font-size='12' {halo}>"
+                 f"<tspan font-style='italic'>c</tspan> = {fmt(c[j])}</text>")
+    s.append(f"<circle cx='{xs}' cy='{ym}' r='20' fill='#3b82f6' fill-opacity='0.15' "
+             f"stroke='#3b82f6' stroke-width='1.5'/>"
+             f"<text x='{xs}' y='{ym + 5}' text-anchor='middle' font-size='15' font-style='italic'>y</text>"
+             f"<text x='{xs}' y='{ym + 36}' text-anchor='middle' font-size='12' {halo}>"
+             f"<tspan font-style='italic'>b</tspan> = {fmt(b)}</text>")
+    for x, texte in [(xe, "entrée"), (xc, "couche cachée (ReLU)"), (xs, "sortie")]:
+        s.append(f"<text x='{x}' y='16' text-anchor='middle' font-size='12' opacity='0.7'>{texte}</text>")
+    return mo.Html(
+        "<svg viewBox='0 0 370 260' width='370' height='260' fill='currentColor' "
+        "role='img' aria-label='Le réseau de l’exercice : une entrée x, trois neurones cachés "
+        "ReLU et une sortie y, avec les valeurs actuelles des dix paramètres.' "
+        "style='max-width:100%;font-family:sans-serif'>" + "".join(s) + "</svg>"
+    )
 ```
 
 ```python {.marimo}
@@ -600,9 +661,12 @@ _coudes = [(-_c[j] / _w[j], "#f59e0b", str(j + 1)) for j in range(3)
            if _w[j] != 0 and abs(_c[j] / _w[j]) <= 2]
 CURSEURS_RESEAU.update(w=list(_w), c=list(_c), v=list(_v), b=biais_sortie.value)
 graphique_reseau = mo.vstack([
-    trace(_xs, [(p, "#f59e0b", 1, False) for p in _parts]
-          + [(_cible, "currentColor", 2, True), (_sortie, "#3b82f6", 2.5, False)],
-          _coudes),
+    mo.hstack([
+        trace(_xs, [(p, "#f59e0b", 1, False) for p in _parts]
+              + [(_cible, "currentColor", 2, True), (_sortie, "#3b82f6", 2.5, False)],
+              _coudes),
+        schema_reseau(_w, _c, _v, biais_sortie.value),
+    ], justify="start", align="center", gap=1.5, wrap=True),
     mo.md(f"Écart quadratique moyen : **{_ecart:.3f}**"
           + (" — ✅ le réseau reproduit la courbe." if _ecart < 1e-3 else "")),
 ])
