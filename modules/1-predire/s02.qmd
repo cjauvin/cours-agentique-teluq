@@ -545,7 +545,7 @@ poids $v$.
 
 ```python {.marimo}
 # Les valeurs des curseurs au départ, et celles de la solution.
-DEPART_RESEAU = {"w": [1, 1, 1], "c": [0, -1, 1], "v": [0.5, 0, 0], "b": 0}
+DEPART_RESEAU = {"w": [1, 1, 1], "c": [0, -1, 1], "v": [0.5, 0.5, -0.5], "b": 0}
 SOLUTION_RESEAU = {"w": [1, 1, 1], "c": [1, 0, -1], "v": [1, -2, 1], "b": 0}
 # Les valeurs actuelles des curseurs, tenues à jour par la figure, pour le
 # bouton de descente de gradient.
@@ -1195,7 +1195,8 @@ modifier un peu ne change rien.
 
 Revoici la figure des curseurs (ce sont les mêmes : modifier l'une modifie
 l'autre), avec un bouton qui fait 200 pas de descente de gradient à partir des
-valeurs actuelles, avec $\eta = 0{,}1$. Cliquez plusieurs fois, et regardez les
+valeurs actuelles, avec $\eta = 0{,}1$. Cliquez d'abord sur « Revenir au
+départ », puis plusieurs fois sur le bouton de descente, et regardez les
 curseurs bouger tout seuls et l'erreur diminuer.
 
 ```python {.marimo}
@@ -1206,17 +1207,28 @@ bouton_descente = mo.ui.button(
 ```
 
 ```python {.marimo}
-mo.vstack([tableau_curseurs, graphique_reseau, bouton_descente])
+mo.vstack([tableau_curseurs, graphique_reseau,
+           mo.hstack([bouton_descente, bouton_depart], justify="start")])
 ```
 
-Partie des valeurs de départ, la descente s'arrête vers 0,011 : la courbe
-ressemble à la tente, mais ses coudes ne sont pas tout à fait à leur place.
-Elle trouve une bonne solution, pas la meilleure : c'est le minimum local de la
-figure [-@fig-descente], en dix dimensions. Partie d'autres réglages, elle peut
-rester bloquée plus haut, par exemple si un neurone est éteint partout et ne
-reçoit plus de gradient. Les vrais réseaux contournent en bonne partie ce
-problème en ayant beaucoup plus de neurones et de paramètres que le strict
-nécessaire.
+Partie des valeurs de départ, la descente trouve la tente en quelques clics :
+l'erreur passe de 0,477 à 0,046, puis 0,008, et le ✅ apparaît au quatrième
+clic. Elle ne trouve pas forcément les mêmes valeurs que la solution
+ci-dessus : plusieurs réglages donnent la même courbe.
+
+Mais elle n'y arrive pas toujours. Revenez au départ, mettez les poids de
+sortie $v_2$ et $v_3$ à 0, sans toucher au reste, et relancez la descente :
+elle s'arrête vers 0,011. Les neurones 1 et 2 ont glissé leur coude au même
+endroit, vers $x \approx -0{,}1$, et font double emploi; plus aucun neurone ne
+s'occupe de la cassure en $x = 1$, et la courbe continue de descendre à droite.
+Pour corriger ce défaut, il faudrait passer par des réglages un peu moins bons,
+ce que la descente ne fait jamais : c'est un minimum local, comme dans les
+figures [-@fig-paysage] et [-@fig-descente], mais en dix dimensions. Vous
+pouvez l'en sortir à la main : mettez $c_2$ à $-1{,}44$, ce qui replace le
+coude du neurone 2 en $x = 1$, et relancez. La descente peut aussi rester
+bloquée si un neurone est éteint partout : il ne reçoit plus de gradient. Les
+vrais réseaux contournent en bonne partie ces problèmes en ayant beaucoup plus
+de neurones et de paramètres que le strict nécessaire.
 
 ## Le bigramme neuronal
 
