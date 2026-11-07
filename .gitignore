@@ -33,3 +33,6 @@ site_libs/
 /essais/hugo/.hugo_build.lock
 /essais/quarto/_site/
 /essais/quarto/.quarto/
+
+# Documents internes (DP, avant-projet) : jamais dans le dépôt public
+/documents/

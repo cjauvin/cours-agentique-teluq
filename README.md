@@ -11,7 +11,7 @@ Cours de la TÉLUQ (programme court en développement logiciel assisté par l'IA
 | `agentique/` | la bibliothèque commune des laboratoires (`verif`, `llm`, `viz`) |
 | `.devcontainer/` | l'environnement GitHub Codespaces des laboratoires |
 | `_extensions/` | l'extension [quarto-marimo](https://github.com/marimo-team/quarto-marimo) |
-| `documents/` | dossiers de présentation et avant-projet |
+| `.github/workflows/` | la publication du site sur GitHub Pages, à chaque push sur `main` |
 | `essais/` | l'essai comparatif Hugo / Quarto (novembre 2026) |
 | `archives/` | l'ancien squelette Quarto |
 
