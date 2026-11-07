@@ -490,9 +490,16 @@ fonction : c'est le **théorème d'approximation universelle** (*universal appro
 theorem*).
 
 Voici un minuscule réseau : une entrée $x$, une couche cachée de trois neurones
-ReLU, et un neurone de sortie, sans activation. Il a dix paramètres : une pente
-$w$, un biais $c$ et un poids de sortie $v$ par neurone caché, plus le biais
-$b$ de la sortie.
+ReLU, et un neurone de sortie, sans activation. Chaque neurone caché $j$ (de 1
+à 3) a trois paramètres : une pente $w_j$ et un biais $c_j$, qui donnent son
+activation $h_j = \mathrm{ReLU}(w_j x + c_j)$, et un poids de sortie $v_j$. Le
+neurone de sortie ajoute son biais $b$ :
+
+$$y = v_1 h_1 + v_2 h_2 + v_3 h_3 + b$$
+
+En tout, dix paramètres : les trois pentes $w_1, w_2, w_3$, les trois biais
+$c_1, c_2, c_3$, les trois poids de sortie $v_1, v_2, v_3$, et le biais de
+sortie $b$. Dans le code, `w`, `c` et `v` sont des vecteurs de trois nombres.
 
 ```python {.marimo}
 code_reseau = code_modifiable(r"""
@@ -572,7 +579,7 @@ def schema_reseau(w, c, v, b):
     halo = ("paint-order='stroke' stroke='var(--bs-body-bg, white)' stroke-width='5' "
             "stroke-linejoin='round'")
 
-    def arete(x1, y1, r1, x2, y2, r2, poids, nom, cote):
+    def arete(x1, y1, r1, x2, y2, r2, poids, nom, j, cote):
         dx, dy = x2 - x1, y2 - y1
         n = (dx * dx + dy * dy) ** 0.5
         a = (x1 + r1 * dx / n, y1 + r1 * dy / n)
@@ -585,13 +592,14 @@ def schema_reseau(w, c, v, b):
         lx, ly = (a[0] + z[0]) / 2, (a[1] + z[1]) / 2 + (-8 if cote < 0 else 17)
         return (f"<line x1='{a[0]:.1f}' y1='{a[1]:.1f}' x2='{z[0]:.1f}' y2='{z[1]:.1f}' {style}/>"
                 f"<text x='{lx:.1f}' y='{ly:.1f}' text-anchor='middle' font-size='12' {halo}>"
-                f"<tspan font-style='italic'>{nom}</tspan> = {fmt(poids)}</text>")
+                f"<tspan font-style='italic'>{nom}</tspan><tspan font-size='9' dy='3'>{j + 1}</tspan>"
+                f"<tspan dy='-3'> = {fmt(poids)}</tspan></text>")
 
     s = []
     for j, y in enumerate(ys):
         cote = 1 if j == 2 else -1
-        s.append(arete(xe, ym, 18, xc, y, 24, w[j], "w", cote))
-        s.append(arete(xc, y, 24, xs, ym, 20, v[j], "v", cote))
+        s.append(arete(xe, ym, 18, xc, y, 24, w[j], "w", j, cote))
+        s.append(arete(xc, y, 24, xs, ym, 20, v[j], "v", j, cote))
     s.append(f"<circle cx='{xe}' cy='{ym}' r='18' fill='none' stroke='currentColor' stroke-width='1.5'/>"
              f"<text x='{xe}' y='{ym + 5}' text-anchor='middle' font-size='15' font-style='italic'>x</text>")
     for j, y in enumerate(ys):
@@ -603,7 +611,8 @@ def schema_reseau(w, c, v, b):
                  f"<polyline points='{xc - 10},{y + 12} {xc},{y + 12} {xc + 10},{y + 2}' fill='none' "
                  f"stroke='currentColor' stroke-width='1.5'/>"
                  f"<text x='{xc}' y='{y + 38}' text-anchor='middle' font-size='12' {halo}>"
-                 f"<tspan font-style='italic'>c</tspan> = {fmt(c[j])}</text>")
+                 f"<tspan font-style='italic'>c</tspan><tspan font-size='9' dy='3'>{j + 1}</tspan>"
+                 f"<tspan dy='-3'> = {fmt(c[j])}</tspan></text>")
     s.append(f"<circle cx='{xs}' cy='{ym}' r='20' fill='#3b82f6' fill-opacity='0.15' "
              f"stroke='#3b82f6' stroke-width='1.5'/>"
              f"<text x='{xs}' y='{ym + 5}' text-anchor='middle' font-size='15' font-style='italic'>y</text>"
@@ -722,8 +731,8 @@ mo.hstack([bouton_solution, bouton_depart], justify="start")
 Essayez aussi de remplacer `np.maximum(z, 0)` par `z` dans le code : sans
 activation, quels que soient les curseurs, la sortie reste une droite.
 
-Avec dix paramètres, on y arrive, mais il faut réfléchir, ou tâtonner
-longtemps. Qwen2.5-0.5B, le modèle de la semaine 3, en a 494 millions :
+Avec dix paramètres ($w_1$ à $w_3$, $c_1$ à $c_3$, $v_1$ à $v_3$ et $b$), on y
+arrive, mais il faut réfléchir, ou tâtonner longtemps. Qwen2.5-0.5B, le modèle de la semaine 3, en a 494 millions :
 personne ne les règle à la main. Il faut une méthode pour trouver
 automatiquement de bons paramètres. C'est l'**entraînement** (*training*).
 
