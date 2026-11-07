@@ -377,7 +377,7 @@ softmax, quand il faut une distribution de probabilités.
     <text id='r-titre2' x='550' y='292' text-anchor='middle' stroke='none' opacity='0.7' font-size='15'>couche de sortie</text>
   </g>
 </svg>
-<div style="text-align:center;margin-top:.3rem"><button type="button" class="btn btn-sm btn-outline-secondary" id="r-tirer">↻ Tirer d'autres poids</button></div>
+<div style="text-align:center;margin-top:.3rem"><button type="button" class="btn btn-sm bouton-figure" id="r-tirer">↻ Tirer d'autres poids</button></div>
 <script>
 (() => {
   const fmt = (v, d = 1) => (v < -1e-9 ? "−" : "") + Math.abs(v).toFixed(d).replace(".", ",");
@@ -701,9 +701,9 @@ même chose, mais dans autant de directions qu'il a de paramètres.
   </g>
 </svg>
 <div style="display:flex;gap:.4rem;justify-content:center;margin-top:.3rem">
-  <button type="button" class="btn btn-sm btn-outline-secondary" id="d-un">Un pas</button>
-  <button type="button" class="btn btn-sm btn-outline-secondary" id="d-dix">Dix pas</button>
-  <button type="button" class="btn btn-sm btn-outline-secondary" id="d-zero">Recommencer</button>
+  <button type="button" class="btn btn-sm bouton-figure" id="d-un">Un pas</button>
+  <button type="button" class="btn btn-sm bouton-figure" id="d-dix">Dix pas</button>
+  <button type="button" class="btn btn-sm bouton-figure" id="d-zero">Recommencer</button>
 </div>
 <script>
 (() => {

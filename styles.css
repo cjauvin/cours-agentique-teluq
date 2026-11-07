@@ -109,3 +109,22 @@ svg .valeur-glissable:focus {
   outline: none;
   font-weight: 800;
 }
+
+/* Boutons des figures interactives en SVG : couleur du texte, lisibles dans
+   les deux thèmes (le gris de btn-outline-secondary est trop sombre en mode
+   sombre). */
+.bouton-figure {
+  color: var(--bs-body-color);
+  background: transparent;
+  border: 1px solid rgba(127, 127, 127, 0.6);
+}
+.bouton-figure:hover,
+.bouton-figure:focus-visible {
+  color: var(--bs-body-color);
+  background: rgba(127, 127, 127, 0.2);
+  border-color: rgba(127, 127, 127, 0.9);
+}
+.bouton-figure:active {
+  background: rgba(127, 127, 127, 0.35) !important;
+  color: var(--bs-body-color) !important;
+}
