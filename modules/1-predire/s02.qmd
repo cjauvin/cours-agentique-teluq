@@ -520,6 +520,10 @@ code_reseau
 (reseau,) = executer(code_reseau, {"np": np}, "reseau")
 ```
 
+Dans cet exercice, c'est vous qui cherchez les bons paramètres, à la main, en
+bougeant les curseurs. Plus loin, la même figure reviendra avec un bouton qui
+fera ce travail automatiquement.
+
 Le réseau, à gauche dans la figure, reçoit un nombre $x$ et en calcule un
 autre, $y$. Le schéma montre les valeurs actuelles des dix paramètres :
 l'épaisseur d'une connexion suit la taille de son poids (pointillé : négatif).
@@ -547,9 +551,9 @@ poids $v$.
 # Les valeurs des curseurs au départ, et celles de la solution.
 DEPART_RESEAU = {"w": [1, 1, 1], "c": [0, -1, 1], "v": [0.5, 0.5, -0.5], "b": 0}
 SOLUTION_RESEAU = {"w": [1, 1, 1], "c": [1, 0, -1], "v": [1, -2, 1], "b": 0}
-# Les valeurs actuelles des curseurs, tenues à jour par la figure, pour le
-# bouton de descente de gradient.
-CURSEURS_RESEAU = dict(DEPART_RESEAU)
+# Les valeurs actuelles des curseurs de la figure d'entraînement, tenues à jour
+# par cette figure, pour le bouton de descente de gradient.
+CURSEURS_ENTRAINEMENT = dict(DEPART_RESEAU)
 
 
 def descendre(r, pas=200, taux=0.1):
@@ -633,83 +637,89 @@ def schema_reseau(w, c, v, b):
         "ReLU et une sortie y, avec les valeurs actuelles des dix paramètres.' "
         "style='max-width:100%;font-family:sans-serif'>" + "".join(s) + "</svg>"
     )
+
+
+# Deux figures utilisent ce réseau : l'exercice, et sa copie indépendante de la
+# section sur l'entraînement. Les fonctions suivantes servent aux deux.
+
+def curseurs_reseau(r):
+    """Les dix curseurs du réseau, réglés sur les valeurs r : (w, c, v, b)."""
+    def ligne(valeurs):
+        return mo.ui.array([mo.ui.slider(-3, 3, step=0.01, value=u, show_value=True,
+                                         full_width=True) for u in valeurs])
+
+    return (ligne(r["w"]), ligne(r["c"]), ligne(r["v"]),
+            mo.ui.slider(-2, 2, step=0.01, value=r["b"], show_value=True))
+
+
+def tableau_reseau(titre, pentes, biais, poids, b):
+    """Les curseurs en tableau, sous un titre : une colonne par neurone caché."""
+    lignes = "".join(
+        f"<tr><td style='white-space:nowrap;padding-right:1em'>{nom}</td>"
+        + "".join(f"<td style='padding:0 .5em'>{curseurs[j]}</td>" for j in range(3)) + "</tr>"
+        for nom, curseurs in [("pente <i>w</i>", pentes), ("biais <i>c</i>", biais),
+                              ("sortie <i>v</i>", poids)]
+    )
+    return mo.vstack([
+        mo.md(titre),
+        mo.Html(
+            "<table style='width:100%;table-layout:fixed'><colgroup><col style='width:6em'>"
+            "</colgroup><tr><th></th><th>neurone 1</th><th>neurone 2</th><th>neurone 3</th></tr>"
+            + lignes + "</table>"
+        ),
+        mo.md(f"Biais de sortie $b$ : {b}"),
+    ])
+
+
+def figure_reseau(reseau, w, c, v, b):
+    """Le schéma du réseau à gauche; à droite, le but et l'erreur."""
+    xs = np.linspace(-2, 2, 201)
+    cible = np.maximum(0, 1 - np.abs(xs))
+    sortie = reseau(xs, w, c, v, b)
+    parts = [reseau(xs, w, c, v * (np.arange(3) == j), 0) for j in range(3)]
+    ecart = float(np.mean((sortie - cible) ** 2))
+    coudes = [(-c[j] / w[j], "#f59e0b", str(j + 1)) for j in range(3)
+              if w[j] != 0 and abs(c[j] / w[j]) <= 2]
+
+    def echantillon(trait, texte):
+        return (f"<span style='white-space:nowrap'><span style='display:inline-block;width:26px;"
+                f"vertical-align:middle;border-top:{trait}'></span> {texte}</span>")
+
+    legende = mo.Html(
+        "<div style='font-weight:600'>Le but : la fonction à reproduire</div>"
+        "<div style='font-size:.85em;display:flex;flex-wrap:wrap;gap:.3em 1.2em;margin-top:.2em'>"
+        + echantillon("2px dashed currentColor", "la cible <i>f</i>")
+        + echantillon("3px solid #3b82f6", "la sortie <i>y</i> du réseau")
+        + echantillon("1.5px solid #f59e0b", "la part de chaque neurone")
+        + "</div>"
+    )
+    return mo.hstack([
+        schema_reseau(w, c, v, b),
+        mo.vstack([
+            legende,
+            trace(xs, [(q, "#f59e0b", 1, False) for q in parts]
+                  + [(cible, "currentColor", 2, True), (sortie, "#3b82f6", 2.5, False)],
+                  coudes),
+            mo.md(f"Erreur (écart quadratique moyen) : **{ecart:.3f}**".replace(".", ",")
+                  + (" — ✅ le réseau reproduit la courbe." if ecart < 1e-3 else "")),
+        ], gap=0.4),
+    ], justify="start", align="center", gap=1.5, wrap=True)
 ```
 
 ```python {.marimo}
-def _curseurs(valeurs):
-    return mo.ui.array(
-        [mo.ui.slider(-3, 3, step=0.01, value=v, show_value=True, full_width=True)
-         for v in valeurs]
-    )
-
-
-# Chaque bouton garde l'heure de son dernier clic (et, pour la descente de
-# gradient, les valeurs obtenues) : le plus récent décide des valeurs avec
-# lesquelles les curseurs sont recréés.
+# Chaque bouton garde l'heure de son dernier clic : le plus récent décide des
+# valeurs avec lesquelles les curseurs sont recréés.
 _choix = [(bouton_depart.value or 0, DEPART_RESEAU),
           (bouton_solution.value or 0, SOLUTION_RESEAU)]
-if bouton_descente.value:
-    _choix.append(bouton_descente.value)
 _r = max(_choix, key=lambda p: p[0])[1]
-pentes = _curseurs(_r["w"])
-biais_caches = _curseurs(_r["c"])
-poids_sortie = _curseurs(_r["v"])
-biais_sortie = mo.ui.slider(-2, 2, step=0.01, value=_r["b"], show_value=True)
-_lignes = "".join(
-    f"<tr><td style='white-space:nowrap;padding-right:1em'>{nom}</td>"
-    + "".join(f"<td style='padding:0 .5em'>{curseurs[j]}</td>" for j in range(3)) + "</tr>"
-    for nom, curseurs in [("pente <i>w</i>", pentes), ("biais <i>c</i>", biais_caches),
-                          ("sortie <i>v</i>", poids_sortie)]
-)
-tableau_curseurs = mo.vstack([
-    mo.Html(
-        "<table style='width:100%;table-layout:fixed'><colgroup><col style='width:6em'>"
-        "</colgroup><tr><th></th><th>neurone 1</th><th>neurone 2</th><th>neurone 3</th></tr>"
-        + _lignes + "</table>"
-    ),
-    mo.md(f"Biais de sortie $b$ : {biais_sortie}"),
-])
-tableau_curseurs
-
+pentes, biais_caches, poids_sortie, biais_sortie = curseurs_reseau(_r)
+tableau_reseau("**Entraînement manuel** : c'est vous qui réglez les curseurs.",
+               pentes, biais_caches, poids_sortie, biais_sortie)
 ```
 
 ```python {.marimo}
-_xs = np.linspace(-2, 2, 201)
 _w, _c, _v = (np.array(a.value) for a in (pentes, biais_caches, poids_sortie))
-_cible = np.maximum(0, 1 - np.abs(_xs))
-_sortie = reseau(_xs, _w, _c, _v, biais_sortie.value)
-_parts = [reseau(_xs, _w, _c, _v * (np.arange(3) == j), 0) for j in range(3)]
-_ecart = float(np.mean((_sortie - _cible) ** 2))
-_coudes = [(-_c[j] / _w[j], "#f59e0b", str(j + 1)) for j in range(3)
-           if _w[j] != 0 and abs(_c[j] / _w[j]) <= 2]
-CURSEURS_RESEAU.update(w=list(_w), c=list(_c), v=list(_v), b=biais_sortie.value)
-
-
-def _echantillon(trait, texte):
-    return (f"<span style='white-space:nowrap'><span style='display:inline-block;width:26px;"
-            f"vertical-align:middle;border-top:{trait}'></span> {texte}</span>")
-
-
-_legende = mo.Html(
-    "<div style='font-weight:600'>Le but : la fonction à reproduire</div>"
-    "<div style='font-size:.85em;display:flex;flex-wrap:wrap;gap:.3em 1.2em;margin-top:.2em'>"
-    + _echantillon("2px dashed currentColor", "la cible <i>f</i>")
-    + _echantillon("3px solid #3b82f6", "la sortie <i>y</i> du réseau")
-    + _echantillon("1.5px solid #f59e0b", "la part de chaque neurone")
-    + "</div>"
-)
-graphique_reseau = mo.hstack([
-    schema_reseau(_w, _c, _v, biais_sortie.value),
-    mo.vstack([
-        _legende,
-        trace(_xs, [(p, "#f59e0b", 1, False) for p in _parts]
-              + [(_cible, "currentColor", 2, True), (_sortie, "#3b82f6", 2.5, False)],
-              _coudes),
-        mo.md(f"Erreur (écart quadratique moyen) : **{_ecart:.3f}**".replace(".", ",")
-              + (" — ✅ le réseau reproduit la courbe." if _ecart < 1e-3 else "")),
-    ], gap=0.4),
-], justify="start", align="center", gap=1.5, wrap=True)
-graphique_reseau
+figure_reseau(reseau, _w, _c, _v, biais_sortie.value)
 ```
 
 ::: {.callout-note collapse="true"}
@@ -738,10 +748,12 @@ mo.hstack([bouton_solution, bouton_depart], justify="start")
 Essayez aussi de remplacer `np.maximum(z, 0)` par `z` dans le code : sans
 activation, quels que soient les curseurs, la sortie reste une droite.
 
+Chercher les paramètres qui font faire au réseau ce qu'on veut, c'est
+l'**entraîner** : vous venez de faire un **entraînement** (*training*) manuel.
 Avec dix paramètres ($w_1$ à $w_3$, $c_1$ à $c_3$, $v_1$ à $v_3$ et $b$), on y
-arrive, mais il faut réfléchir, ou tâtonner longtemps. Qwen2.5-0.5B, le modèle de la semaine 3, en a 494 millions :
-personne ne les règle à la main. Il faut une méthode pour trouver
-automatiquement de bons paramètres. C'est l'**entraînement** (*training*).
+arrive, mais il faut réfléchir, ou tâtonner longtemps. Qwen2.5-0.5B, le modèle
+de la semaine 3, en a 494 millions : personne ne les règle à la main. Il faut
+une méthode pour entraîner un réseau automatiquement.
 
 ## Apprendre : la perte et la descente de gradient
 
@@ -1191,24 +1203,44 @@ que le neurone $j$ était actif ($h_j > 0$) là où la sortie se trompait. Un
 neurone éteint par la ReLU ne reçoit, lui, aucun gradient : là où il vaut 0, le
 modifier un peu ne change rien.
 
-### Le réseau s'entraîne
+### Le réseau s'entraîne tout seul
 
-Revoici la figure des curseurs (ce sont les mêmes : modifier l'une modifie
-l'autre), avec un bouton qui fait 200 pas de descente de gradient à partir des
-valeurs actuelles, avec $\eta = 0{,}1$. Cliquez d'abord sur « Revenir au
-départ », puis plusieurs fois sur le bouton de descente, et regardez les
-curseurs bouger tout seuls et l'erreur diminuer.
+Revoici la figure de l'exercice, dans une copie indépendante : ses curseurs
+partent des valeurs de départ, quels que soient vos réglages plus haut. Mais
+cette fois, l'entraînement est automatique : ce n'est plus vous qui cherchez
+les paramètres, c'est la descente de gradient. Chaque clic sur le bouton fait
+200 pas de descente à partir des valeurs actuelles, avec $\eta = 0{,}1$.
+Cliquez plusieurs fois, et regardez les curseurs bouger tout seuls et l'erreur
+diminuer.
 
 ```python {.marimo}
 bouton_descente = mo.ui.button(
     label="Faire 200 pas de descente de gradient",
-    on_click=lambda _: (time.time(), descendre(CURSEURS_RESEAU)),
+    on_click=lambda _: (time.time(), descendre(CURSEURS_ENTRAINEMENT)),
 )
+bouton_depart_entrainement = mo.ui.button(label="Revenir au départ",
+                                          on_click=lambda _: time.time())
 ```
 
 ```python {.marimo}
-mo.vstack([tableau_curseurs, graphique_reseau,
-           mo.hstack([bouton_descente, bouton_depart], justify="start")])
+# Le bouton de descente garde l'heure de son dernier clic et les valeurs
+# obtenues; le plus récent des deux boutons décide des valeurs des curseurs.
+_choix = [(bouton_depart_entrainement.value or 0, DEPART_RESEAU)]
+if bouton_descente.value:
+    _choix.append(bouton_descente.value)
+_r = max(_choix, key=lambda p: p[0])[1]
+pentes_e, biais_caches_e, poids_sortie_e, biais_sortie_e = curseurs_reseau(_r)
+tableau_reseau("**Entraînement automatique** : c'est la descente de gradient qui règle "
+               "les curseurs.", pentes_e, biais_caches_e, poids_sortie_e, biais_sortie_e)
+```
+
+```python {.marimo}
+_w, _c, _v = (np.array(a.value) for a in (pentes_e, biais_caches_e, poids_sortie_e))
+CURSEURS_ENTRAINEMENT.update(w=list(_w), c=list(_c), v=list(_v), b=biais_sortie_e.value)
+mo.vstack([
+    figure_reseau(reseau, _w, _c, _v, biais_sortie_e.value),
+    mo.hstack([bouton_descente, bouton_depart_entrainement], justify="start"),
+])
 ```
 
 Partie des valeurs de départ, la descente trouve la tente en quelques clics :
