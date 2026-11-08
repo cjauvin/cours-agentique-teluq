@@ -671,8 +671,9 @@ def tableau_reseau(titre, pentes, biais, poids, b):
     ])
 
 
-def figure_reseau(reseau, w, c, v, b):
-    """Le schéma du réseau à gauche; à droite, le but et l'erreur."""
+def figure_reseau(reseau, w, c, v, b, pas=None):
+    """Le schéma du réseau à gauche; à droite, le but et l'erreur (et, si on le
+    donne, le nombre de pas de descente effectués)."""
     xs = np.linspace(-2, 2, 201)
     cible = np.maximum(0, 1 - np.abs(xs))
     sortie = reseau(xs, w, c, v, b)
@@ -702,7 +703,8 @@ def figure_reseau(reseau, w, c, v, b):
                   coudes),
             mo.md(f"Erreur (écart quadratique moyen) : **{ecart:.3f}**".replace(".", ",")
                   + (" — ✅ le réseau reproduit la courbe." if ecart < 1e-3 else "")),
-        ], gap=0.4),
+        ] + ([mo.md(f"Pas de descente effectués : **{pas}**")] if pas is not None else []),
+            gap=0.4),
     ], justify="start", align="center", gap=1.5, wrap=True)
 ```
 
@@ -1211,12 +1213,17 @@ cette fois, l'entraînement est automatique : ce n'est plus vous qui cherchez
 les paramètres, c'est la descente de gradient. Chaque clic sur le bouton fait
 200 pas de descente à partir des valeurs actuelles, avec $\eta = 0{,}1$.
 Cliquez plusieurs fois, et regardez les curseurs bouger tout seuls et l'erreur
-diminuer.
+diminuer. Sous l'erreur, un compteur donne le nombre de pas effectués depuis
+le départ. Ici, chaque pas calcule l'erreur sur tous les points du
+graphique à la fois; un passage complet sur les données d'entraînement s'appelle
+une **époque** (*epoch*), et chaque pas en fait donc une.
 
 ```python {.marimo}
 bouton_descente = mo.ui.button(
     label="Faire 200 pas de descente de gradient",
-    on_click=lambda _: (time.time(), descendre(CURSEURS_ENTRAINEMENT)),
+    # Le nombre de pas effectués voyage avec les valeurs obtenues.
+    on_click=lambda _: (time.time(), {**descendre(CURSEURS_ENTRAINEMENT),
+                                      "pas": CURSEURS_ENTRAINEMENT.get("pas", 0) + 200}),
 )
 bouton_depart_entrainement = mo.ui.button(label="Revenir au départ",
                                           on_click=lambda _: time.time())
@@ -1230,22 +1237,24 @@ if bouton_descente.value:
     _choix.append(bouton_descente.value)
 _r = max(_choix, key=lambda p: p[0])[1]
 pentes_e, biais_caches_e, poids_sortie_e, biais_sortie_e = curseurs_reseau(_r)
+pas_effectues = _r.get("pas", 0)
 tableau_reseau("**Entraînement automatique** : c'est la descente de gradient qui règle "
                "les curseurs.", pentes_e, biais_caches_e, poids_sortie_e, biais_sortie_e)
 ```
 
 ```python {.marimo}
 _w, _c, _v = (np.array(a.value) for a in (pentes_e, biais_caches_e, poids_sortie_e))
-CURSEURS_ENTRAINEMENT.update(w=list(_w), c=list(_c), v=list(_v), b=biais_sortie_e.value)
+CURSEURS_ENTRAINEMENT.update(w=list(_w), c=list(_c), v=list(_v), b=biais_sortie_e.value,
+                             pas=pas_effectues)
 mo.vstack([
-    figure_reseau(reseau, _w, _c, _v, biais_sortie_e.value),
+    figure_reseau(reseau, _w, _c, _v, biais_sortie_e.value, pas_effectues),
     mo.hstack([bouton_descente, bouton_depart_entrainement], justify="start"),
 ])
 ```
 
 Partie des valeurs de départ, la descente trouve la tente en quelques clics :
-l'erreur passe de 0,477 à 0,046, puis 0,008, et le ✅ apparaît au quatrième
-clic. Elle ne trouve pas forcément les mêmes valeurs que la solution
+l'erreur passe de 0,477 à 0,046 après 200 pas, puis à 0,008 après 400, et le ✅
+apparaît après 800 pas. Elle ne trouve pas forcément les mêmes valeurs que la solution
 ci-dessus : plusieurs réglages donnent la même courbe.
 
 Mais elle n'y arrive pas toujours. Revenez au départ, mettez les poids de
