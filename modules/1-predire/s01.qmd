@@ -667,7 +667,7 @@ route](../../mise-en-route.qmd).
   vocabulaire de 21 mots? Avec 50 000 mots?
 - Essayez « le hamster dort . » avec et sans lissage. Que vaut la probabilité
   d'un mot absent du vocabulaire? Comment un vrai LLM évite-t-il ce problème?
-  ([Semaine 2](s02.qmd#jetons).)
+  ([Semaine 3](s03.qmd#jetons).)
 
 ## Pour aller plus loin
 

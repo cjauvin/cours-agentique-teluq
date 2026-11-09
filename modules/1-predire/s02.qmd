@@ -13,20 +13,6 @@ from collections import Counter, defaultdict
 import marimo as mo
 import numpy as np
 
-COULEURS = ["#dbeafe", "#fde68a", "#bbf7d0", "#fecaca", "#e9d5ff", "#fed7aa"]
-
-
-def colorer(morceaux):
-    spans = [
-        f"<span style='background:{COULEURS[i % len(COULEURS)]};color:#1e293b;padding:2px 1px;"
-        f"border-radius:3px;font-family:monospace;white-space:pre'>{m}</span>"
-        for i, m in enumerate(morceaux)
-    ]
-    return mo.Html(
-        "<div style='display:flex;flex-wrap:wrap;gap:2px;line-height:1.8'>"
-        + "".join(spans) + "</div>"
-    )
-
 
 def barres(etiquettes, valeurs, largeur=300, format="{:.0%}"):
     lignes = [
@@ -172,10 +158,9 @@ corpus : un mot nouveau a une probabilité nulle.
 Cette semaine, on remplace la table de comptes par une fonction qu'on
 **ajuste** aux données : un **réseau de neurones** (*neural network*). On verra ce qu'est un
 réseau, comment il apprend, et ce qu'il apprend au passage : un vecteur par
-mot, le **plongement** (*embedding*), qui permet enfin de généraliser. On terminera par les
-unités sur lesquelles travaillent les vrais modèles, les **jetons** (*tokens*), qui
-règlent le problème des mots inconnus. Le dernier défaut, un contexte trop
-court, attendra la [semaine 3](s03.qmd).
+mot, le **plongement** (*embedding*), qui permet enfin de généraliser. Les deux autres
+défauts, les mots inconnus et un contexte trop court, attendront la
+[semaine 3](s03.qmd).
 
 À la fin de la semaine, vous saurez :
 
@@ -185,9 +170,7 @@ court, attendra la [semaine 3](s03.qmd).
   la rétropropagation, puis la perte d'entropie croisée pour prédire le mot
   suivant;
 - expliquer ce qu'est un plongement, et pourquoi des vecteurs appris
-  permettent de généraliser;
-- expliquer comment un texte est découpé en jetons par l'algorithme BPE, et
-  pourquoi ce découpage a des conséquences pratiques pour un agent.
+  permettent de généraliser.
 
 ## Qu'est-ce qu'un réseau de neurones?
 
@@ -2037,7 +2020,7 @@ Ces comptes, eux aussi, regroupent « chat » et « chien », « mange » et
 tiennent compte de ce qui **précède** un mot, alors que le plongement du
 bigramme neuronal ne sert qu'à prédire ce qui le **suit**, et y range « souris »
 avec les autres animaux. Un plongement appris encode ce dont sa tâche a besoin,
-et rien d'autre. Ceux d'un LLM, appris pour prédire le jeton suivant à partir
+et rien d'autre. Ceux d'un LLM, appris pour prédire la suite à partir
 de tout le contexte, sont bien plus riches que les nôtres.
 
 Voilà ce qui manquait au bigramme par comptage. Si « chat » et « chien » ont des
@@ -2045,167 +2028,19 @@ vecteurs proches, tout ce que le modèle apprend sur l'un profite à l'autre :
 avoir vu « le chien dort » rend « le chat dort » plus plausible. C'est la
 **généralisation**.
 
-## Des mots aux jetons {#jetons}
-
-Jusqu'ici, nos modèles travaillent sur des mots, et ne connaissent que ceux de
-leur corpus. Sur quelles unités un vrai modèle de langue doit-il travailler?
-Les **mots** posent deux problèmes : leur nombre est sans limite (noms propres,
-fautes de frappe, mots composés, conjugaisons), et un mot absent du vocabulaire
-est impossible à traiter. Les **caractères** règlent ce problème, puisqu'ils
-sont en nombre fini, mais les séquences deviennent très longues, et chaque
-caractère, pris isolément, ne porte presque aucun sens.
-
-Les LLM travaillent avec un compromis : des **jetons**, c'est-à-dire
-des morceaux de mots. Les mots fréquents sont des jetons entiers; les mots
-rares se découpent en plusieurs morceaux plus courants; dans le pire des cas,
-on retombe sur les caractères. Le vocabulaire est fixe, typiquement de
-quelques dizaines à quelques centaines de milliers de jetons, et pourtant
-**n'importe quel texte** peut être représenté.
-
-### L'algorithme BPE
-
-Le vocabulaire de jetons s'apprend à partir d'un corpus, le plus souvent avec
-l'algorithme **BPE** (*byte pair encoding*, codage par paires) :
-
-1. on part des caractères;
-2. on compte les paires de symboles adjacents dans le corpus;
-3. on fusionne la paire la plus fréquente en un nouveau symbole, qu'on ajoute
-   au vocabulaire;
-4. on recommence, jusqu'à atteindre la taille de vocabulaire voulue.
-
-Pour découper un texte nouveau, on rejoue les mêmes fusions, dans le même
-ordre.
-
-```python {.marimo}
-code_bpe = code_modifiable(r'''
-def compter_paires(mots):
-    paires = Counter()
-    for mot, freq in mots.items():
-        for a, b in zip(mot, mot[1:]):
-            paires[a, b] += freq
-    return paires
-
-
-def fusionner(mot, paire):
-    resultat, i = [], 0
-    while i < len(mot):
-        if mot[i:i + 2] == paire:
-            resultat.append(paire[0] + paire[1])
-            i += 2
-        else:
-            resultat.append(mot[i])
-            i += 1
-    return tuple(resultat)
-
-
-def apprendre_bpe(texte, n_fusions):
-    mots = Counter(tuple("▁" + m) for m in texte.split())
-    fusions = []
-    for _ in range(n_fusions):
-        paires = compter_paires(mots)
-        if not paires:
-            break
-        meilleure = paires.most_common(1)[0][0]
-        fusions.append(meilleure)
-        mots = Counter({fusionner(m, meilleure): f for m, f in mots.items()})
-    return fusions
-
-
-def tokeniser(texte, fusions):
-    jetons = []
-    for m in texte.split():
-        mot = tuple("▁" + m)
-        for paire in fusions:
-            mot = fusionner(mot, paire)
-        jetons.extend(mot)
-    return jetons
-''')
-code_bpe
-```
-
-```python {.marimo}
-apprendre_bpe, tokeniser = executer(
-    code_bpe, {"Counter": Counter}, "apprendre_bpe", "tokeniser"
-)
-```
-
-Comme tout le code du cours, celui-ci est modifiable : essayez, par exemple, de
-fusionner la paire la **moins** fréquente plutôt que la plus fréquente, et
-comparez les jetons obtenus.
-
-Le symbole `▁` marque le début d'un mot, ce qui permet de reconstituer les
-espaces. Augmentez le nombre de fusions et observez les jetons de la phrase
-grossir : d'abord des paires de lettres fréquentes, puis des terminaisons
-(`ons`, `ait`, `ez`), puis des mots entiers.
-
-```python {.marimo}
-CORPUS_BPE = " ".join(
-    ["le chat mange la souris", "nous mangeons le fromage", "vous mangez le repas",
-     "le chien mangeait", "nous dormons", "vous dormez", "le chat dormait",
-     "nous regardons le chien", "vous regardez la souris", "le chien regardait",
-     "nous courons", "vous courez", "la souris courait"] * 5
-)
-n_fusions = mo.ui.slider(0, 60, value=20, label="Fusions", show_value=True)
-phrase_bpe = mo.ui.text(value="nous mangions le chat", label="Phrase", full_width=True)
-mo.vstack([n_fusions, phrase_bpe])
-```
-
-```python {.marimo}
-_fusions = apprendre_bpe(CORPUS_BPE, n_fusions.value)
-_jetons = tokeniser(phrase_bpe.value, _fusions)
-mo.vstack([
-    colorer(_jetons),
-    mo.md(
-        f"**{len(_jetons)} jetons** pour {len(phrase_bpe.value)} caractères — "
-        f"dernières fusions : {', '.join('`' + a + b + '`' for a, b in _fusions[-5:])}"
-    ),
-])
-```
-
-« mangions » n'est pas dans le corpus, et pourtant il se découpe sans problème
-en morceaux connus : `▁man`, `g`, `i`, `ons`, soit le radical et la terminaison
-de « mangeons ». Avec un vocabulaire qui contient tous les caractères, **aucun
-texte n'est hors vocabulaire**. Essayez un mot inventé, ou une phrase en
-anglais.
-
-### Les jetons en pratique
-
-Les **tokeniseurs** (*tokenizers*) réels, les programmes qui découpent le texte
-en jetons, appliquent BPE aux **octets** (*bytes*) du texte encodé en UTF-8
-plutôt qu'aux caractères : les 256 octets possibles forment le vocabulaire de
-départ, si bien que tout texte, dans toutes les langues, avec emojis et code
-source, est représentable. Quelques conséquences méritent d'être retenues.
-
-- **Les jetons sont l'unité de compte.** La taille de la fenêtre de contexte,
-  le prix des API et la vitesse de génération se mesurent en jetons, pas en
-  mots. En anglais, un jeton correspond en moyenne à environ quatre caractères;
-  en français, le même texte demande généralement plus de jetons, parce que les
-  tokeniseurs sont surtout entraînés sur de l'anglais.
-- **Le modèle ne voit pas les lettres.** « fromage » est peut-être un seul
-  jeton : le modèle n'a alors aucun accès direct à ses lettres. Compter les
-  « r » d'un mot, inverser une chaîne ou faire de l'arithmétique sur de longs
-  nombres (découpés en morceaux arbitraires) sont des tâches étonnamment
-  difficiles pour un LLM.
-- **Les espaces comptent.** En code, l'indentation et les espaces font partie
-  des jetons. Un agent qui doit reproduire exactement un passage de code pour
-  le modifier peut se tromper d'un espace; nous concevrons nos outils en
-  conséquence ([semaine 8](../3-agir/s08.qmd)).
-
-Tout ce qu'on a vu plus haut s'applique tel quel aux jetons : un vrai modèle a
-un plongement par jeton plutôt que par mot, et il prédit le jeton suivant
-plutôt que le mot suivant.
-
 ## Ce que ça change pour un agent
 
-- **Le contexte se paie en jetons.** Tout ce qu'un agent lit (fichiers,
-  résultats d'outils, historique de la conversation) occupe des jetons de sa
-  fenêtre et coûte de l'argent et du temps. Un outil qui renvoie un fichier de
-  10 000 lignes peut saturer le contexte à lui seul. Gérer le contexte sera
-  l'un des enjeux du module 4.
-- **Le texte exact est fragile.** Parce que le modèle voit des jetons et non des
-  caractères, reproduire exactement une chaîne (un chemin de fichier, un
-  passage de code à remplacer) est une source d'erreurs fréquente. Les outils
-  d'un agent doivent vérifier et signaler clairement ces erreurs.
+- **Les connaissances d'un modèle sont figées.** Une fois l'entraînement
+  terminé, les paramètres ne bougent plus. Le modèle ne sait rien de ce qui est
+  postérieur à son corpus, sa **date de coupure** (*knowledge cutoff*), et il
+  n'apprend rien pendant une conversation : aucun pas de descente de gradient
+  n'a lieu quand on lui parle. Tout ce qu'un agent doit savoir de neuf (les
+  fichiers d'un projet, le résultat d'une commande) doit donc lui être fourni
+  dans son contexte, à chaque fois.
+- **Adapter un modèle, c'est poursuivre son entraînement.** Pour qu'un modèle
+  suive des instructions ou appelle des outils, on reprend la même recette :
+  une perte, la descente de gradient, mais sur d'autres données. C'est le sujet
+  du [module 2](../2-assister/s04.qmd).
 - **Les plongements servent à chercher par le sens.** Des textes de sens voisin
   ont des plongements proches : on peut donc trouver les passages d'un document
   qui répondent à une question, même sans aucun mot en commun avec elle. C'est
@@ -2222,9 +2057,6 @@ plutôt que le mot suivant.
 - Un plongement est un vecteur appris par mot. Des mots qui jouent des rôles
   semblables reçoivent des vecteurs proches, ce qui permet de généraliser et
   contourne le fléau de la dimension.
-- Les vrais modèles travaillent sur des jetons, des morceaux de mots appris par
-  BPE. Aucun texte n'est hors vocabulaire, mais le modèle ne voit pas
-  directement les caractères.
 
 ## Laboratoire
 
@@ -2252,13 +2084,11 @@ les autres façons de l'ouvrir, voir la [mise en route](../../mise-en-route.qmd)
   comptage. Pourquoi ne le peut-il pas, sur le corpus d'entraînement? Pourrait-il
   faire mieux que lui sur des phrases nouvelles?
 - Nos vecteurs de voisins ont une composante par voisin possible. Combien de
-  composantes auraient-ils avec un vocabulaire de 50 000 jetons? Pourquoi les
+  composantes auraient-ils avec un vocabulaire de 50 000 mots? Pourquoi les
   plongements appris sont-ils plutôt de dimension quelques centaines?
 - Le modèle de Bengio et al. voit les $n - 1$ mots précédents. Pour accorder un
   verbe avec un sujet placé trente mots plus tôt, faudrait-il $n = 31$? Que
   deviendraient ses paramètres? ([Semaine 3](s03.qmd).)
-- Les tokeniseurs, entraînés surtout sur de l'anglais, découpent le français en
-  plus de jetons. Quelles conséquences pour un agent qui travaille en français?
 
 ## Pour aller plus loin
 
