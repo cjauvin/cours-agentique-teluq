@@ -1282,10 +1282,11 @@ qui ne manipule que des nombres, et comment obtenir de lui une distribution de
 probabilités.
 
 **La sortie.** On veut une probabilité par mot du vocabulaire. On donne donc à
-la couche de sortie $V$ neurones, un par mot, sans activation. Leurs sorties
-$z_1, \dots, z_V$ sont des scores quelconques, positifs ou négatifs : les
-**logits**, rencontrés avec la température. Pour en faire des probabilités, on
-applique la fonction **softmax**, qui rend chaque score positif avec
+la couche de sortie $V$ neurones, un par mot. Leurs scores $z_1, \dots, z_V$
+sont quelconques, positifs ou négatifs : les **logits**, rencontrés avec la
+température. Pour en faire des probabilités, la couche de sortie applique une
+activation particulière, le **softmax**, qui, contrairement à la ReLU, porte
+sur toute la couche à la fois : il rend chaque score positif avec
 l'exponentielle, puis divise par la somme pour que le total fasse 1 :
 
 $$\mathrm{softmax}(z)_i = \frac{e^{z_i}}{\sum_{j=1}^{V} e^{z_j}}$$
