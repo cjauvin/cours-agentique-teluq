@@ -159,7 +159,7 @@ où $C(a, b)$ compte les occurrences de la paire « $a$ $b$ », et $C(a)$ celles
 de $a$ suivi de n'importe quoi. On peut montrer que ces fréquences sont les
 probabilités qui rendent le corpus le plus probable possible : c'est
 l'estimation par **maximum de vraisemblance** (*maximum likelihood*), le principe même qui guidera
-l'entraînement des réseaux de neurones à la semaine 3.
+l'entraînement des réseaux de neurones à la semaine 2.
 
 Voici un corpus minuscule, et tout le modèle : un dictionnaire de compteurs. Le
 point joue un double rôle : il termine une phrase, et il sert de « mot
@@ -255,7 +255,7 @@ perplexité de 5 signifie que le modèle est, en moyenne, aussi incertain que
 s'il devait choisir au hasard parmi 5 mots équiprobables. Un modèle qui ne sait
 rien, et qui donne la même probabilité aux $V$ mots du vocabulaire, a une
 perplexité de $V$. L'entropie croisée est exactement la quantité que les LLM
-minimisent pendant leur entraînement (semaine 3).
+minimisent pendant leur entraînement (semaine 2).
 
 ```python {.marimo}
 code_probabilite = code_modifiable(r'''

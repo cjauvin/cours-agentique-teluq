@@ -1768,20 +1768,34 @@ Pour entraîner le bigramme neuronal, on suit la même recette que pour le petit
 réseau : une perte, puis la descente de gradient. Seule la perte change. La
 sortie n'est plus un nombre à rapprocher d'une cible, c'est une distribution de
 probabilités, et la bonne réponse est un mot. L'écart quadratique n'a plus de
-sens; la perte naturelle est la mesure de la semaine 1, l'**entropie croisée** :
-la moyenne, sur tous les exemples du corpus, de $-\log_2 P(y \mid x)$, la
-surprise du réseau devant le bon mot.
+sens.
+
+Cette perte, vous la connaissez déjà : c'est l'**entropie croisée** de la
+semaine 1, celle qui servait à évaluer le bigramme par comptage, et dont la
+perplexité était une version plus parlante. Avec $x_t$, le mot précédent
+($w_{t-1}$ à la semaine 1), et $y_t$, le mot qui suit ($w_t$), c'est la même
+formule :
 
 $$\mathcal{L} = -\frac{1}{N} \sum_{t=1}^{N} \log_2 P(y_t \mid x_t)$$
 
-Elle est petite quand le réseau donne une forte probabilité au mot qui suit
-vraiment, et grande quand il le juge improbable. Au départ, les paramètres sont
-tirés au hasard, et la perte est élevée. La semaine 1 nous dit jusqu'où elle
-peut descendre :
-les fréquences du bigramme par comptage sont, par définition, les
-probabilités qui rendent le corpus le plus probable (le maximum de
-vraisemblance). Aucun bigramme, neuronal ou non, ne peut faire mieux sur ce
-corpus. Leur entropie croisée est un **plancher**.
+C'est la moyenne, sur tous les exemples du corpus, de $-\log_2 P(y_t \mid x_t)$,
+la surprise du réseau devant le bon mot. Elle est petite quand le réseau donne
+une forte probabilité au mot qui suit vraiment, et grande quand il le juge
+improbable.
+
+Ce qui change, c'est son rôle. À la semaine 1, on la calculait après coup, pour
+juger un modèle déjà construit. Ici, c'est elle que la descente de gradient fait
+baisser, pas à pas : la mesure devient la perte à minimiser.
+
+Les deux bigrammes poursuivent donc le même but : rendre le corpus le plus
+probable possible, c'est-à-dire avoir la plus petite entropie croisée. Le
+bigramme par comptage l'atteint d'un coup : ses fréquences sont, par
+définition, les probabilités qui rendent le corpus le plus probable (le maximum
+de vraisemblance de la semaine 1). Le bigramme neuronal, lui, part de
+paramètres tirés au hasard, avec une perte élevée, et s'en approche par la
+descente de gradient. Aucun bigramme, neuronal ou non, ne peut faire mieux sur
+ce corpus : l'entropie croisée du bigramme par comptage est un **plancher**,
+que la courbe d'entraînement, plus bas, trace en pointillé.
 
 ```python {.marimo}
 _comptes = defaultdict(Counter)
