@@ -125,23 +125,36 @@ def nuage(points, etiquettes, largeur=520, hauteur=320):
         else:
             groupes.append((a, b, [e]))
 
-    def etiquette(a, b, es):
-        # Trois mots par ligne au plus; à gauche du point s'il déborderait à droite.
+    # Chaque étiquette prend la première place libre autour de son point :
+    # au-dessus à droite, sinon en dessous, à gauche, de côté...
+    def chevauchement(r, s):
+        return (max(0, min(r[2], s[2]) - max(r[0], s[0]))
+                * max(0, min(r[3], s[3]) - max(r[1], s[1])))
+
+    occupe = [(a - 4, b - 4, a + 4, b + 4) for a, b, _ in groupes]
+    textes = []
+    for a, b, es in sorted(groupes, key=lambda g: -len(", ".join(g[2]))):
+        # Trois mots par ligne au plus.
         lignes = [", ".join(es[i:i + 3]) for i in range(0, len(es), 3)]
-        vers_gauche = a + 5 + 7.3 * max(map(len, lignes)) > largeur
-        x_texte, ancre = (a - 5, "end") if vers_gauche else (a + 5, "start")
+        l, h = 7.3 * max(map(len, lignes)), 14 * len(lignes)
+        places = [(x0, y0) for y0 in (b - 2 - h, b + 2, b - h / 2)
+                  for x0 in (a + 5, a - 5 - l)] + [(a - l / 2, b - 5 - h), (a - l / 2, b + 5)]
+        cadre = lambda x0, y0: (x0, y0, x0 + l, y0 + h)
+        dans_le_cadre = [p for p in places
+                         if 2 <= p[0] and p[0] + l <= largeur - 2 and 2 <= p[1] and p[1] + h <= hauteur - 2]
+        moi = (a - 4, b - 4, a + 4, b + 4)
+        x0, y0 = min(dans_le_cadre or places, key=lambda p: sum(
+            chevauchement(cadre(*p), r) for r in occupe if r != moi))
+        occupe.append(cadre(x0, y0))
         tspans = "".join(
-            f"<tspan x='{x_texte:.1f}' dy='{0 if i == 0 else 14}'>{l}</tspan>"
-            for i, l in enumerate(lignes)
+            f"<tspan x='{x0:.1f}' dy='{0 if i == 0 else 14}'>{ligne}</tspan>"
+            for i, ligne in enumerate(lignes)
         )
-        y_texte = b - 4 - 14 * (len(lignes) - 1)
-        return (f"<text y='{y_texte:.1f}' font-size='12' text-anchor='{ancre}'>"
-                f"{tspans}</text>")
+        textes.append(f"<text y='{y0 + 11:.1f}' font-size='12'>{tspans}</text>")
 
     marques = "".join(
-        f"<circle cx='{a:.1f}' cy='{b:.1f}' r='3' fill='#3b82f6'/>" + etiquette(a, b, es)
-        for a, b, es in groupes
-    )
+        f"<circle cx='{a:.1f}' cy='{b:.1f}' r='3' fill='#3b82f6'/>" for a, b, _ in groupes
+    ) + "".join(textes)
     return mo.Html(
         f"<svg width='{largeur}' height='{hauteur}' fill='currentColor' style='font-family:monospace;"
         f"border:1px solid rgba(127,127,127,.3);border-radius:4px'>{marques}</svg>"
