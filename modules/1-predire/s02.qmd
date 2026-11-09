@@ -1893,18 +1893,42 @@ au-dessus : un seul nombre par mot ne suffit pas à résumer ce qui le suit.
 
 ## Les plongements appris {#plongements}
 
-Le réseau a appris, au passage, un vecteur par mot. Le voici, dans le plan
-(au-delà de 2 dimensions, on projette sur les deux directions où les points
-s'étalent le plus).
+Le réseau a appris, au passage, un vecteur par mot. Au départ, ces plongements
+ne veulent rien dire : comme tous les paramètres, la matrice $E$ est tirée au
+hasard (la ligne `rng.normal` du code d'`entrainer`). Les mots sont donc
+éparpillés n'importe comment dans le plan, et « chat » n'y est pas plus près de
+« chien » que de « tapis ». Puis, à chaque pas de descente de gradient, la
+rétropropagation déplace un peu le plongement de chaque mot (la ligne
+`E -= taux * gE`), dans la direction qui aide à mieux prédire le mot qui le
+suit. Pas après pas, ces petits déplacements s'accumulent, et les plongements
+convergent vers une représentation organisée. Voici les deux états, avant et
+après l'entraînement. Au-delà de 2 dimensions, on projette sur les deux
+directions où les points s'étalent le plus, et chaque nuage a sa propre
+échelle : au départ, les coordonnées sont de l'ordre de 0,1; après
+l'entraînement, de quelques unités.
 
 ```python {.marimo}
-if E.shape[1] == 1:
-    _points = np.hstack([E, np.zeros_like(E)])
-else:
-    _centre = E - E.mean(axis=0)
-    _points = _centre @ np.linalg.svd(_centre, full_matrices=False)[2][:2].T
-nuage(_points, vocabulaire) if np.isfinite(_points).all() else mo.md("*Pas de plongements : l'entraînement a divergé.*")
+def _plan(M):
+    if M.shape[1] == 1:
+        return np.hstack([M, np.zeros_like(M)])
+    centre = M - M.mean(axis=0)
+    return centre @ np.linalg.svd(centre, full_matrices=False)[2][:2].T
+
+_avant = _plan(entrainer(dimension.value, 0, taux.value)[0])
+_apres = _plan(E)
+_titre_apres = f"**Après {n_pas.value} pas d'entraînement**"
+mo.hstack([
+    mo.vstack([mo.md("**Avant l'entraînement** : des vecteurs tirés au hasard"),
+               nuage(_avant, vocabulaire, 370, 300)]),
+    mo.vstack([mo.md(_titre_apres),
+               nuage(_apres, vocabulaire, 370, 300) if np.isfinite(_apres).all()
+               else mo.md("*Pas de plongements : l'entraînement a divergé.*")]),
+], wrap=True, justify="center", gap=1)
 ```
+
+Les curseurs de l'entraînement, plus haut, pilotent aussi ces nuages. Ramenez
+le nombre de pas à 0, puis augmentez-le peu à peu : les mots quittent leurs
+positions de départ et se regroupent.
 
 Personne n'a dit au réseau ce qu'est un animal ou un lieu. Pourtant, après
 entraînement, « chat », « chien » et « souris » se regroupent, tout comme
@@ -2008,7 +2032,7 @@ vecteurs proches, tout ce que le modèle apprend sur l'un profite à l'autre :
 avoir vu « le chien dort » rend « le chat dort » plus plausible. C'est la
 **généralisation**.
 
-## Des mots aux jetons
+## Des mots aux jetons {#jetons}
 
 Jusqu'ici, nos modèles travaillent sur des mots, et ne connaissent que ceux de
 leur corpus. Sur quelles unités un vrai modèle de langue doit-il travailler?
@@ -2219,7 +2243,7 @@ les autres façons de l'ouvrir, voir la [mise en route](../../mise-en-route.qmd)
   plongements appris sont-ils plutôt de dimension quelques centaines?
 - Le modèle de Bengio et al. voit les $n - 1$ mots précédents. Pour accorder un
   verbe avec un sujet placé trente mots plus tôt, faudrait-il $n = 31$? Que
-  deviendraient ses paramètres? (Semaine 3.)
+  deviendraient ses paramètres? ([Semaine 3](s03.qmd).)
 - Les tokeniseurs, entraînés surtout sur de l'anglais, découpent le français en
   plus de jetons. Quelles conséquences pour un agent qui travaille en français?
 
