@@ -162,7 +162,7 @@ réseau, comment il apprend, et ce qu'il apprend au passage : un vecteur par
 mot, le **plongement** (*embedding*), qui permet enfin de généraliser. On terminera par les
 unités sur lesquelles travaillent les vrais modèles, les **jetons** (*tokens*), qui
 règlent le problème des mots inconnus. Le dernier défaut, un contexte trop
-court, attendra la semaine 3.
+court, attendra la [semaine 3](s03.qmd).
 
 À la fin de la semaine, vous saurez :
 
@@ -754,7 +754,7 @@ Chercher les paramètres qui font faire au réseau ce qu'on veut, c'est
 l'**entraîner** : vous venez de faire un **entraînement** (*training*) manuel.
 Avec dix paramètres ($w_1$ à $w_3$, $c_1$ à $c_3$, $v_1$ à $v_3$ et $b$), on y
 arrive, mais il faut réfléchir, ou tâtonner longtemps. Qwen2.5-0.5B, le modèle
-de la semaine 3, en a 494 millions : personne ne les règle à la main. Il faut
+de la [semaine 3](s03.qmd), en a 494 millions : personne ne les règle à la main. Il faut
 une méthode pour entraîner un réseau automatiquement.
 
 ## Apprendre : la perte et la descente de gradient
@@ -1191,8 +1191,8 @@ pas de sortir.
 Reste à calculer le gradient de chaque paramètre. La sortie d'un réseau est une
 suite de calculs simples (produits, sommes, ReLU), et la dérivée d'une suite de
 calculs s'obtient en enchaînant leurs dérivées : c'est la règle de dérivation en
-chaîne, qu'on a vue en analyse (sans rapport avec la règle de la chaîne des
-probabilités de la semaine 1). On part de la perte, on calcule sa dérivée par
+chaîne, qu'on a vue en analyse (sans rapport avec la [règle de la chaîne des
+probabilités de la semaine 1](s01.qmd#distribution)). On part de la perte, on calcule sa dérivée par
 rapport à la sortie, puis on remonte couche par couche vers l'entrée : chaque
 couche reçoit le gradient de la suivante, en déduit celui de ses propres
 paramètres, et transmet à la couche précédente celui de son entrée. C'est la
@@ -1273,7 +1273,7 @@ de neurones et de paramètres que le strict nécessaire.
 
 ## Le bigramme neuronal
 
-Revenons au bigramme de la semaine 1. Sa table de comptes est, au fond, une
+Revenons au [bigramme de la semaine 1](s01.qmd#bigramme). Sa table de comptes est, au fond, une
 fonction : on lui donne un mot, elle rend une distribution de probabilités sur
 le mot suivant. Or un réseau de neurones, on vient de le voir, est justement une
 fonction dont on peut ajuster les paramètres. Peut-on remplacer la table par un
@@ -1726,7 +1726,7 @@ proportionnellement à $n$, et non plus comme $V^n$ : le fléau de la dimension
 de la figure 1.2 est contourné. Et surtout, comme on va le voir, des mots
 semblables y reçoivent des vecteurs proches.
 
-Voici les données : chaque position du corpus de la semaine 1 donne un exemple,
+Voici les données : chaque position du [corpus de la semaine 1](s01.qmd#bigramme) donne un exemple,
 le mot précédent `x` et le mot à prédire `y`.
 
 ```python {.marimo}
@@ -1762,7 +1762,7 @@ mots : le plancher, la courbe d'entraînement et le nuage des plongements, plus
 bas, se recalculent à partir de lui. Les figures précédentes, elles, restent
 calculées sur le corpus d'origine.
 
-## Même recette, autre perte : l'entropie croisée
+## Même recette, autre perte : l'entropie croisée {#entropie-croisee}
 
 Pour entraîner le bigramme neuronal, on suit la même recette que pour le petit
 réseau : une perte, puis la descente de gradient. Seule la perte change. La
@@ -1770,8 +1770,8 @@ sortie n'est plus un nombre à rapprocher d'une cible, c'est une distribution de
 probabilités, et la bonne réponse est un mot. L'écart quadratique n'a plus de
 sens.
 
-Cette perte, vous la connaissez déjà : c'est l'**entropie croisée** de la
-semaine 1, celle qui servait à évaluer le bigramme par comptage, et dont la
+Cette perte, vous la connaissez déjà : c'est l'[**entropie croisée** de la
+semaine 1](s01.qmd#perplexite), celle qui servait à évaluer le bigramme par comptage, et dont la
 perplexité était une version plus parlante. Avec $x_t$, le mot précédent
 ($w_{t-1}$ à la semaine 1), et $y_t$, le mot qui suit ($w_t$), c'est la même
 formule :
@@ -1790,8 +1790,8 @@ baisser, pas à pas : la mesure devient la perte à minimiser.
 Les deux bigrammes poursuivent donc le même but : rendre le corpus le plus
 probable possible, c'est-à-dire avoir la plus petite entropie croisée. Le
 bigramme par comptage l'atteint d'un coup : ses fréquences sont, par
-définition, les probabilités qui rendent le corpus le plus probable (le maximum
-de vraisemblance de la semaine 1). Le bigramme neuronal, lui, part de
+définition, les probabilités qui rendent le corpus le plus probable (le [maximum
+de vraisemblance de la semaine 1](s01.qmd#bigramme)). Le bigramme neuronal, lui, part de
 paramètres tirés au hasard, avec une perte élevée, et s'en approche par la
 descente de gradient. Aucun bigramme, neuronal ou non, ne peut faire mieux sur
 ce corpus : l'entropie croisée du bigramme par comptage est un **plancher**,
@@ -1817,7 +1817,7 @@ autres). Le pas augmente donc le logit du bon mot, et diminue celui de chaque
 autre mot en proportion de la probabilité qu'on lui accordait à tort. La
 rétropropagation transmet ensuite ce gradient à $W$, $b$ et $E$. Ici, nous
 l'écrivons à la main; en laboratoire, vous l'écrirez vous-même, et à partir de
-la semaine 3, PyTorch la calculera pour nous.
+la [semaine 3](s03.qmd), PyTorch la calculera pour nous.
 
 ```python {.marimo}
 code_entrainer = code_modifiable(r'''
@@ -1891,7 +1891,7 @@ Entre les deux, quelques centaines de pas suffisent pour s'approcher du
 plancher, même avec $d = 2$. Avec $d = 1$, en revanche, le réseau plafonne
 au-dessus : un seul nombre par mot ne suffit pas à résumer ce qui le suit.
 
-## Les plongements appris
+## Les plongements appris {#plongements}
 
 Le réseau a appris, au passage, un vecteur par mot. Le voici, dans le plan
 (au-delà de 2 dimensions, on projette sur les deux directions où les points
@@ -2152,7 +2152,7 @@ source, est représentable. Quelques conséquences méritent d'être retenues.
 - **Les espaces comptent.** En code, l'indentation et les espaces font partie
   des jetons. Un agent qui doit reproduire exactement un passage de code pour
   le modifier peut se tromper d'un espace; nous concevrons nos outils en
-  conséquence (semaine 8).
+  conséquence ([semaine 8](../3-agir/s08.qmd)).
 
 Tout ce qu'on a vu plus haut s'applique tel quel aux jetons : un vrai modèle a
 un plongement par jeton plutôt que par mot, et il prédit le jeton suivant

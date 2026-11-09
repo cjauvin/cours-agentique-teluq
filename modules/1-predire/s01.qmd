@@ -87,7 +87,7 @@ probabilités.
 ```
 
 La seule opération d'un LLM : donner une probabilité à chaque suite possible.
-Les probabilités sont celles d'un vrai modèle, Qwen2.5-0.5B (semaine 3), pour
+Les probabilités sont celles d'un vrai modèle, Qwen2.5-0.5B ([semaine 3](s03.qmd)), pour
 les mots qui suivent « Le chat dort sur le » : même la plus probable, « sol »,
 ne dépasse pas 5 %. On tire une suite au hasard selon ces probabilités, on
 l'ajoute au texte, et on recommence.
@@ -97,7 +97,7 @@ Cette semaine, on construit cette opération de zéro, avec le modèle le plus
 simple qui soit, le **bigramme**. Il est bien trop pauvre pour être utile,
 mais il possède déjà toute la structure d'un LLM : une distribution sur le mot
 suivant, une façon de l'apprendre à partir d'un corpus, une façon de
-l'évaluer, et une façon d'en tirer du texte. Les semaines 2 et 3 remplaceront
+l'évaluer, et une façon d'en tirer du texte. Les semaines [2](s02.qmd) et [3](s03.qmd) remplaceront
 le bigramme par un réseau de neurones; tout le reste restera.
 
 À la fin de la semaine, vous saurez :
@@ -110,7 +110,7 @@ le bigramme par un réseau de neurones; tout le reste restera.
 - expliquer les principales stratégies de décodage (glouton, température,
   top-k, top-p) et leur effet sur le comportement d'un agent.
 
-## Un modèle de langue est une distribution
+## Un modèle de langue est une distribution {#distribution}
 
 Considérez la phrase « le chat dort sur le … ». Certains mots sont des suites
 plausibles (« tapis », « canapé »), d'autres beaucoup moins (« dort »,
@@ -139,7 +139,7 @@ produit devient une partie du contexte qui sert à produire le suivant. Toute
 la difficulté se concentre dans une seule question : comment estimer
 $P(w_t \mid w_1, \dots, w_{t-1})$?
 
-## Le bigramme
+## Le bigramme {#bigramme}
 
 Le contexte $w_1, \dots, w_{t-1}$ s'allonge sans cesse, et une phrase de vingt
 mots n'apparaît presque jamais deux fois dans un corpus. Il faut donc
@@ -159,7 +159,7 @@ où $C(a, b)$ compte les occurrences de la paire « $a$ $b$ », et $C(a)$ celles
 de $a$ suivi de n'importe quoi. On peut montrer que ces fréquences sont les
 probabilités qui rendent le corpus le plus probable possible : c'est
 l'estimation par **maximum de vraisemblance** (*maximum likelihood*), le principe même qui guidera
-l'entraînement des réseaux de neurones à la semaine 2.
+l'entraînement des réseaux de neurones à la [semaine 2](s02.qmd#entropie-croisee).
 
 Voici un corpus minuscule, et tout le modèle : un dictionnaire de compteurs. Le
 point joue un double rôle : il termine une phrase, et il sert de « mot
@@ -225,9 +225,9 @@ barres({m: c / _total for m, c in comptes[mot.value].items()})
 Remarquez que la distribution après « . » donne la probabilité de chaque
 **premier** mot de phrase : le point fait office de marqueur de début. Les
 vrais modèles utilisent pour cela des jetons spéciaux, que nous retrouverons à
-la semaine 4.
+la [semaine 4](../2-assister/s04.qmd).
 
-## Évaluer : la perplexité
+## Évaluer : la perplexité {#perplexite}
 
 Comment savoir si un modèle de langue est bon? On l'évalue sur des phrases
 qu'il **n'a pas vues** pendant l'estimation : l'**ensemble de test** (*test set*). Évaluer
@@ -255,7 +255,7 @@ perplexité de 5 signifie que le modèle est, en moyenne, aussi incertain que
 s'il devait choisir au hasard parmi 5 mots équiprobables. Un modèle qui ne sait
 rien, et qui donne la même probabilité aux $V$ mots du vocabulaire, a une
 perplexité de $V$. L'entropie croisée est exactement la quantité que les LLM
-minimisent pendant leur entraînement (semaine 2).
+minimisent pendant leur entraînement ([semaine 2](s02.qmd#entropie-croisee)).
 
 ```python {.marimo}
 code_probabilite = code_modifiable(r'''
@@ -464,7 +464,7 @@ que masquer le problème.
 Nombre de paramètres d'un n-gramme pour un vocabulaire de 50 000 mots ($V^n$),
 en échelle logarithmique : chaque mot de contexte en plus multiplie le total
 par 50 000. Dès le trigramme, il y a plus de paramètres que de jetons dans tout
-le corpus d'entraînement de Qwen2.5, le modèle de la semaine 3 : la plupart des
+le corpus d'entraînement de Qwen2.5, le modèle de la [semaine 3](s03.qmd) : la plupart des
 contextes n'y apparaîtront jamais, pas même une fois.
 :::
 
@@ -482,7 +482,7 @@ représentant chaque mot par un vecteur : deux mots qui apparaissent dans des
 contextes semblables reçoivent des vecteurs proches, et ce que le modèle
 apprend sur l'un profite à l'autre. C'est la réponse au fléau de la dimension
 proposée par le premier modèle de langue neuronal [@bengio2003neural], et le
-sujet de la semaine 2.
+sujet de la [semaine 2](s02.qmd#plongements).
 
 ## Générer : les stratégies de décodage
 
@@ -614,7 +614,7 @@ tout au long du cours.
 - **Un agent n'est pas déterministe.** La même consigne peut produire des
   actions différentes d'une exécution à l'autre. Pour évaluer un agent, il
   faudra donc le faire travailler plusieurs fois sur la même tâche et mesurer
-  un taux de réussite (semaine 9).
+  un taux de réussite ([semaine 9](../3-agir/s09.qmd)).
 - **Le décodage se règle selon la tâche.** Pour un appel d'outil ou une
   modification de code, où une seule réponse est correcte et où une erreur de
   syntaxe fait tout échouer, on choisit une température basse. Pour proposer
