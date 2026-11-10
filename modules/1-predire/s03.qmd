@@ -1,5 +1,5 @@
 ---
-title: "Un vrai petit modèle"
+title: "Un vrai modèle de langue"
 engine: marimo
 pyproject: |
   requires-python = ">=3.10"
@@ -68,45 +68,38 @@ def courbe(pertes, plancher, haut, largeur=520, hauteur=200):
     )
 
 
-def nuage(points, etiquettes, largeur=520, hauteur=320):
-    """Nuage de points étiquetés en SVG."""
-    x, y = points[:, 0], points[:, 1]
-
-    def echelle(v, n):
-        etendue = v.max() - v.min()
-        return 30 + (v - v.min()) / (etendue if etendue > 1e-9 else 1) * (n - 60)
-
-    xs, ys = echelle(x, largeur), hauteur - echelle(y, hauteur)
-    # Les points très proches partagent une seule étiquette.
-    groupes = []
-    for a, b, e in zip(xs, ys, etiquettes):
-        for g in groupes:
-            if abs(g[0] - a) < 25 and abs(g[1] - b) < 12:
-                g[2].append(e)
-                break
+def arcs(mots, sous_titres, poids, i, largeur=640):
+    """Où regarde le mot i : un arc vers chaque mot visible, épais selon son poids."""
+    pas = largeur / len(mots)
+    xs = [pas * (k + 0.5) for k in range(len(mots))]
+    base = 205
+    s = []
+    for j in range(i + 1):
+        w = float(poids[j])
+        if j == i:  # le mot se regarde lui-même : une petite boucle
+            d = (f"M{xs[i] - 7:.1f},{base - 20} C{xs[i] - 26:.1f},{base - 70} "
+                 f"{xs[i] + 26:.1f},{base - 70} {xs[i] + 7:.1f},{base - 20}")
+            x_lab, y_lab = xs[i], base - 62
         else:
-            groupes.append((a, b, [e]))
-
-    def etiquette(a, b, es):
-        # Trois mots par ligne au plus; à gauche du point s'il déborderait à droite.
-        lignes = [", ".join(es[i:i + 3]) for i in range(0, len(es), 3)]
-        vers_gauche = a + 5 + 7.3 * max(map(len, lignes)) > largeur
-        x_texte, ancre = (a - 5, "end") if vers_gauche else (a + 5, "start")
-        tspans = "".join(
-            f"<tspan x='{x_texte:.1f}' dy='{0 if i == 0 else 14}'>{l}</tspan>"
-            for i, l in enumerate(lignes)
-        )
-        y_texte = b - 4 - 14 * (len(lignes) - 1)
-        return (f"<text y='{y_texte:.1f}' font-size='12' text-anchor='{ancre}'>"
-                f"{tspans}</text>")
-
-    marques = "".join(
-        f"<circle cx='{a:.1f}' cy='{b:.1f}' r='3' fill='#3b82f6'/>" + etiquette(a, b, es)
-        for a, b, es in groupes
-    )
+            h = 28 + 21 * (i - j)
+            d = (f"M{xs[i]:.1f},{base - 20} Q{(xs[i] + xs[j]) / 2:.1f},{base - 20 - 2 * h} "
+                 f"{xs[j]:.1f},{base - 20}")
+            x_lab, y_lab = (xs[i] + xs[j]) / 2, base - 24 - h
+        s.append(f"<path d='{d}' fill='none' stroke='#3b82f6' stroke-linecap='round' "
+                 f"stroke-width='{1 + 11 * w:.1f}' stroke-opacity='{0.2 + 0.8 * w:.2f}'/>")
+        if w >= 0.05:
+            s.append(f"<text x='{x_lab:.1f}' y='{y_lab:.1f}' text-anchor='middle' "
+                     f"font-size='12'>{round(100 * w)} %</text>")
+    for k, (mot, sous_titre) in enumerate(zip(mots, sous_titres)):
+        style = ("fill='#f59e0b' font-weight='bold'" if k == i
+                 else "opacity='0.35'" if k > i else "")
+        s.append(f"<text x='{xs[k]:.1f}' y='{base}' text-anchor='middle' font-size='16' "
+                 f"{style}>{html.escape(mot)}</text>")
+        s.append(f"<text x='{xs[k]:.1f}' y='{base + 18}' text-anchor='middle' font-size='11' "
+                 f"opacity='0.55'>{html.escape(sous_titre)}</text>")
     return mo.Html(
-        f"<svg width='{largeur}' height='{hauteur}' fill='currentColor' style='font-family:monospace;"
-        f"border:1px solid rgba(127,127,127,.3);border-radius:4px'>{marques}</svg>"
+        f"<svg viewBox='0 0 {largeur} {base + 28}' fill='currentColor' "
+        f"style='width:100%;max-width:{largeur}px;display:block;margin:auto'>{''.join(s)}</svg>"
     )
 
 
@@ -147,26 +140,28 @@ def carte(jetons, poids):
 
 {{< include /_includes/s03-donnees.qmd >}}
 
-Les deux premières semaines ont posé toutes les pièces d'un modèle de langue :
-une distribution sur le jeton suivant, qu'on évalue par la perplexité et qu'on
-échantillonne par le décodage (semaine 1); des jetons, des plongements et
-l'attention (semaine 2). Deux questions sont restées ouvertes. **D'où viennent
-les nombres?** Les plongements et les matrices de l'attention, que nous avons
-écrits à la main, ne le sont jamais dans un vrai modèle : ils sont **appris**.
-Et **comment l'attention connaît-elle l'ordre des mots**, elle qui traite le
-contexte comme un ensemble?
+{{< include /_includes/s03-mini-transformeur.qmd >}}
 
-Cette semaine, on entraîne nous-mêmes un minuscule réseau de neurones, dans la
-page. Puis on ouvre un vrai modèle de langue, de 494 millions de paramètres,
-pour y retrouver tout ce qu'on a construit.
+Le bigramme de la [semaine 1](s01.qmd#parcimonie) avait trois défauts : il
+ne généralise pas, il ne connaît que les mots de son corpus, et il ne voit que
+le mot précédent. La [semaine 2](s02.qmd) a réglé le premier : un réseau de
+neurones apprend un plongement par mot, et des mots semblables reçoivent des
+vecteurs proches. Cette semaine règle les deux autres. Les **jetons** donnent un
+vocabulaire ouvert, où aucun texte n'est inconnu. L'**attention** permet à
+chaque jeton d'aller chercher l'information dans tout le contexte, quelle que
+soit la distance. Assemblées, ces pièces forment le **transformeur**
+(*transformer*), l'architecture de tous les LLM actuels.
+
+On terminera en ouvrant un vrai modèle de langue, de 494 millions de
+paramètres, pour y retrouver tout ce qu'on a construit depuis trois semaines.
 
 À la fin de la semaine, vous saurez :
 
 - expliquer comment un texte est découpé en jetons par l'algorithme BPE, et
   pourquoi ce découpage a des conséquences pratiques pour un agent;
-- expliquer comment un réseau de neurones apprend à prédire le jeton suivant :
-  la perte d'entropie croisée, le gradient, la descente de gradient;
-- expliquer comment un transformeur tient compte de la position des jetons;
+- expliquer le calcul de l'attention (requêtes, clés, valeurs, masque causal),
+  et pourquoi elle a besoin d'une information de position;
+- décrire un transformeur : ses blocs, sa sortie et son entraînement;
 - lire les distributions, les surprises et les cartes d'attention d'un vrai
   modèle;
 - distinguer un modèle de base d'un assistant, et dire ce qu'on gagne et ce
@@ -322,229 +317,166 @@ Tout ce qu'on a vu à la [semaine 2](s02.qmd) s'applique tel quel aux jetons : u
 un plongement par jeton plutôt que par mot, et il prédit le jeton suivant
 plutôt que le mot suivant.
 
-## Apprendre plutôt que compter
+## L'attention {#attention}
 
-### Le bigramme neuronal
+Il reste le dernier défaut du bigramme : le contexte. Pour prédire la suite de
+« Le chat noir qui dormait sur le tapis s'est … », il faut se souvenir que le
+sujet est « chat », loin derrière, pour accorder le participe : « réveillé », et
+non « réveillée ». Un n-gramme ne le peut pas : on a vu à la
+[semaine 1](s01.qmd#parcimonie) qu'allonger son contexte fait exploser le
+nombre de paramètres. Il faudrait un mécanisme qui, pour chaque position, aille
+**chercher** dans tout le contexte les mots qui comptent, quelle que soit leur
+distance, et sans paramètres de plus pour chaque mot de contexte ajouté.
 
-Reprenons le bigramme de la semaine 1, mais remplaçons sa table de comptes par
-un petit réseau de neurones. Chaque mot $a$ du vocabulaire reçoit un
-**plongement** $h = E_a$, un vecteur de $d$ nombres (une ligne de la matrice
-$E$). Pour prédire le mot qui suit $a$, le réseau multiplie ce vecteur par une
-seconde matrice $W$, ajoute un **biais** $b$, et obtient un score par mot du
-vocabulaire, les **logits**. Un softmax en fait une distribution :
+C'est ce que fait l'**attention**. Pour chaque jeton, elle calcule une
+distribution sur les jetons qui précèdent (des poids positifs qui somment à 1),
+puis fait la moyenne de leurs vecteurs selon ces poids. Le résultat est un
+nouveau vecteur pour ce jeton, enrichi de ce qu'il a trouvé dans son contexte :
+le vecteur de « s'est » peut ainsi recevoir une bonne part de celui de « chat ».
 
-$$z = E_a W + b, \qquad P(\cdot \mid a) = \mathrm{softmax}(z)$$
+### Requêtes, clés et valeurs
 
-C'est déjà, en miniature, la fin de tout LLM : un vecteur projeté sur le
-vocabulaire, puis un softmax. Avec nos $V = 21$ mots et $d = 2$, le réseau a
-$21 \times 2 + 2 \times 21 + 21 = 105$ paramètres, contre $21 \times 21 = 441$
-cases pour la table de comptes. Il doit donc **compresser** : impossible de
-retenir chaque paire séparément.
+Comment décider où regarder? Chaque jeton produit trois vecteurs, par trois
+multiplications matricielles de son plongement $x$ :
 
-Voici les données : chaque position du corpus de la semaine 1 donne un exemple,
-le mot précédent `x` et le mot à prédire `y`.
+- une **requête** (*query*) $q = x W_Q$ : ce qu'il cherche;
+- une **clé** (*key*) $k = x W_K$ : ce qu'il offre, ce sur quoi on peut le
+  trouver;
+- une **valeur** (*value*) $v = x W_V$ : ce qu'il transmet quand on le trouve.
+
+L'image est celle d'un dictionnaire où l'on chercherait par ressemblance plutôt
+que par égalité exacte. Le score entre le jeton $i$ et le jeton $j$ est le
+produit scalaire $q_i \cdot k_j$ : grand si ce que $i$ cherche ressemble à ce
+que $j$ offre. Un softmax, celui de la sortie du
+[bigramme neuronal](s02.qmd#bigramme-neuronal), transforme les scores en poids,
+et le résultat est la moyenne des valeurs pondérée par ces poids. Pour tous les
+jetons à la fois, en empilant les vecteurs en matrices :
+
+$$\mathrm{Attention}(Q, K, V) = \mathrm{softmax}\!\left(\frac{QK^\top}{\sqrt{d}}\right) V$$
+
+Deux détails. La division par $\sqrt{d}$, où $d$ est la dimension des
+vecteurs, empêche les scores de grandir avec la dimension, ce qui rendrait le
+softmax trop pointu : c'est une température, exactement comme à la
+[semaine 1](s01.qmd#decodage). Et le **masque causal** (*causal mask*) interdit
+à chaque jeton de regarder les jetons qui le suivent, en mettant leur score à
+$-\infty$ avant le softmax : un modèle qui génère de gauche à droite ne doit
+pas apprendre à « tricher » en regardant l'avenir.
 
 ```python {.marimo}
-code_donnees = code_modifiable(r'''
-CORPUS = """
-le chat dort sur le tapis . le chien dort sur le canapé .
-le chat mange la souris . le chien mange le repas du chat .
-la souris dort dans le trou . le chat regarde le chien .
-le chien regarde la souris . la souris regarde le fromage .
-la souris mange le fromage . le chat dort dans le panier .
-le chien court dans le jardin . le chat court après la souris .
-la souris court dans le trou . le chien dort dans le jardin .
-le chat mange le fromage du chien . la souris dort sur le tapis .
-"""
-jetons = ["."] + CORPUS.split()
-vocabulaire = sorted(set(jetons))
-index = {m: i for i, m in enumerate(vocabulaire)}
-x = np.array([index[m] for m in jetons[:-1]])  # le mot précédent
-y = np.array([index[m] for m in jetons[1:]])   # le mot à prédire
-V, N = len(vocabulaire), len(x)
+code_attention = code_modifiable(r'''
+def softmax(x):
+    e = np.exp(x - x.max(axis=-1, keepdims=True))
+    return e / e.sum(axis=-1, keepdims=True)
+
+
+def attention(Q, K, V, causal=True):
+    scores = Q @ K.T / np.sqrt(K.shape[1])
+    if causal:
+        # Le masque : -∞ au-dessus de la diagonale, là où j > i
+        scores = np.where(np.tri(len(Q), dtype=bool), scores, -np.inf)
+    poids = softmax(scores)
+    return poids @ V, poids
 ''')
-code_donnees
+code_attention
 ```
 
 ```python {.marimo}
-jetons, vocabulaire, x, y, V, N = executer(
-    code_donnees, {"np": np}, "jetons", "vocabulaire", "x", "y", "V", "N"
+(attention,) = executer(code_attention, {"np": np}, "attention")
+```
+
+### Une attention construite à la main
+
+Dans un vrai modèle, les matrices $W_Q$, $W_K$ et $W_V$ sont apprises, et ce
+qu'elles encodent est difficile à lire. Construisons-en une à la main, pour
+voir le mécanisme. Chaque mot de la phrase « le chat noir dort sur le tapis »
+est codé par sa catégorie grammaticale : déterminant, nom, adjectif, verbe ou
+préposition. Une matrice $M$ dit quelle catégorie en « cherche » quelle autre :
+un adjectif cherche un nom (pour s'accorder), un verbe cherche un nom (son
+sujet), un nom cherche un déterminant. Le score entre deux mots est alors
+$x_i M x_j^\top$, ce qui revient à prendre $W_Q = M$ et $W_K = I$, la matrice
+identité.
+
+Ce code est modifiable : changez la phrase ou les valeurs de $M$, puis cliquez
+hors de l'éditeur, et observez l'effet sur la figure plus bas.
+
+```python {.marimo}
+code_phrase = code_modifiable(r'''
+CATEGORIES = ["dét", "nom", "adj", "verbe", "prép"]
+PHRASE = [("le", "dét"), ("chat", "nom"), ("noir", "adj"), ("dort", "verbe"),
+          ("sur", "prép"), ("le", "dét"), ("tapis", "nom")]
+
+# Un vecteur one-hot par mot : sa catégorie
+X = np.array([[c == cat for c in CATEGORIES] for _, cat in PHRASE], dtype=float)
+
+M = np.zeros((5, 5))
+M[2, 1] = 4  # l'adjectif cherche un nom
+M[3, 1] = 4  # le verbe cherche un nom
+M[1, 0] = 3  # le nom cherche un déterminant
+M[4, 3] = 3  # la préposition cherche un verbe
+M[0, 4] = 2  # le déterminant cherche une préposition
+''')
+code_phrase
+```
+
+```python {.marimo}
+CATEGORIES, PHRASE, X, M = executer(
+    code_phrase, {"np": np}, "CATEGORIES", "PHRASE", "X", "M"
 )
 ```
 
-### La perte : l'entropie croisée
-
-Au départ, les paramètres sont tirés au hasard, et les prédictions ne valent
-rien. Pour les améliorer, il faut d'abord mesurer à quel point elles sont
-mauvaises. On reprend exactement la mesure de la semaine 1, l'**entropie
-croisée** : la moyenne, sur tous les exemples du corpus, de
-$-\log_2 P(y \mid x)$, la surprise du réseau devant le bon mot.
-
-$$\mathcal{L} = -\frac{1}{N} \sum_{t=1}^{N} \log_2 P(y_t \mid x_t)$$
-
-Entraîner le réseau, c'est chercher les paramètres qui rendent cette **perte**
-la plus petite possible. La semaine 1 nous dit jusqu'où elle peut descendre :
-les fréquences du bigramme par comptage sont, par définition, les
-probabilités qui rendent le corpus le plus probable (le maximum de
-vraisemblance). Aucun bigramme, neuronal ou non, ne peut faire mieux sur ce
-corpus. Leur entropie croisée est un **plancher**.
+Choisissez un mot : les arcs montrent où il porte son attention, d'autant plus
+épais que le poids est grand. Les mots qui le suivent, en gris, lui sont
+cachés par le masque causal. La **netteté** multiplie les scores avant le
+softmax : c'est l'inverse d'une température.
 
 ```python {.marimo}
-_comptes = defaultdict(Counter)
-for _a, _b in zip(jetons, jetons[1:]):
-    _comptes[_a][_b] += 1
-plancher = -sum(
-    math.log2(_comptes[_a][_b] / sum(_comptes[_a].values()))
-    for _a, _b in zip(jetons, jetons[1:])
-) / N
-```
-
-### La descente de gradient
-
-Comment trouver ces paramètres? Pour chacun, on calcule le **gradient** : de
-combien la perte varierait si on l'augmentait un tout petit peu. On déplace
-alors chaque paramètre d'un petit pas dans la direction opposée, celle où la
-perte diminue, et on recommence. C'est la **descente de gradient**. La taille
-du pas est le **taux d'apprentissage**.
-
-Pour un softmax suivi de l'entropie croisée, le gradient par rapport aux
-logits est d'une simplicité remarquable : $p - y$, la distribution prédite
-moins la « bonne réponse » (1 pour le bon mot, 0 pour les autres). Le pas
-augmente donc le logit du bon mot, et diminue celui de chaque autre mot en
-proportion de la probabilité qu'on lui accordait à tort. La **règle de la
-chaîne** des dérivées propage ensuite ce gradient vers $W$, $b$ et $E$ : c'est
-la **rétropropagation**. Ici, nous l'écrivons à la main; en laboratoire,
-PyTorch la calculera pour nous.
-
-```python {.marimo}
-code_entrainer = code_modifiable(r'''
-def entrainer(d, pas, taux, graine=0):
-    rng = np.random.default_rng(graine)
-    E = rng.normal(0, 0.1, (V, d))  # les plongements : une ligne par mot
-    W = rng.normal(0, 0.1, (d, V))  # la projection vers les logits
-    b = np.zeros(V)                 # le biais : un par mot
-    pertes = []
-    for _ in range(pas):
-        # Propagation : la distribution du mot suivant, pour chaque exemple
-        h = E[x]
-        z = h @ W + b
-        p = np.exp(z - z.max(axis=1, keepdims=True))
-        p /= p.sum(axis=1, keepdims=True)
-        pertes.append(-np.mean(np.log2(p[np.arange(N), y])))
-        if not np.isfinite(pertes[-1]):
-            break  # l'entraînement a divergé
-        # Rétropropagation : le gradient par rapport aux logits est p − y
-        g = p.copy()
-        g[np.arange(N), y] -= 1
-        g /= N
-        gW, gb, gh = h.T @ g, g.sum(axis=0), g @ W.T
-        gE = np.zeros_like(E)
-        np.add.at(gE, x, gh)
-        # Descente de gradient : un petit pas dans la direction opposée
-        E -= taux * gE
-        W -= taux * gW
-        b -= taux * gb
-    return E, W, b, pertes
-''')
-code_entrainer
+_options = {f"{i + 1}. {mot}": i for i, (mot, _) in enumerate(PHRASE)}
+requete = mo.ui.dropdown(_options, value=list(_options)[min(3, len(_options) - 1)], label="Mot")
+nettete = mo.ui.slider(0.0, 3.0, step=0.1, value=1.0, label="Netteté", show_value=True)
+mo.hstack([requete, nettete], justify="start", gap=2)
 ```
 
 ```python {.marimo}
-(entrainer,) = executer(
-    code_entrainer, {"np": np, "x": x, "y": y, "V": V, "N": N}, "entrainer"
-)
+_, poids_main = attention(nettete.value * X @ M, X, X)
+_i = min(requete.value, len(PHRASE) - 1)
+arcs([m for m, _ in PHRASE], [c for _, c in PHRASE], poids_main[_i], _i)
 ```
 
-Faites varier le nombre de pas, le taux d'apprentissage et la dimension $d$
-des plongements.
+À netteté 0, tous les scores sont nuls : l'attention est uniforme sur les mots
+visibles, et toute structure disparaît. En la montant, chaque mot se concentre
+sur celui qu'il cherche, **quelle que soit la distance**. « dort » trouve
+« chat » deux mots plus loin; il le trouverait aussi bien vingt mots plus loin.
+Et le coût ne dépend pas de la distance : contrairement au n-gramme, allonger
+le contexte n'ajoute aucun paramètre.
+
+On résume souvent toute l'attention d'une phrase en un seul tableau : une ligne
+par mot qui regarde, une colonne par mot regardé, et les poids en pourcentage.
+La ligne du mot choisi plus haut est celle de la figure; le triangle vide en
+haut à droite, c'est le masque causal. Nous lirons plus bas des tableaux
+semblables, ceux d'un vrai modèle.
 
 ```python {.marimo}
-n_pas = mo.ui.slider(0, 500, step=10, value=300, label="Pas d'entraînement", show_value=True)
-taux = mo.ui.slider(steps=[0.1, 0.5, 1, 2, 5, 10], value=2, label="Taux d'apprentissage", show_value=True)
-dimension = mo.ui.slider(steps=[1, 2, 3, 4, 8], value=2, label="Dimension d", show_value=True)
-mo.vstack([n_pas, taux, dimension])
+carte([m for m, _ in PHRASE],
+      [[round(100 * p) for p in poids_main[i, :i + 1]] for i in range(len(PHRASE))])
 ```
 
-```python {.marimo}
-E, _W, _b, pertes = entrainer(dimension.value, n_pas.value, taux.value)
-_haut = math.ceil(math.log2(V))
-if not pertes:
-    _bilan = mo.md(f"*Aucun pas : la perte d'un réseau non entraîné est d'environ {math.log2(V):.2f} bits.*")
-elif not np.isfinite(pertes[-1]):
-    _bilan = mo.callout(mo.md(
-        f"**L'entraînement a divergé** après {len(pertes) - 1} pas : le taux "
-        "d'apprentissage est trop grand, chaque pas dépasse la vallée au lieu d'y descendre."
-    ), kind="danger")
-else:
-    _bilan = mo.md(
-        f"Perte après {len(pertes)} pas : **{pertes[-1]:.2f} bits** "
-        f"(plancher : {plancher:.2f}; réseau non entraîné : {pertes[0]:.2f})."
-    )
-mo.vstack([courbe([p for p in pertes if np.isfinite(p)] or [0], plancher, _haut), _bilan])
-```
+Remarquez enfin les deux « le » : ils ont exactement le même vecteur, et
+l'attention, telle quelle, ne sait pas lequel vient en premier. Elle traite le
+contexte comme un **ensemble**, sans ordre. Il faudra lui donner la
+[position](#position) de chaque jeton.
 
-Avec un taux de 0,1, la perte descend, mais lentement; à 10, elle diverge.
-Entre les deux, quelques centaines de pas suffisent pour s'approcher du
-plancher, même avec $d = 2$. Avec $d = 1$, en revanche, le réseau plafonne
-au-dessus : un seul nombre par mot ne suffit pas à résumer ce qui le suit.
+### Plusieurs têtes
 
-### Les plongements appris
+Une seule attention ne peut chercher qu'une chose à la fois. Un transformeur en
+calcule plusieurs en parallèle, avec des matrices différentes : ce sont les
+**têtes d'attention** (*attention heads*). L'une peut suivre l'accord
+grammatical, une autre la référence d'un pronom, une autre encore la structure
+d'un bloc de code. Leurs résultats sont mis bout à bout, puis combinés par une
+dernière multiplication matricielle.
 
-Le réseau a appris, au passage, un vecteur par mot. Le voici, dans le plan
-(au-delà de 2 dimensions, on projette sur les deux directions où les points
-s'étalent le plus).
+## Où est chaque mot : la position {#position}
 
-```python {.marimo}
-if E.shape[1] == 1:
-    _points = np.hstack([E, np.zeros_like(E)])
-else:
-    _centre = E - E.mean(axis=0)
-    _points = _centre @ np.linalg.svd(_centre, full_matrices=False)[2][:2].T
-nuage(_points, vocabulaire) if np.isfinite(_points).all() else mo.md("*Pas de plongements : l'entraînement a divergé.*")
-```
-
-Personne n'a dit au réseau ce qu'est un animal ou un lieu. Pourtant, après
-entraînement, « chat », « chien » et « souris » se regroupent, tout comme
-« tapis », « jardin », « trou » et les autres lieux, au point de se
-confondre; « dort » et « court » se rapprochent, loin de « mange » et
-« regarde ». La raison est instructive : dans un bigramme, le plongement d'un
-mot ne sert qu'à prédire **le mot qui le suit**. Les animaux sont suivis d'un
-verbe, les lieux d'un point, « dort » et « court » de « sur » ou « dans »,
-« mange » et « regarde » de « le » ou « la ». Le point lui-même, toujours suivi
-de « le » ou « la », se range à côté de « mange » et « regarde » : pour le
-réseau, ce n'est pas une ponctuation, c'est un mot qui annonce un déterminant.
-Le réseau range les mots selon ce qu'ils permettent de prédire.
-
-Comparez avec les comptes de voisins de la semaine 2, où « souris » s'écartait
-de « chat » parce qu'elle **suit** « la » et non « le » : ici, ce qui précède
-un mot n'entre pas dans son plongement, et « souris » rejoint les autres
-animaux. Un plongement appris encode ce dont la tâche a besoin, et rien d'autre.
-
-### Du bigramme au transformeur
-
-Un vrai LLM s'entraîne exactement ainsi : même perte, même gradient, même
-descente. Une seule chose change, mais elle change tout : le vecteur projeté
-sur le vocabulaire n'est plus le plongement du seul mot précédent, c'est la
-sortie des blocs du transformeur, qui a vu **tout le contexte**. Et tous les
-paramètres sont appris de la même façon : les plongements, les matrices
-$W_Q$, $W_K$ et $W_V$ de chaque tête d'attention, les réseaux par jeton. La
-matrice $M$ que nous avions écrite à la main à la semaine 2 n'est jamais écrite
-par personne : elle émerge de la descente de gradient, parce qu'elle aide à
-prédire le jeton suivant.
-
-Le modèle que nous ouvrirons plus bas, **Qwen2.5-0.5B** [@qwen2024], a
-494 millions de paramètres, répartis en 24 blocs de 14 têtes d'attention, avec
-des vecteurs de dimension 896 et un vocabulaire de 151 665 jetons. Il a été
-entraîné sur environ 18 000 milliards de jetons de texte. Cette phase, le
-**pré-entraînement**, coûte des semaines de calcul sur des centaines de
-processeurs graphiques; elle n'est faite qu'une fois, puis le modèle est
-distribué tel quel. Il tient pourtant dans un ordinateur portable (environ
-1 Go), et c'est lui que vous utiliserez en laboratoire.
-
-## Où est chaque mot : la position
-
-La semaine dernière, nous avons constaté que l'attention ne voit pas l'ordre :
-les deux « le » de « le chat noir dort sur le tapis » avaient exactement le même
+Nous venons de le constater : l'attention ne voit pas l'ordre. Les deux « le » de « le chat noir dort sur le tapis » avaient exactement le même
 vecteur, et le second ne pouvait pas savoir qu'il suivait « sur ». Il faut donc
 injecter la **position** dans le calcul. Deux grandes approches existent.
 
@@ -620,13 +552,182 @@ mo.Html(
 Chaque diagonale du tableau est constante : le score entre les positions 5 et
 3 est le même qu'entre 2 et 0, car l'écart est le même. À $\theta = 0$, rien ne
 tourne, et tous les scores sont égaux : on retrouve l'attention sans position
-de la semaine 2. Un vrai modèle découpe ses vecteurs en paires de dimensions
+de la section précédente. Un vrai modèle découpe ses vecteurs en paires de dimensions
 qui tournent chacune à une vitesse différente : les rapides distinguent les
 voisins immédiats, les lentes situent des jetons éloignés de milliers de
 positions. Le second « le » peut maintenant savoir qu'il vient juste après
 « sur » : il le trouve à une distance de 1.
 
-## Un vrai modèle, jeton par jeton
+## Le transformeur {#transformeur}
+
+On peut maintenant assembler un **transformeur** [@vaswani2017attention].
+
+::: {#fig-transformeur}
+
+```{=html}
+<svg viewBox="0 0 480 500" role="img" aria-label="Le transformeur : le texte devient des jetons, puis des plongements auxquels s'ajoute la position; ces vecteurs traversent N blocs, chacun formé d'une attention puis d'un petit réseau par jeton, dont les sorties s'ajoutent au vecteur de chaque jeton; à la fin, une projection sur le vocabulaire donne les logits, puis le softmax la distribution du jeton suivant."
+     style="width:100%;max-width:480px;display:block;margin:auto;font-size:14px">
+  <defs><marker id="fleche-tr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+  <g fill="none" stroke="currentColor" stroke-width="1.3">
+    <rect x="40" y="10" width="260" height="30" rx="6"/>
+    <rect x="40" y="60" width="260" height="30" rx="6"/>
+    <rect x="40" y="110" width="260" height="30" rx="6"/>
+    <rect x="15" y="158" width="455" height="225" rx="10" stroke-dasharray="5 4" opacity="0.6"/>
+    <rect x="250" y="195" width="200" height="48" rx="6" stroke="#3b82f6" stroke-width="1.8"/>
+    <rect x="250" y="298" width="200" height="40" rx="6" stroke="#f59e0b" stroke-width="1.8"/>
+    <rect x="40" y="403" width="260" height="30" rx="6"/>
+    <rect x="40" y="455" width="260" height="30" rx="6"/>
+    <line x1="170" y1="40" x2="170" y2="58" marker-end="url(#fleche-tr)"/>
+    <line x1="170" y1="90" x2="170" y2="108" marker-end="url(#fleche-tr)"/>
+    <line x1="170" y1="140" x2="170" y2="256"/>
+    <polyline points="170,178 350,178 350,193" marker-end="url(#fleche-tr)"/>
+    <polyline points="350,243 350,265 180,265" marker-end="url(#fleche-tr)"/>
+    <circle cx="170" cy="265" r="9"/>
+    <line x1="170" y1="274" x2="170" y2="356"/>
+    <polyline points="170,283 350,283 350,296" marker-end="url(#fleche-tr)"/>
+    <polyline points="350,338 350,365 180,365" marker-end="url(#fleche-tr)"/>
+    <circle cx="170" cy="365" r="9"/>
+    <line x1="170" y1="374" x2="170" y2="401" marker-end="url(#fleche-tr)"/>
+    <line x1="170" y1="433" x2="170" y2="453" marker-end="url(#fleche-tr)"/>
+  </g>
+  <g fill="currentColor" text-anchor="middle">
+    <text x="170" y="30">le texte, découpé en jetons</text>
+    <text x="170" y="80">un plongement par jeton</text>
+    <text x="170" y="130">+ l'information de position</text>
+    <text x="350" y="215">attention</text>
+    <text x="350" y="233" font-size="12" opacity="0.8">plusieurs têtes, masque causal</text>
+    <text x="350" y="316">petit réseau</text>
+    <text x="350" y="331" font-size="12" opacity="0.8">pour chaque jeton</text>
+    <text x="170" y="270" font-size="16">+</text>
+    <text x="170" y="370" font-size="16">+</text>
+    <text x="28" y="176" text-anchor="start" font-size="13" opacity="0.8">un bloc, répété N fois</text>
+    <text x="170" y="423">projection sur le vocabulaire</text>
+    <text x="170" y="475">softmax : P(jeton suivant)</text>
+  </g>
+</svg>
+```
+
+Le transformeur. Les vecteurs des jetons descendent le long d'un même chemin.
+Dans chaque bloc, l'attention (en bleu), où les jetons échangent de
+l'information, puis le petit réseau (en orange), qui la transforme pour chaque
+jeton, calculent une correction qui s'**ajoute** au vecteur de chaque jeton (les
+« + »). Avant chacune de ces deux étapes, une normalisation, non dessinée,
+ramène les vecteurs à une échelle comparable.
+:::
+
+Le texte est découpé en jetons, et chaque jeton reçoit son plongement, auquel
+s'ajoute l'information de position. Viennent ensuite les **blocs**, tous
+construits de la même façon :
+
+1. une **attention** à plusieurs têtes, avec masque causal : c'est là que les
+   jetons échangent de l'information;
+2. un **petit réseau de neurones**, appliqué à chaque jeton séparément : c'est
+   là que cette information est transformée. C'est le réseau de la
+   [semaine 2](s02.qmd#reseau) : une couche cachée avec une activation, puis une
+   couche de sortie, en bien plus large.
+
+Deux ingrédients rendent l'empilement stable. Les **connexions résiduelles**
+(*residual connections*) additionnent l'entrée de chaque étape à sa sortie :
+chaque étape ne fait qu'ajouter une correction au vecteur du jeton, au lieu de
+le remplacer. Et une **normalisation** (*layer normalization*) ramène les
+vecteurs à une échelle comparable avant chaque étape. Les vrais modèles
+empilent des dizaines de blocs.
+
+À la sortie, le vecteur de chaque jeton est projeté sur le vocabulaire : un
+logit par jeton possible, puis un softmax donne la distribution du jeton
+suivant. C'est exactement la fin du
+[bigramme neuronal](s02.qmd#bigramme-neuronal), et on retrouve l'interface de
+la [semaine 1](s01.qmd#distribution) : tout ce qu'on y a vu (perplexité,
+température, top-p) s'applique tel quel. Une seule chose change, mais elle
+change tout : le vecteur projeté n'est plus le plongement du seul mot
+précédent, c'est la sortie des blocs, qui a vu **tout le contexte**.
+
+### L'entraînement
+
+Un transformeur s'entraîne exactement comme le bigramme neuronal : même perte,
+l'[entropie croisée](s02.qmd#entropie-croisee), et même descente de gradient.
+Chaque position du texte fournit un exemple : prédire le jeton suivant à partir
+de tous ceux qui le précèdent. Tous les paramètres sont appris de la même
+façon : les plongements, les matrices $W_Q$, $W_K$ et $W_V$ de chaque tête, les
+petits réseaux. La matrice $M$ que nous avons écrite à la main plus haut n'est
+jamais écrite par personne : elle émerge de la descente de gradient, parce
+qu'elle aide à prédire le jeton suivant.
+
+Voyons-le sur le [corpus des semaines 1 et 2](s01.qmd#bigramme). Nous avons entraîné un
+**mini-transformeur** : un seul bloc, deux têtes, des vecteurs de dimension 16
+et un contexte de 8 jetons. PyTorch ne tourne pas dans votre navigateur :
+l'entraînement a été fait à l'avance, avec le script
+`outils/precalculer_mini_transformeur.py` du dépôt, et vous le referez en
+laboratoire. Il utilise **Adam** (*Adam*), une variante de la descente de
+gradient qui adapte la taille du pas de chaque paramètre; c'est l'optimiseur de
+presque tous les LLM.
+
+```python {.marimo}
+def _virgule(v):
+    return f"{v:.2f}".replace(".", ",")
+
+
+mo.vstack([
+    courbe(MINI["pertes"], MINI["plancher"], 5),
+    mo.md(
+        f"{MINI['parametres']:,} paramètres. ".replace(",", " ")
+        + f"Perte après {len(MINI['pertes'])} pas : **{_virgule(MINI['pertes'][-1])} bit{"s" if MINI["pertes"][-1] >= 2 else ""}** "
+        f"(plancher du bigramme : {_virgule(MINI['plancher'])})."
+    ),
+])
+```
+
+La courbe passe sous le plancher de la [semaine 2](s02.qmd#entropie-croisee).
+Ce n'est pas une contradiction : ce plancher borne les modèles qui ne voient
+que le mot précédent, et le mini-transformeur en voit jusqu'à huit. Voici ce
+qu'il prédit après quelques débuts de phrase qui se terminent tous par « le ».
+
+```python {.marimo}
+def _liste(paires):
+    return ", ".join(f"{m} ({round(100 * p)} %)" for m, p in paires)
+
+
+mo.md(
+    "| Début de phrase | Mini-transformeur | Bigramme |\n|:--|:--|:--|\n"
+    + "\n".join(
+        f"| {p['contexte']} … | {_liste(p['transformeur'][:1])} | {_liste(p['bigramme'])} |"
+        for p in MINI["predictions"]
+    )
+)
+```
+
+Le bigramme ne voit que « le », et donne partout la même réponse. Le
+mini-transformeur regarde plus loin : après « le chien mange le », c'est
+« repas »; après « le chat mange le », « fromage », exactement comme dans le
+corpus.
+
+Une mise en garde, toutefois : ces nombres sont mesurés sur le corpus
+d'entraînement. Avec huit jetons de contexte, nos seize phrases sont presque
+entièrement déterminées, et le modèle peut les apprendre par cœur. Comme à la
+[semaine 1](s01.qmd#perplexite), le vrai test serait des phrases qu'il n'a
+jamais vues, et pour le réussir, il faut bien plus de texte. C'est ce dont
+disposent les vrais modèles.
+
+### Le prix de l'attention
+
+L'attention a un coût : chaque jeton se compare à tous ceux qui le précèdent,
+si bien que le calcul croît comme le **carré** de la longueur du contexte.
+Doubler le contexte, c'est quadrupler le travail de l'attention. C'est la
+principale raison pour laquelle la **fenêtre de contexte** (*context window*)
+des modèles, le nombre maximal de jetons qu'ils peuvent voir, est limitée.
+
+### Le pré-entraînement
+
+Le modèle que nous ouvrons plus bas, **Qwen2.5-0.5B** [@qwen2024], a
+494 millions de paramètres, répartis en 24 blocs de 14 têtes d'attention, avec
+des vecteurs de dimension 896 et un vocabulaire de 151 665 jetons. Il a été
+entraîné sur environ 18 000 milliards de jetons de texte. Cette phase, le
+**pré-entraînement** (*pre-training*), coûte des semaines de calcul sur des
+centaines de processeurs graphiques; elle n'est faite qu'une fois, puis le
+modèle est distribué tel quel. Il tient pourtant dans un ordinateur portable
+(environ 1 Go), et c'est lui que vous utiliserez en laboratoire.
+
+## Un vrai modèle, jeton par jeton {#qwen}
 
 Ouvrons maintenant Qwen2.5-0.5B. Son code ne peut pas tourner dans votre
 navigateur; les résultats ci-dessous ont été calculés à l'avance, avec le
@@ -680,16 +781,16 @@ mo.vstack([
 ])
 ```
 
-Plusieurs choses de la semaine 1 et de la semaine 2 se retrouvent ici.
+Plusieurs choses vues depuis la [semaine 1](s01.qmd) se retrouvent ici.
 
 - **Le découpage en jetons.** Malgré un vocabulaire de 151 665 jetons,
   « dormait » devient deux jetons, `dorm` et `ait`, et « tapis » aussi, `t` et
   `apis` : ce vocabulaire a surtout été construit sur de l'anglais et du code.
   (Ici, l'espace qui précède un mot fait partie de son jeton, au lieu du `▁`
-  de la semaine 2.)
+  de [notre BPE](#jetons).)
 - **Le décodage glouton tourne en rond.** Après « Le chat dort. », le modèle
   écrit « Il est dans son nid. Il dort. Il dort. Il dort. Il dort… » : la
-  boucle annoncée à la semaine 1, chez un vrai modèle.
+  boucle annoncée à la [semaine 1](s01.qmd#decodage), chez un vrai modèle.
 - **Le code est prévisible.** Après `def moyenne(valeurs): return`, le jeton
   `sum` domine nettement, alors qu'après « Le chat dort sur le », la
   distribution s'étale sur des dizaines de mots plausibles (sol, pont, lit,
@@ -704,7 +805,7 @@ Plusieurs choses de la semaine 1 et de la semaine 2 se retrouvent ici.
 
 ### Sa surprise, jeton par jeton
 
-La perplexité de la semaine 1 se calcule de la même façon pour un vrai
+La [perplexité de la semaine 1](s01.qmd#perplexite) se calcule de la même façon pour un vrai
 modèle : on lui donne une phrase, et on mesure, pour chaque jeton, sa surprise
 $-\log_2 P(\text{jeton} \mid \text{tout ce qui précède})$. Plus le rouge est
 foncé, plus le modèle a été surpris.
@@ -824,34 +925,41 @@ fois plus gros, se compte en processeurs graphiques et en argent.
   caractères, reproduire exactement une chaîne (un chemin de fichier, un
   passage de code à remplacer) est une source d'erreurs fréquente. Les outils
   d'un agent doivent vérifier et signaler clairement ces erreurs.
+- **Tout le contexte n'est pas également bien utilisé.** L'attention peut, en
+  principe, atteindre n'importe quel jeton; en pratique, les modèles exploitent
+  moins bien l'information placée au milieu d'un long contexte qu'au début ou à
+  la fin [@liu2024lost]. Où l'on place une consigne importante n'est pas
+  indifférent.
 - **Un modèle de base n'est pas un assistant.** Qwen2.5-0.5B continue le
   texte qu'on lui donne, comme le ferait n'importe quelle page de son corpus;
   il ne répond pas aux questions, ne suit pas d'instructions et n'appelle
   aucun outil. Pour en faire la pièce centrale d'un agent, il faut l'adapter.
-  C'est le sujet du module 2, dès la semaine prochaine.
+  C'est le sujet du [module 2](../2-assister/s04.qmd), dès la semaine prochaine.
 - **Plausible n'est pas vrai.** Le modèle a appris ce qui est probable dans du
   texte, pas ce qui est vrai : « la capitale du Canada est Toronto » est une
   phrase tout à fait plausible, et il la produit avec aplomb. C'est la racine
   de ce qu'on appelle les **hallucinations**. Un agent fiable doit pouvoir
-  vérifier ce qu'il affirme, avec des outils (module 3).
-- **La surprise est une information.** Certaines API renvoient la probabilité
-  de chaque jeton généré. Un jeton très improbable dans une réponse (un nom de
-  fonction, un chiffre) signale un endroit où le modèle hésitait, et où une
-  vérification s'impose.
+  vérifier ce qu'il affirme, avec des outils ([module 3](../3-agir/s07.qmd)).
+  La surprise peut aider : certaines API renvoient la probabilité de chaque
+  jeton généré, et un jeton très improbable dans une réponse (un nom de
+  fonction, un chiffre) signale un endroit où le modèle hésitait.
 
 ## Points clés
 
 - Les vrais modèles travaillent sur des jetons, des morceaux de mots appris par
   BPE. Aucun texte n'est hors vocabulaire, mais le modèle ne voit pas
   directement les caractères.
-- Un réseau de neurones apprend à prédire le jeton suivant en minimisant
-  l'entropie croisée par descente de gradient. Le gradient par rapport aux
-  logits est $p - y$; la rétropropagation le transmet à tous les paramètres.
-- Les plongements et les matrices de l'attention ne sont pas écrits à la
-  main : ils sont appris, et ils encodent ce qui aide à prédire.
+- L'attention permet à chaque jeton d'aller chercher l'information dans tout
+  le contexte, quelle que soit la distance : une moyenne des valeurs,
+  pondérée par la ressemblance entre sa requête et les clés des autres jetons.
+  Le masque causal l'empêche de regarder l'avenir.
 - L'attention ignore l'ordre des jetons; on le lui donne par des vecteurs de
   position ou, dans les modèles récents, par des rotations (RoPE) qui rendent
   le score dépendant de la distance entre les jetons.
+- Un transformeur empile des blocs (attention, puis petit réseau par jeton,
+  avec connexions résiduelles) et se termine comme le bigramme neuronal, par une
+  projection sur le vocabulaire et un softmax. Il s'entraîne avec la même perte
+  et la même descente; ses matrices d'attention sont apprises.
 - Un vrai modèle de base accorde, généralise et voit loin, mais il ne fait que
   continuer du texte de façon plausible : il ne répond pas, et il peut affirmer
   des faussetés.
@@ -859,14 +967,18 @@ fois plus gros, se compte en processeurs graphiques et en argent.
 ## Laboratoire
 
 ::: {.callout-tip icon=false}
-## Laboratoire 3 — `labos/s03_petit_modele.py`
+## Laboratoire 3 — `labos/s03_transformeur.py`
 
-1. **Exercice** — écrire l'entropie croisée à partir des logits, et la
-   vérifier contre celle de PyTorch.
-2. **Exercice** — calculer la perplexité d'un texte avec Qwen2.5-0.5B.
-3. **Expérience** — trouver automatiquement, parmi les 336 têtes, celles qui
-   regardent le jeton précédent, et vérifier sur d'autres phrases qu'elles le
-   font toujours.
+1. **Exercice** — écrire l'attention causale en NumPy (scores, masque, softmax
+   par ligne), et la faire passer au vert.
+2. **Exercice** — réécrire la même attention en PyTorch, puis constater que
+   PyTorch retrouve tout seul le gradient $p - y$ calculé à la main à la
+   [semaine 2](s02.qmd#entropie-croisee).
+3. **Expérience** — entraîner le mini-transformeur de la page, le voir passer
+   sous le plancher du bigramme, et faire varier la longueur de son contexte.
+4. **Expérience** — avec Qwen2.5-0.5B, calculer la perplexité d'un texte, et
+   trouver automatiquement, parmi les 336 têtes, celles qui regardent le jeton
+   précédent.
 
 Ce laboratoire demande un vrai Python et télécharge le modèle (environ 1 Go)
 à la première exécution. Voir la [mise en route](../../mise-en-route.qmd).
@@ -876,9 +988,11 @@ Ce laboratoire demande un vrai Python et télécharge le modèle (environ 1 Go)
 
 - Les tokeniseurs, entraînés surtout sur de l'anglais, découpent le français en
   plus de jetons. Quelles conséquences pour un agent qui travaille en français?
-- Le bigramme neuronal ne descend pas sous le plancher du bigramme par
-  comptage. Pourquoi ne le peut-il pas, sur le corpus d'entraînement? Pourrait-il
-  faire mieux que lui sur des phrases nouvelles?
+- Le mini-transformeur descend à 0,37 bit sur son corpus d'entraînement.
+  Comment sauriez-vous s'il a appris les régularités de ce corpus, ou s'il l'a
+  appris par cœur?
+- L'attention compare chaque jeton à tous ceux qui le précèdent. Combien de
+  comparaisons pour un contexte de 1 000 jetons? De 100 000?
 - Avec Qwen, « le fromage dort . » n'est plus impossible. Est-ce un progrès dans
   tous les cas? Pensez à un agent qui doit produire un appel d'outil valide.
 - Avec RoPE, le score ne dépend que de la distance entre deux jetons. Quel
@@ -890,5 +1004,7 @@ Ce laboratoire demande un vrai Python et télécharge le modèle (environ 1 Go)
 
 ## Pour aller plus loin
 
-Facultatif : les chapitres 4 (construire un modèle GPT) et 5
-(le pré-entraîner) de @raschka2024llm, qui font tout cela en PyTorch.
+Facultatif : l'article de @vaswani2017attention, qui a introduit le
+transformeur; le chapitre « Transformers » de @jurafsky2026slp; les chapitres 3
+(l'attention), 4 (construire un modèle GPT) et 5 (le pré-entraîner) de
+@raschka2024llm, qui font tout cela en PyTorch.

@@ -87,7 +87,7 @@ probabilités.
 ```
 
 La seule opération d'un LLM : donner une probabilité à chaque suite possible.
-Les probabilités sont celles d'un vrai modèle, Qwen2.5-0.5B ([semaine 3](s03.qmd)), pour
+Les probabilités sont celles d'un vrai modèle, Qwen2.5-0.5B ([semaine 3](s03.qmd#qwen)), pour
 les mots qui suivent « Le chat dort sur le » : même la plus probable, « sol »,
 ne dépasse pas 5 %. On tire une suite au hasard selon ces probabilités, on
 l'ajoute au texte, et on recommence.
@@ -396,7 +396,7 @@ retrouvera ce dilemme sous bien des formes; il porte un nom, le
 **surajustement** (*overfitting*). Notez aussi que le bon réglage se choisit sur des données
 que le modèle n'a pas vues, jamais sur l'entraînement.
 
-## Le mur de la parcimonie
+## Le mur de la parcimonie {#parcimonie}
 
 Pourquoi ne pas simplement allonger le contexte, avec un trigramme, un
 4-gramme, un 10-gramme? Parce que le nombre de contextes possibles explose. Avec
@@ -484,7 +484,7 @@ apprend sur l'un profite à l'autre. C'est la réponse au fléau de la dimension
 proposée par le premier modèle de langue neuronal [@bengio2003neural], et le
 sujet de la [semaine 2](s02.qmd#plongements).
 
-## Générer : les stratégies de décodage
+## Générer : les stratégies de décodage {#decodage}
 
 Le modèle donne une distribution; il reste à choisir un mot. Cette étape, le
 **décodage** (*decoding*), a un effet énorme sur le texte produit, et donc sur le

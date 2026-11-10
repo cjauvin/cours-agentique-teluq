@@ -172,7 +172,7 @@ défauts, les mots inconnus et un contexte trop court, attendront la
 - expliquer ce qu'est un plongement, et pourquoi des vecteurs appris
   permettent de généraliser.
 
-## Qu'est-ce qu'un réseau de neurones?
+## Qu'est-ce qu'un réseau de neurones? {#reseau}
 
 Un **neurone** artificiel est un calcul très simple. Il reçoit des nombres
 $x_1, \dots, x_n$, en fait une somme pondérée, ajoute un **biais**, puis
@@ -1267,7 +1267,7 @@ bloquée si un neurone est éteint partout : il ne reçoit plus de gradient. Les
 vrais réseaux contournent en bonne partie ces problèmes en ayant beaucoup plus
 de neurones et de paramètres que le strict nécessaire.
 
-## Le bigramme neuronal
+## Le bigramme neuronal {#bigramme-neuronal}
 
 Revenons au [bigramme de la semaine 1](s01.qmd#bigramme). Sa table de comptes est, au fond, une
 fonction : on lui donne un mot, elle rend une distribution de probabilités sur
@@ -2088,7 +2088,7 @@ les autres façons de l'ouvrir, voir la [mise en route](../../mise-en-route.qmd)
   plongements appris sont-ils plutôt de dimension quelques centaines?
 - Le modèle de Bengio et al. voit les $n - 1$ mots précédents. Pour accorder un
   verbe avec un sujet placé trente mots plus tôt, faudrait-il $n = 31$? Que
-  deviendraient ses paramètres? ([Semaine 3](s03.qmd).)
+  deviendraient ses paramètres? ([Semaine 3](s03.qmd#attention).)
 
 ## Pour aller plus loin
 
