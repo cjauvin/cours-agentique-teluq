@@ -649,23 +649,278 @@ mot, et elle se confond avec lui; des poids égaux, et elle tombe au centre. Les
 vecteurs sont choisis pour l'illustration.
 :::
 
+### D'où viennent les poids? {#poids}
+
+Dans la figure [-@fig-moyenne], c'est vous qui fixiez les poids. Un modèle doit
+les calculer lui-même, pour n'importe quelle phrase, à partir de la seule chose
+dont il dispose : les vecteurs des jetons. Il lui faut, pour chaque paire de
+jetons, un **score** qui dise à quel point le second intéresse le premier;
+un softmax, celui de la sortie du
+[bigramme neuronal](s02.qmd#bigramme-neuronal), transforme ensuite les scores
+de tout le contexte en poids positifs qui somment à 1.
+
+Première idée, la plus simple : la ressemblance. À la
+[semaine 2](s02.qmd#plongements), les mots qui se comportent de la même façon
+avaient des vecteurs proches, et le produit scalaire $x_i \cdot x_j$ de deux
+plongements mesure justement cette proximité. Prenons-le comme score. Cette
+attention-là ne demande aucun paramètre, mais elle échoue, pour deux raisons.
+D'abord, le mot qui ressemble le plus à « s'est », c'est presque toujours
+« s'est » lui-même : chaque jeton regarderait surtout lui-même. Ensuite, et
+surtout, ce que cherche « s'est », ce n'est pas un mot qui lui ressemble, c'est
+son sujet : un nom, pas un verbe. **Ce qu'un mot cherche n'est pas ce qu'il
+est.** Un seul vecteur par mot ne peut pas porter les deux.
+
+D'où l'idée de donner à chaque jeton deux vecteurs distincts, tirés de son
+plongement : une **requête**, qui décrit ce qu'il cherche, et une **clé**, qui
+décrit ce qu'il est, ce sur quoi on peut le trouver. Le score de « chat » pour
+« s'est » devient le produit scalaire de la requête de « s'est » et de la clé de
+« chat » : grand si ce que l'un cherche ressemble à ce que l'autre offre. La
+requête de « s'est » peut alors dire « un nom sujet », la clé de « chat » dire
+« un nom », sans que les deux mots se ressemblent : c'est ce que montre la
+figure [-@fig-requete].
+
+::: {#fig-requete}
+
+```{=html}
+<svg class="figure-requete" viewBox="0 0 720 450" role="img"
+     aria-label="Requête et clé. À gauche, avec un seul vecteur par mot, le score de ressemblance fait regarder à « s'est » surtout lui-même et « dormait », presque jamais « chat ». À droite, chaque mot a une clé, et « s'est » une requête, en orange, qui pointe vers la clé de « chat » : « chat » reçoit alors presque tout le poids."
+     style="width:100%;max-width:720px;display:block;margin:auto;font-size:16px">
+  <defs>
+    <marker id="fleche-req" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+    <marker id="fleche-req-orange" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#f59e0b"/></marker>
+  </defs>
+  <g fill="currentColor" stroke="currentColor">
+    <text x='180' y='20' text-anchor='middle' stroke='none' font-size='15' font-weight='600'>un seul vecteur par mot</text>
+    <text x='180' y='38' text-anchor='middle' stroke='none' font-size='13' opacity='0.75'>les plongements x; score = x(s&#39;est) · x(mot)</text>
+    <line x1='80' y1='150' x2='280' y2='150' stroke-width='1' opacity='0.2'/>
+    <line x1='180' y1='50' x2='180' y2='250' stroke-width='1' opacity='0.2'/>
+    <line x1='180' y1='150' x2='238.5' y2='109.5' stroke-width='1.6' marker-end='url(#fleche-req)'/>
+    <text id='fr-al0' x='248.4' y='107.7' text-anchor='start' stroke='none' font-size='14'>chat</text>
+    <line x1='180' y1='150' x2='184.5' y2='217.5' stroke-width='1.6' marker-end='url(#fleche-req)'/>
+    <text id='fr-al1' x='185.3' y='234.5' text-anchor='middle' stroke='none' font-size='14'>noir</text>
+    <line x1='180' y1='150' x2='126.0' y2='105.0' stroke-width='1.6' marker-end='url(#fleche-req)'/>
+    <text id='fr-al2' x='116.8' y='102.3' text-anchor='end' stroke='none' font-size='14'>dormait</text>
+    <line x1='180' y1='150' x2='243.0' y2='145.5' stroke-width='1.6' marker-end='url(#fleche-req)'/>
+    <text id='fr-al3' x='255.0' y='149.6' text-anchor='start' stroke='none' font-size='14'>tapis</text>
+    <line x1='180' y1='150' x2='117.0' y2='132.0' stroke='#f59e0b' stroke-width='3' marker-end='url(#fleche-req-orange)'/>
+    <text id='fr-al4' x='105.5' y='133.7' text-anchor='end' stroke='none' font-size='14' fill='#f59e0b' font-weight='bold'>s&#39;est</text>
+    <text x='125' y='280' text-anchor='end' stroke='none' font-size='12' opacity='0.7'>x · x</text>
+    <text x='135' y='280' stroke='none' font-size='12' opacity='0.7'>poids (softmax)</text>
+    <text id='fr-am0' x='70' y='307' text-anchor='end' stroke='none' font-size='14'>chat</text>
+    <text id='fr-as0' x='125' y='307' text-anchor='end' stroke='none' font-size='13' style='font-variant-numeric:tabular-nums'></text>
+    <rect x='135' y='293' width='150' height='18' rx='3' fill='currentColor' fill-opacity='0.08' stroke='none'/>
+    <rect id='fr-ab0' x='135' y='293' height='18' rx='3' fill='#3b82f6' stroke='none'/>
+    <text id='fr-ap0' x='291' y='307' stroke='none' font-size='13'></text>
+    <text id='fr-am1' x='70' y='331' text-anchor='end' stroke='none' font-size='14'>noir</text>
+    <text id='fr-as1' x='125' y='331' text-anchor='end' stroke='none' font-size='13' style='font-variant-numeric:tabular-nums'></text>
+    <rect x='135' y='317' width='150' height='18' rx='3' fill='currentColor' fill-opacity='0.08' stroke='none'/>
+    <rect id='fr-ab1' x='135' y='317' height='18' rx='3' fill='#3b82f6' stroke='none'/>
+    <text id='fr-ap1' x='291' y='331' stroke='none' font-size='13'></text>
+    <text id='fr-am2' x='70' y='355' text-anchor='end' stroke='none' font-size='14'>dormait</text>
+    <text id='fr-as2' x='125' y='355' text-anchor='end' stroke='none' font-size='13' style='font-variant-numeric:tabular-nums'></text>
+    <rect x='135' y='341' width='150' height='18' rx='3' fill='currentColor' fill-opacity='0.08' stroke='none'/>
+    <rect id='fr-ab2' x='135' y='341' height='18' rx='3' fill='#3b82f6' stroke='none'/>
+    <text id='fr-ap2' x='291' y='355' stroke='none' font-size='13'></text>
+    <text id='fr-am3' x='70' y='379' text-anchor='end' stroke='none' font-size='14'>tapis</text>
+    <text id='fr-as3' x='125' y='379' text-anchor='end' stroke='none' font-size='13' style='font-variant-numeric:tabular-nums'></text>
+    <rect x='135' y='365' width='150' height='18' rx='3' fill='currentColor' fill-opacity='0.08' stroke='none'/>
+    <rect id='fr-ab3' x='135' y='365' height='18' rx='3' fill='#3b82f6' stroke='none'/>
+    <text id='fr-ap3' x='291' y='379' stroke='none' font-size='13'></text>
+    <text id='fr-am4' x='70' y='403' text-anchor='end' stroke='none' font-size='14'>s&#39;est</text>
+    <text id='fr-as4' x='125' y='403' text-anchor='end' stroke='none' font-size='13' style='font-variant-numeric:tabular-nums'></text>
+    <rect x='135' y='389' width='150' height='18' rx='3' fill='currentColor' fill-opacity='0.08' stroke='none'/>
+    <rect id='fr-ab4' x='135' y='389' height='18' rx='3' fill='#3b82f6' stroke='none'/>
+    <text id='fr-ap4' x='291' y='403' stroke='none' font-size='13'></text>
+    <text id='fr-amsg' x='10' y='430' stroke='none' font-size='13'></text>
+    <line x1='360' y1='10' x2='360' y2='440' stroke-width='1' opacity='0.15'/>
+    <text x='540' y='20' text-anchor='middle' stroke='none' font-size='15' font-weight='600'>une requête et des clés</text>
+    <text x='540' y='38' text-anchor='middle' stroke='none' font-size='13' opacity='0.75'>les clés k; score = q(s&#39;est) · k(mot)</text>
+    <line x1='440' y1='150' x2='640' y2='150' stroke-width='1' opacity='0.2'/>
+    <line x1='540' y1='50' x2='540' y2='250' stroke-width='1' opacity='0.2'/>
+    <line x1='540' y1='150' x2='612.0' y2='91.5' stroke-width='1.6' marker-end='url(#fleche-req)'/>
+    <text id='fr-bl0' x='621.3' y='88.9' text-anchor='start' stroke='none' font-size='14'>chat</text>
+    <text x='621.3' y='102.9' text-anchor='start' stroke='none' font-size='12' opacity='0.65'>nom sujet</text>
+    <line x1='540' y1='150' x2='544.5' y2='222.0' stroke-width='1.6' marker-end='url(#fleche-req)'/>
+    <text id='fr-bl1' x='545.2' y='245.0' text-anchor='middle' stroke='none' font-size='14'>noir</text>
+    <text x='545.2' y='259.0' text-anchor='middle' stroke='none' font-size='12' opacity='0.65'>adjectif</text>
+    <line x1='540' y1='150' x2='481.5' y2='109.5' stroke-width='1.6' marker-end='url(#fleche-req)'/>
+    <text id='fr-bl2' x='471.6' y='107.7' text-anchor='end' stroke='none' font-size='14'>dormait</text>
+    <text x='471.6' y='121.7' text-anchor='end' stroke='none' font-size='12' opacity='0.65'>verbe</text>
+    <line x1='540' y1='150' x2='607.5' y2='195.0' stroke-width='1.6' marker-end='url(#fleche-req)'/>
+    <text id='fr-bl3' x='617.5' y='212.7' text-anchor='start' stroke='none' font-size='14'>tapis</text>
+    <text x='617.5' y='226.7' text-anchor='start' stroke='none' font-size='12' opacity='0.65'>nom complément</text>
+    <line x1='540' y1='150' x2='472.5' y2='172.5' stroke-width='1.6' marker-end='url(#fleche-req)'/>
+    <text id='fr-bl4' x='461.1' y='187.3' text-anchor='end' stroke='none' font-size='14'>s&#39;est</text>
+    <text x='461.1' y='201.3' text-anchor='end' stroke='none' font-size='12' opacity='0.65'>verbe</text>
+    <line id='fr-q' x1='540' y1='150' stroke='#f59e0b' stroke-width='3.5' marker-end='url(#fleche-req-orange)'/>
+    <circle id='fr-poignee' r='9' fill='#f59e0b' fill-opacity='0.25' stroke='#f59e0b' stroke-width='1.5' tabindex='0' style='cursor:grab;touch-action:none' aria-label='Pointe de la requête de « s&#39;est »: faites-la glisser, ou utilisez les flèches'/>
+    <text id='fr-qnom' stroke='none' font-size='13' font-weight='bold' fill='#f59e0b'><tspan id='fr-qnom1'>requête</tspan><tspan id='fr-qnom2' dy='14'>de « s&#39;est »</tspan></text>
+    <text x='495' y='280' text-anchor='end' stroke='none' font-size='12' opacity='0.7'>q · k</text>
+    <text x='505' y='280' stroke='none' font-size='12' opacity='0.7'>poids (softmax)</text>
+    <text id='fr-bm0' x='440' y='307' text-anchor='end' stroke='none' font-size='14'>chat</text>
+    <text id='fr-bs0' x='495' y='307' text-anchor='end' stroke='none' font-size='13' style='font-variant-numeric:tabular-nums'></text>
+    <rect x='505' y='293' width='150' height='18' rx='3' fill='currentColor' fill-opacity='0.08' stroke='none'/>
+    <rect id='fr-bb0' x='505' y='293' height='18' rx='3' fill='#3b82f6' stroke='none'/>
+    <text id='fr-bp0' x='661' y='307' stroke='none' font-size='13'></text>
+    <text id='fr-bm1' x='440' y='331' text-anchor='end' stroke='none' font-size='14'>noir</text>
+    <text id='fr-bs1' x='495' y='331' text-anchor='end' stroke='none' font-size='13' style='font-variant-numeric:tabular-nums'></text>
+    <rect x='505' y='317' width='150' height='18' rx='3' fill='currentColor' fill-opacity='0.08' stroke='none'/>
+    <rect id='fr-bb1' x='505' y='317' height='18' rx='3' fill='#3b82f6' stroke='none'/>
+    <text id='fr-bp1' x='661' y='331' stroke='none' font-size='13'></text>
+    <text id='fr-bm2' x='440' y='355' text-anchor='end' stroke='none' font-size='14'>dormait</text>
+    <text id='fr-bs2' x='495' y='355' text-anchor='end' stroke='none' font-size='13' style='font-variant-numeric:tabular-nums'></text>
+    <rect x='505' y='341' width='150' height='18' rx='3' fill='currentColor' fill-opacity='0.08' stroke='none'/>
+    <rect id='fr-bb2' x='505' y='341' height='18' rx='3' fill='#3b82f6' stroke='none'/>
+    <text id='fr-bp2' x='661' y='355' stroke='none' font-size='13'></text>
+    <text id='fr-bm3' x='440' y='379' text-anchor='end' stroke='none' font-size='14'>tapis</text>
+    <text id='fr-bs3' x='495' y='379' text-anchor='end' stroke='none' font-size='13' style='font-variant-numeric:tabular-nums'></text>
+    <rect x='505' y='365' width='150' height='18' rx='3' fill='currentColor' fill-opacity='0.08' stroke='none'/>
+    <rect id='fr-bb3' x='505' y='365' height='18' rx='3' fill='#3b82f6' stroke='none'/>
+    <text id='fr-bp3' x='661' y='379' stroke='none' font-size='13'></text>
+    <text id='fr-bm4' x='440' y='403' text-anchor='end' stroke='none' font-size='14'>s&#39;est</text>
+    <text id='fr-bs4' x='495' y='403' text-anchor='end' stroke='none' font-size='13' style='font-variant-numeric:tabular-nums'></text>
+    <rect x='505' y='389' width='150' height='18' rx='3' fill='currentColor' fill-opacity='0.08' stroke='none'/>
+    <rect id='fr-bb4' x='505' y='389' height='18' rx='3' fill='#3b82f6' stroke='none'/>
+    <text id='fr-bp4' x='661' y='403' stroke='none' font-size='13'></text>
+    <text id='fr-bmsg' x='380' y='430' stroke='none' font-size='13'></text>
+  </g>
+</svg>
+<div style="display:flex;gap:.4rem;justify-content:center;margin-top:.3rem;flex-wrap:wrap">
+  <button type="button" class="btn btn-sm bouton-figure" id="fr-cle">Requête = clé</button>
+  <button type="button" class="btn btn-sm bouton-figure" id="fr-depart">Revenir au départ</button>
+</div>
+<script>
+(() => {
+  const D = {"mots": ["chat", "noir", "dormait", "tapis", "s'est"], "x": [[1.3, 0.9], [0.1, -1.5], [-1.2, 1.0], [1.4, 0.1], [-1.4, 0.4]], "k": [[1.6, 1.3], [0.1, -1.6], [-1.3, 0.9], [1.5, -1.0], [-1.5, -0.5]], "q": [1.3, 1.3], "soi": 4, "cb": 540, "cy": 150, "ech": 45, "lb": 150};
+  const fig = document.querySelector("svg.figure-requete");
+  const $ = id => fig.querySelector("#" + id);
+  const fmt = (v, d = 1) => (v < -0.05 ? "−" : "") + Math.abs(v).toFixed(d).replace(".", ",");
+  const dot = (a, b) => a[0] * b[0] + a[1] * b[1];
+  const softmax = s => { const m = Math.max(...s), e = s.map(x => Math.exp(x - m)), t = e.reduce((a, b) => a + b); return e.map(x => x / t); };
+  const RMAX = 2.2;
+  let q = [...D.q];
+
+  const remplir = (ident, scores) => {
+    const w = softmax(scores), max = w.indexOf(Math.max(...w));
+    w.forEach((p, i) => {
+      $(`fr-${ident}s${i}`).textContent = fmt(scores[i]);
+      $(`fr-${ident}b${i}`).setAttribute("width", (p * D.lb).toFixed(1));
+      $(`fr-${ident}p${i}`).textContent = Math.round(p * 100) + " %";
+      $(`fr-${ident}m${i}`).setAttribute("font-weight", i === max ? "bold" : "normal");
+    });
+    const qui = i => i === D.soi ? "lui-même" : `« ${D.mots[i]} »`;
+    const tri = w.map((p, i) => [p, i]).sort((a, b) => b[0] - a[0]);
+    let msg = `« s'est » regarde surtout ${qui(tri[0][1])} (${Math.round(tri[0][0] * 100)} %)`;
+    if (tri[1][0] > 0.2) msg += ` et ${qui(tri[1][1])} (${Math.round(tri[1][0] * 100)} %)`;
+    $(`fr-${ident}msg`).textContent = msg + ".";
+  };
+
+  const maj = () => {
+    const x = D.cb + D.ech * q[0], y = D.cy - D.ech * q[1];
+    $("fr-q").setAttribute("x2", x.toFixed(1));
+    $("fr-q").setAttribute("y2", y.toFixed(1));
+    $("fr-poignee").setAttribute("cx", x.toFixed(1));
+    $("fr-poignee").setAttribute("cy", y.toFixed(1));
+    const nom = $("fr-qnom");
+    // L'étiquette sur deux lignes, à côté de la pointe, du côté de l'axe vertical
+    // (la requête pointe vers une clé : au-delà de la pointe, elle cacherait son mot)
+    const gauche = q[0] >= 0, lx = (x + (gauche ? -12 : 12)).toFixed(1);
+    nom.setAttribute("text-anchor", gauche ? "end" : "start");
+    nom.setAttribute("y", (y - 4).toFixed(1));
+    $("fr-qnom1").setAttribute("x", lx);
+    $("fr-qnom2").setAttribute("x", lx);
+    remplir("b", D.k.map(k => dot(q, k)));
+  };
+
+  const borner = ([a, b]) => {
+    const n = Math.hypot(a, b);
+    return n > RMAX ? [a * RMAX / n, b * RMAX / n] : [a, b];
+  };
+  const poignee = $("fr-poignee");
+  let actif = false;
+  const vers = e => {
+    const p = fig.createSVGPoint();
+    p.x = e.clientX; p.y = e.clientY;
+    const r = p.matrixTransform(fig.getScreenCTM().inverse());
+    return borner([(r.x - D.cb) / D.ech, (D.cy - r.y) / D.ech]);
+  };
+  poignee.addEventListener("pointerdown", e => {
+    actif = true; poignee.setPointerCapture(e.pointerId); poignee.style.cursor = "grabbing";
+    e.preventDefault();
+  });
+  poignee.addEventListener("pointermove", e => { if (actif) { q = vers(e); maj(); } });
+  const fin = () => { actif = false; poignee.style.cursor = "grab"; };
+  poignee.addEventListener("pointerup", fin);
+  poignee.addEventListener("pointercancel", fin);
+  // Clavier : gauche/droite font tourner la requête, haut/bas l'allongent
+  poignee.addEventListener("keydown", e => {
+    const n = Math.hypot(q[0], q[1]), a = Math.atan2(q[1], q[0]);
+    const k = { ArrowLeft: [a + Math.PI / 18, n], ArrowRight: [a - Math.PI / 18, n],
+                ArrowUp: [a, n + 0.1], ArrowDown: [a, Math.max(0.1, n - 0.1)] }[e.key];
+    if (!k) return;
+    e.preventDefault();
+    q = borner([k[1] * Math.cos(k[0]), k[1] * Math.sin(k[0])]);
+    maj();
+  });
+  document.getElementById("fr-cle").addEventListener("click", () => { q = [...D.k[D.soi]]; maj(); });
+  document.getElementById("fr-depart").addEventListener("click", () => { q = [...D.q]; maj(); });
+
+  remplir("a", D.x.map(x => dot(D.x[D.soi], x)));
+  maj();
+})();
+</script>
+```
+
+Requête et clé. À gauche, la première idée : un seul vecteur par mot, et pour
+score la ressemblance des plongements. « s'est » ressemble surtout à lui-même
+et à l'autre verbe, « dormait », et ne regarde presque pas « chat ». À droite,
+chaque mot a une clé, ce qu'il est, et « s'est » a en plus une requête (en
+orange), ce qu'il cherche. Le score est le produit scalaire $q \cdot k$ : grand
+quand la clé va dans la direction de la requête. La requête de « s'est » pointe
+vers la clé de « chat », sans que les deux mots se ressemblent. Faites glisser
+la pointe orange (ou utilisez les flèches du clavier) : « s'est » regarde le mot
+dont la clé va dans sa direction. Le bouton « Requête = clé » revient à un seul
+vecteur par mot : « s'est » se regarde de nouveau lui-même. Les vecteurs et
+leurs rôles sont choisis pour l'illustration; dans un vrai modèle, ils sont
+appris, et leurs axes ne portent pas d'étiquettes.
+:::
+
+Reste ce qu'on moyenne. Dans la figure [-@fig-moyenne], c'étaient les
+plongements eux-mêmes. Mais ce que « chat » doit transmettre n'est pas
+forcément ce qui a permis de le trouver : on l'a trouvé parce que c'est un nom
+(sa clé), mais ce qui sert à « s'est », pour accorder la suite, c'est qu'il
+soit masculin singulier. D'où un troisième vecteur, la **valeur**, ce que le
+jeton transmet quand on le trouve.
+
 ### Requêtes, clés et valeurs
 
-Comment décider où regarder? Chaque jeton produit trois vecteurs, par trois
-multiplications matricielles de son plongement $x$ :
+Chaque jeton produit donc trois vecteurs, par trois multiplications
+matricielles de son plongement $x$ :
 
 - une **requête** (*query*) $q = x W_Q$ : ce qu'il cherche;
 - une **clé** (*key*) $k = x W_K$ : ce qu'il offre, ce sur quoi on peut le
   trouver;
 - une **valeur** (*value*) $v = x W_V$ : ce qu'il transmet quand on le trouve.
 
-L'image est celle d'un dictionnaire où l'on chercherait par ressemblance plutôt
-que par égalité exacte. Le score entre le jeton $i$ et le jeton $j$ est le
-produit scalaire $q_i \cdot k_j$ : grand si ce que $i$ cherche ressemble à ce
-que $j$ offre. Un softmax, celui de la sortie du
-[bigramme neuronal](s02.qmd#bigramme-neuronal), transforme les scores en poids,
-et le résultat est la moyenne des valeurs pondérée par ces poids. Pour tous les
-jetons à la fois, en empilant les vecteurs en matrices :
+Les trois matrices $W_Q$, $W_K$ et $W_V$ sont les paramètres de l'attention,
+apprises par descente de gradient comme tout le reste. Leur taille ne dépend
+que de la dimension des vecteurs, pas de la longueur du contexte : c'est
+pourquoi allonger le contexte n'ajoute aucun paramètre. L'image est celle d'un
+dictionnaire où l'on chercherait par ressemblance plutôt que par égalité
+exacte : la requête est la question, les clés sont les entrées, les valeurs
+sont les définitions.
+
+Pour « s'est », l'attention se déroule donc en trois étapes, qui reprennent la
+figure [-@fig-moyenne] :
+
+1. un score par jeton du contexte, le produit scalaire $q_{\text{s'est}} \cdot
+   k_j$;
+2. un softmax sur ces scores : ce sont les poids, les barres de gauche de la
+   figure;
+3. la moyenne des valeurs $v_j$ selon ces poids : c'est la flèche orange, le
+   nouveau vecteur de « s'est ».
+
+Pour tous les jetons à la fois, en empilant les vecteurs en matrices :
 
 $$\mathrm{Attention}(Q, K, V) = \mathrm{softmax}\!\left(\frac{QK^\top}{\sqrt{d}}\right) V$$
 
@@ -709,7 +964,8 @@ préposition. Une matrice $M$ dit quelle catégorie en « cherche » quelle autr
 un adjectif cherche un nom (pour s'accorder), un verbe cherche un nom (son
 sujet), un nom cherche un déterminant. Le score entre deux mots est alors
 $x_i M x_j^\top$, ce qui revient à prendre $W_Q = M$ et $W_K = I$, la matrice
-identité.
+identité : la clé d'un mot est sa catégorie, sa requête la catégorie qu'il
+cherche. Les valeurs sont les catégories elles-mêmes ($W_V = I$).
 
 Ce code est modifiable : changez la phrase ou les valeurs de $M$, puis cliquez
 hors de l'éditeur, et observez l'effet sur la figure plus bas.
