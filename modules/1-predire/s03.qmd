@@ -180,8 +180,8 @@ caractère, pris isolément, ne porte presque aucun sens.
 Les LLM travaillent avec un compromis : des **jetons**, c'est-à-dire
 des morceaux de mots. Les mots fréquents sont des jetons entiers; les mots
 rares se découpent en plusieurs morceaux plus courants; dans le pire des cas,
-on retombe sur les caractères. Le vocabulaire est fixe, typiquement de
-quelques dizaines à quelques centaines de milliers de jetons, et pourtant
+on retombe sur les caractères. Le vocabulaire est fixe, de quelques dizaines
+à quelques centaines de milliers de jetons selon le modèle, et pourtant
 **n'importe quel texte** peut être représenté.
 
 ### L'algorithme BPE
@@ -290,6 +290,49 @@ de « mangeons ». Avec un vocabulaire qui contient tous les caractères, **aucu
 texte n'est hors vocabulaire**. Essayez un mot inventé, ou une phrase en
 anglais.
 
+### Combien de jetons?
+
+Les vrais tokeniseurs suivent la même recette que notre BPE, mais sur des
+milliers de milliards de caractères de texte et de code, et ils s'arrêtent à
+une taille de vocabulaire choisie d'avance. Voici celle de quelques modèles
+connus, mesurée sur leurs tokeniseurs publics, jetons spéciaux compris.
+
+| Modèle | Année | Jetons |
+|:--|:--|--:|
+| GPT-2 | 2019 | 50 257 |
+| Llama 2, Mistral 7B | 2023 | 32 000 |
+| GPT-3.5 et GPT-4, les premiers modèles de ChatGPT | 2022–⁠2023 | 100 277 |
+| Llama 3 | 2024 | 128 256 |
+| DeepSeek-V3 | 2024 | 128 815 |
+| Qwen2.5, le modèle que nous ouvrons [plus bas](#qwen) | 2024 | 151 665 |
+| GPT-4o, o1, GPT-5, les modèles récents de ChatGPT | 2024–⁠2025 | 200 019 |
+| Gemma 3 | 2025 | 262 145 |
+
+La tendance est nette : en deux ans, les vocabulaires sont passés de 32 000
+jetons (Llama 2) à plus de 250 000 (Gemma 3). Un plus grand vocabulaire découpe un même texte en
+moins de jetons, ce qui économise de la fenêtre de contexte et du calcul,
+surtout pour les langues autres que l'anglais. Mais chaque jeton a son
+plongement : chez Qwen2.5-0.5B, la seule matrice des plongements compte
+environ 136 millions de paramètres, plus du quart des 494 millions du modèle.
+
+Comparons avec les mots. Le *Trésor de la langue française*, le grand
+dictionnaire du français, décrit environ 100 000 mots [@tlfi]; en anglais, le
+*Webster's Third* et l'*Oxford English Dictionary* comptent chacun quelque
+470 000 entrées [@merriamwebster_mots]. Et ces nombres ne comptent pas les
+formes fléchies : les 68 000 mots de la nomenclature du *Trésor* donnent
+540 000 formes, comme « mange », « mangeons » ou « mangions », près de huit
+par mot [@morphalou]. Une personne en connaît beaucoup moins : environ 42 000
+mots pour un anglophone de 20 ans, sans compter les noms propres ni les
+formes fléchies [@brysbaert2016mots].
+
+Un vocabulaire de 150 000 jetons est donc bien plus petit que les seules
+formes du français, et il doit pourtant servir à toutes les langues à la fois,
+et au code. C'est possible parce qu'un jeton n'est pas un mot. Les mots
+fréquents ont leur propre jeton; les autres se découpent en morceaux. Chez
+Qwen2.5 comme chez GPT-4o, « chat » est un seul jeton, « dormait » en fait
+deux (`dorm` et `ait`), et « anticonstitutionnellement » quatre ou cinq selon
+le modèle.
+
 ### Les jetons en pratique
 
 Les **tokeniseurs** (*tokenizers*) réels, les programmes qui découpent le texte
@@ -302,7 +345,10 @@ source, est représentable. Quelques conséquences méritent d'être retenues.
   le prix des API et la vitesse de génération se mesurent en jetons, pas en
   mots. En anglais, un jeton correspond en moyenne à environ quatre caractères;
   en français, le même texte demande généralement plus de jetons, parce que les
-  tokeniseurs sont surtout entraînés sur de l'anglais.
+  tokeniseurs sont surtout entraînés sur de l'anglais. Le premier article de la
+  Déclaration universelle des droits de l'homme compte 30 mots en anglais et 34
+  en français. GPT-2 le découpe en 33 et 61 jetons; GPT-4o, avec un vocabulaire
+  quatre fois plus grand, en 33 et 41. L'écart se réduit, mais il demeure.
 - **Le modèle ne voit pas les lettres.** « fromage » est peut-être un seul
   jeton : le modèle n'a alors aucun accès direct à ses lettres. Compter les
   « r » d'un mot, inverser une chaîne ou faire de l'arithmétique sur de longs
