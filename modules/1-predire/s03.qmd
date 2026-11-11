@@ -372,13 +372,282 @@ non « réveillée ». Un n-gramme ne le peut pas : on a vu à la
 [semaine 1](s01.qmd#parcimonie) qu'allonger son contexte fait exploser le
 nombre de paramètres. Il faudrait un mécanisme qui, pour chaque position, aille
 **chercher** dans tout le contexte les mots qui comptent, quelle que soit leur
-distance, et sans paramètres de plus pour chaque mot de contexte ajouté.
+distance, et sans paramètres de plus pour chaque mot de contexte ajouté. La
+figure [-@fig-fenetre] oppose les deux approches.
+
+::: {#fig-fenetre}
+
+```{=html}
+<svg class="figure-fenetre" viewBox="0 0 720 335" role="img"
+     aria-label="Deux façons de voir le contexte de « Le chat noir qui dormait sur le tapis s'est … ». En haut, un n-gramme ne voit que les n moins 1 mots précédents : il faut n = 9 pour atteindre « chat », avec un nombre astronomique de paramètres. En bas, l'attention relie « s'est » à tous les mots précédents, avec le plus gros poids, 58 %, sur « chat », sans paramètre de plus."
+     style="width:100%;max-width:720px;display:block;margin:auto;font-size:16px">
+  <defs><marker id="fleche-fen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+  <g fill="currentColor" stroke="currentColor">
+    <text x='16' y='30' stroke='none' font-size='15' font-weight='600'>n-gramme</text>
+    <text x='104' y='30' stroke='none' font-size='15'><tspan font-style='italic'>n</tspan> =</text>
+    <text id='f1-n' x='134' y='30' stroke='none' font-size='15' fill='#3b82f6'>3</text>
+    <text id='f1-etat' x='16' y='54' stroke='none' font-size='14' opacity='0.8'></text>
+    <rect id='f1-fenetre' y='78' height='32' rx='6' fill='#3b82f6' fill-opacity='0.12' stroke='#3b82f6' stroke-width='1.5'/>
+    <text id='f1-m0' x='40' y='100' text-anchor='middle' stroke='none' font-size='16' >Le</text>
+    <text id='f1-m1' x='111' y='100' text-anchor='middle' stroke='none' font-size='16' >chat</text>
+    <text id='f1-m2' x='182' y='100' text-anchor='middle' stroke='none' font-size='16' >noir</text>
+    <text id='f1-m3' x='253' y='100' text-anchor='middle' stroke='none' font-size='16' >qui</text>
+    <text id='f1-m4' x='324' y='100' text-anchor='middle' stroke='none' font-size='16' >dormait</text>
+    <text id='f1-m5' x='395' y='100' text-anchor='middle' stroke='none' font-size='16' >sur</text>
+    <text id='f1-m6' x='466' y='100' text-anchor='middle' stroke='none' font-size='16' >le</text>
+    <text id='f1-m7' x='537' y='100' text-anchor='middle' stroke='none' font-size='16' >tapis</text>
+    <text id='f1-m8' x='608' y='100' text-anchor='middle' stroke='none' font-size='16' >s&#39;est</text>
+    <text x='679' y='100' text-anchor='middle' stroke='none' font-size='16' fill='#f59e0b' font-weight='bold'>?</text>
+    <text id='f1-msg' x='16' y='136' stroke='none' font-size='14'></text>
+    <line x1='16' y1='152' x2='704' y2='152' stroke-width='1' opacity='0.2'/>
+    <text x='16' y='178' stroke='none' font-size='15' font-weight='600'>attention</text>
+    <text x='104' y='178' stroke='none' font-size='14' opacity='0.8'>tous les mots précédents, et autant de paramètres pour 10 mots que pour 10 000</text>
+    <path d='M608,300 Q324.0,112 40,300' fill='none' stroke='#3b82f6' stroke-linecap='round' stroke-width='1.4' stroke-opacity='0.28'/>
+    <path d='M608,300 Q359.5,132 111,300' fill='none' stroke='#3b82f6' stroke-linecap='round' stroke-width='6.8' stroke-opacity='0.68'/>
+    <text x='359.5' y='211' text-anchor='middle' stroke='none' font-size='12'>58 %</text>
+    <path d='M608,300 Q395.0,152 182,300' fill='none' stroke='#3b82f6' stroke-linecap='round' stroke-width='1.7' stroke-opacity='0.30'/>
+    <text x='395.0' y='221' text-anchor='middle' stroke='none' font-size='12'>7 %</text>
+    <path d='M608,300 Q430.5,172 253,300' fill='none' stroke='#3b82f6' stroke-linecap='round' stroke-width='1.5' stroke-opacity='0.29'/>
+    <text x='430.5' y='231' text-anchor='middle' stroke='none' font-size='12'>5 %</text>
+    <path d='M608,300 Q466.0,192 324,300' fill='none' stroke='#3b82f6' stroke-linecap='round' stroke-width='1.9' stroke-opacity='0.32'/>
+    <text x='466.0' y='241' text-anchor='middle' stroke='none' font-size='12'>9 %</text>
+    <path d='M608,300 Q501.5,212 395,300' fill='none' stroke='#3b82f6' stroke-linecap='round' stroke-width='1.3' stroke-opacity='0.27'/>
+    <path d='M608,300 Q537.0,232 466,300' fill='none' stroke='#3b82f6' stroke-linecap='round' stroke-width='1.4' stroke-opacity='0.28'/>
+    <path d='M608,300 Q572.5,252 537,300' fill='none' stroke='#3b82f6' stroke-linecap='round' stroke-width='2.0' stroke-opacity='0.33'/>
+    <text x='572.5' y='271' text-anchor='middle' stroke='none' font-size='12'>10 %</text>
+    <text x='40' y='318' text-anchor='middle' stroke='none' font-size='16' >Le</text>
+    <text x='111' y='318' text-anchor='middle' stroke='none' font-size='16' fill='#3b82f6' font-weight='bold'>chat</text>
+    <text x='182' y='318' text-anchor='middle' stroke='none' font-size='16' >noir</text>
+    <text x='253' y='318' text-anchor='middle' stroke='none' font-size='16' >qui</text>
+    <text x='324' y='318' text-anchor='middle' stroke='none' font-size='16' >dormait</text>
+    <text x='395' y='318' text-anchor='middle' stroke='none' font-size='16' >sur</text>
+    <text x='466' y='318' text-anchor='middle' stroke='none' font-size='16' >le</text>
+    <text x='537' y='318' text-anchor='middle' stroke='none' font-size='16' >tapis</text>
+    <text x='608' y='318' text-anchor='middle' stroke='none' font-size='16' >s&#39;est</text>
+    <text x='679' y='318' text-anchor='middle' stroke='none' font-size='16' fill='#f59e0b' font-weight='bold'>?</text>
+    <line x1='634' y1='95' x2='667' y2='95' stroke-width='1.3' marker-end='url(#fleche-fen)'/>
+    <line x1='634' y1='313' x2='667' y2='313' stroke-width='1.3' marker-end='url(#fleche-fen)'/>
+  </g>
+</svg>
+<script>
+(() => {
+  const fmt = (v, d = 1) => (v < -1e-9 ? "−" : "") + Math.abs(v).toFixed(d).replace(".", ",");
+  // Une valeur qu'on modifie en la faisant glisser (ou avec les flèches du clavier).
+  const glisser = (el, lire, ecrire, pas, min, max, pixels = 25) => {
+    el.classList.add("valeur-glissable");
+    el.setAttribute("tabindex", "0");
+    const borner = v => Math.min(max, Math.max(min, Math.round(v / pas) * pas));
+    let x0 = null, v0 = 0;
+    el.addEventListener("pointerdown", e => {
+      x0 = e.clientX; v0 = lire();
+      el.setPointerCapture(e.pointerId);
+      e.preventDefault();
+    });
+    el.addEventListener("pointermove", e => {
+      if (x0 !== null) ecrire(borner(v0 + (e.clientX - x0) / pixels * pas));
+    });
+    const fin = () => { x0 = null; };
+    el.addEventListener("pointerup", fin);
+    el.addEventListener("pointercancel", fin);
+    el.addEventListener("keydown", e => {
+      const d = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 }[e.key];
+      if (!d) return;
+      e.preventDefault();
+      ecrire(borner(lire() + d * pas));
+    });
+  };
+
+  const fig = document.querySelector("svg.figure-fenetre");
+  const $ = id => fig.querySelector("#" + id);
+  const XS = [40, 111, 182, 253, 324, 395, 466, 537, 608, 679];
+  const SUP = "⁰¹²³⁴⁵⁶⁷⁸⁹";
+  const puissance = n => {
+    // V^n, avec V = 50 000 mots, en notation scientifique
+    const l = n * Math.log10(5e4), e = Math.floor(l), m = 10 ** (l - e);
+    return fmt(m, 1) + " × 10" + String(e).split("").map(c => SUP[+c]).join("");
+  };
+  let n = 3;
+  const maj = () => {
+    $("f1-n").textContent = n;
+    const debut = 9 - (n - 1);
+    const r = $("f1-fenetre");
+    r.setAttribute("x", XS[debut] - 34);
+    r.setAttribute("width", XS[8] - XS[debut] + 68);
+    for (let i = 0; i < 9; i++) {
+      const m = $("f1-m" + i), dedans = i >= debut;
+      m.setAttribute("opacity", dedans ? 1 : 0.3);
+      m.setAttribute("fill", i === 1 && dedans ? "#3b82f6" : "currentColor");
+      m.setAttribute("font-weight", i === 1 && dedans ? "bold" : "normal");
+    }
+    const corpus = n * Math.log10(5e4) > Math.log10(1.8e13)
+      ? ", plus que les 18 000 milliards de jetons du corpus de Qwen2.5" : "";
+    $("f1-etat").textContent = `il voit ${n - 1} mot${n > 2 ? "s" : ""}; paramètres : V${String(n).split("").map(c => SUP[+c]).join("")} ≈ ${puissance(n)}${corpus}`;
+    const msg = $("f1-msg");
+    if (debut <= 1) {
+      msg.textContent = "« chat » est enfin visible, au prix d'un nombre astronomique de paramètres.";
+      msg.setAttribute("fill", "#3b82f6");
+    } else {
+      msg.textContent = "« chat » est hors de la fenêtre : impossible de savoir qu'il faut accorder au masculin.";
+      msg.setAttribute("fill", "currentColor");
+    }
+  };
+  glisser($("f1-n"), () => n, v => { n = v; maj(); }, 1, 2, 10);
+  maj();
+})();
+</script>
+```
+
+Voir loin : fenêtre fixe ou attention. En haut, un n-gramme ne voit que les
+$n - 1$ mots qui précèdent. Faites glisser $n$ (en bleu) : pour atteindre
+« chat », il faut $n = 9$, et le nombre de paramètres devient astronomique
+(avec $V = 50\,000$ mots, comme à la [semaine 1](s01.qmd#parcimonie)). En bas,
+l'attention relie « s'est » à tous les mots précédents, sans aucun paramètre de
+plus. Ses poids, choisis ici pour l'illustration, donnent à « chat » la plus
+grosse part.
+:::
 
 C'est ce que fait l'**attention**. Pour chaque jeton, elle calcule une
 distribution sur les jetons qui précèdent (des poids positifs qui somment à 1),
 puis fait la moyenne de leurs vecteurs selon ces poids. Le résultat est un
 nouveau vecteur pour ce jeton, enrichi de ce qu'il a trouvé dans son contexte :
-le vecteur de « s'est » peut ainsi recevoir une bonne part de celui de « chat ».
+le vecteur de « s'est » peut ainsi recevoir une bonne part de celui de « chat »,
+comme le montre la figure [-@fig-moyenne].
+
+::: {#fig-moyenne}
+
+```{=html}
+<svg class="figure-moyenne" viewBox="0 0 720 345" role="img"
+     aria-label="La moyenne pondérée. À gauche, les poids que « s'est » accorde à chat, noir, dormait, tapis et à lui-même, qui totalisent 100 %. À droite, un vecteur par mot, et en orange leur moyenne pondérée, le nouveau vecteur de « s'est », tirée vers « chat », qui a le plus gros poids."
+     style="width:100%;max-width:720px;display:block;margin:auto;font-size:16px">
+  <defs>
+    <marker id="fleche-moy" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+    <marker id="fleche-moy-orange" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#f59e0b"/></marker>
+  </defs>
+  <g fill="currentColor" stroke="currentColor">
+    <text x='16' y='30' stroke='none' font-size='15' font-weight='600'>les poids de « s&#39;est »</text>
+    <text x='95' y='83' text-anchor='end' stroke='none' font-size='15'>chat</text>
+    <rect id='f2-piste0' class='piste-poids' x='105' y='67' width='190' height='22' rx='3' fill='currentColor' fill-opacity='0.08' stroke='none' style='cursor:ew-resize;touch-action:none' tabindex='0'/>
+    <rect id='f2-barre0' x='105' y='67' height='22' rx='3' fill='#3b82f6' stroke='none' pointer-events='none'/>
+    <text id='f2-pct0' x='303' y='83' stroke='none' font-size='14'></text>
+    <text x='95' y='129' text-anchor='end' stroke='none' font-size='15'>noir</text>
+    <rect id='f2-piste1' class='piste-poids' x='105' y='113' width='190' height='22' rx='3' fill='currentColor' fill-opacity='0.08' stroke='none' style='cursor:ew-resize;touch-action:none' tabindex='0'/>
+    <rect id='f2-barre1' x='105' y='113' height='22' rx='3' fill='#3b82f6' stroke='none' pointer-events='none'/>
+    <text id='f2-pct1' x='303' y='129' stroke='none' font-size='14'></text>
+    <text x='95' y='175' text-anchor='end' stroke='none' font-size='15'>dormait</text>
+    <rect id='f2-piste2' class='piste-poids' x='105' y='159' width='190' height='22' rx='3' fill='currentColor' fill-opacity='0.08' stroke='none' style='cursor:ew-resize;touch-action:none' tabindex='0'/>
+    <rect id='f2-barre2' x='105' y='159' height='22' rx='3' fill='#3b82f6' stroke='none' pointer-events='none'/>
+    <text id='f2-pct2' x='303' y='175' stroke='none' font-size='14'></text>
+    <text x='95' y='221' text-anchor='end' stroke='none' font-size='15'>tapis</text>
+    <rect id='f2-piste3' class='piste-poids' x='105' y='205' width='190' height='22' rx='3' fill='currentColor' fill-opacity='0.08' stroke='none' style='cursor:ew-resize;touch-action:none' tabindex='0'/>
+    <rect id='f2-barre3' x='105' y='205' height='22' rx='3' fill='#3b82f6' stroke='none' pointer-events='none'/>
+    <text id='f2-pct3' x='303' y='221' stroke='none' font-size='14'></text>
+    <text x='95' y='267' text-anchor='end' stroke='none' font-size='15'>s&#39;est</text>
+    <rect id='f2-piste4' class='piste-poids' x='105' y='251' width='190' height='22' rx='3' fill='currentColor' fill-opacity='0.08' stroke='none' style='cursor:ew-resize;touch-action:none' tabindex='0'/>
+    <rect id='f2-barre4' x='105' y='251' height='22' rx='3' fill='#3b82f6' stroke='none' pointer-events='none'/>
+    <text id='f2-pct4' x='303' y='267' stroke='none' font-size='14'></text>
+    <text x='105' y='302' stroke='none' font-size='14' opacity='0.8'>total : 100 %</text>
+    <text x='535' y='30' text-anchor='middle' stroke='none' font-size='15' font-weight='600'>les vecteurs</text>
+    <line x1='385' y1='165' x2='685' y2='165' stroke-width='1' opacity='0.2'/>
+    <line x1='535' y1='40' x2='535' y2='290' stroke-width='1' opacity='0.2'/>
+    <line id='f2-v0' x1='535' y1='165' x2='439.8' y2='103.4' stroke-width='1.6' marker-end='url(#fleche-moy)'/>
+    <text id='f2-l0' x='426.2' y='99.6' text-anchor='end' stroke='none' font-size='14'>chat</text>
+    <line id='f2-v1' x1='535' y1='165' x2='479.0' y2='254.6' stroke-width='1.6' marker-end='url(#fleche-moy)'/>
+    <text id='f2-l1' x='471.0' y='272.4' text-anchor='end' stroke='none' font-size='14'>noir</text>
+    <line id='f2-v2' x1='535' y1='165' x2='568.6' y2='58.6' stroke-width='1.6' marker-end='url(#fleche-moy)'/>
+    <text id='f2-l2' x='573.4' y='48.4' text-anchor='start' stroke='none' font-size='14'>dormait</text>
+    <line id='f2-v3' x1='535' y1='165' x2='641.4' y2='209.8' stroke-width='1.6' marker-end='url(#fleche-moy)'/>
+    <text id='f2-l3' x='656.6' y='221.2' text-anchor='start' stroke='none' font-size='14'>tapis</text>
+    <line id='f2-v4' x1='535' y1='165' x2='596.6' y2='131.4' stroke-width='1.6' marker-end='url(#fleche-moy)'/>
+    <text id='f2-l4' x='605.4' y='131.6' text-anchor='start' stroke='none' font-size='14'>s&#39;est</text>
+    <line id='f2-res' x1='535' y1='165' stroke='#f59e0b' stroke-width='3.5' marker-end='url(#fleche-moy-orange)'/>
+    <circle id='f2-pt' r='4' fill='#f59e0b' stroke='none'/>
+    <text id='f2-nom' stroke='none' font-size='13' font-weight='bold' fill='#f59e0b'>nouveau « s&#39;est »</text>
+    <text id='f2-formule' x='16' y='330' stroke='none' font-size='13'></text>
+  </g>
+</svg>
+<div style="display:flex;gap:.4rem;justify-content:center;margin-top:.3rem;flex-wrap:wrap">
+  <button type="button" class="btn btn-sm bouton-figure" id="f2-chat">Tout sur « chat »</button>
+  <button type="button" class="btn btn-sm bouton-figure" id="f2-egaux">Poids égaux</button>
+  <button type="button" class="btn btn-sm bouton-figure" id="f2-depart">Revenir au départ</button>
+</div>
+<script>
+(() => {
+  const fmt = (v, d = 2) => v.toFixed(d).replace(".", ",");
+  const fig = document.querySelector("svg.figure-moyenne");
+  const $ = id => fig.querySelector("#" + id);
+  const MOTS = ['chat', 'noir', 'dormait', 'tapis', "s'est"];
+  const V = [[-0.85, 0.55], [-0.5, -0.8], [0.3, 0.95], [0.95, -0.4], [0.55, 0.3]];
+  const DEPART = [0.55, 0.1, 0.15, 0.1, 0.1];
+  const [XB, LB, CX, CY, ECH] = [105, 190, 535, 165, 112];
+  let w = [...DEPART];
+  // Fixe le poids du mot i; les autres s'ajustent pour que le total reste 1.
+  const regler = (i, v) => {
+    v = Math.min(1, Math.max(0, v));
+    const reste = w.reduce((s, x, j) => j === i ? s : s + x, 0);
+    w = w.map((x, j) => j === i ? v
+      : reste > 1e-9 ? x * (1 - v) / reste : (1 - v) / (w.length - 1));
+    maj();
+  };
+  const maj = () => {
+    let rx = 0, ry = 0;
+    w.forEach((p, i) => {
+      $("f2-barre" + i).setAttribute("width", (p * LB).toFixed(1));
+      $("f2-pct" + i).textContent = Math.round(p * 100) + " %";
+      $("f2-v" + i).setAttribute("stroke-opacity", (0.25 + 0.75 * p).toFixed(2));
+      $("f2-l" + i).setAttribute("font-weight", p >= 0.3 ? "bold" : "normal");
+      rx += p * V[i][0]; ry += p * V[i][1];
+    });
+    const x = CX + ECH * rx, y = CY - ECH * ry;
+    $("f2-res").setAttribute("x2", x.toFixed(1));
+    $("f2-res").setAttribute("y2", y.toFixed(1));
+    $("f2-pt").setAttribute("cx", x.toFixed(1));
+    $("f2-pt").setAttribute("cy", y.toFixed(1));
+    // L'étiquette du résultat, du côté opposé à l'origine
+    const nom = $("f2-nom"), dx = x - CX, dy = y - CY, n = Math.hypot(dx, dy) || 1;
+    nom.setAttribute("x", (x + 14 * dx / n + (dx < 0 ? -4 : 4)).toFixed(1));
+    nom.setAttribute("y", (y + 14 * dy / n + 4).toFixed(1));
+    nom.setAttribute("text-anchor", dx < 0 ? "end" : "start");
+    $("f2-formule").textContent = "nouveau vecteur de « s'est » = "
+      + w.map((p, i) => `${fmt(p)} × ${MOTS[i]}`).join(" + ");
+  };
+  w.forEach((_, i) => {
+    const piste = $("f2-piste" + i);
+    const vers = e => {
+      const p = fig.createSVGPoint();
+      p.x = e.clientX; p.y = e.clientY;
+      return (p.matrixTransform(fig.getScreenCTM().inverse()).x - XB) / LB;
+    };
+    let actif = false;
+    piste.addEventListener("pointerdown", e => {
+      actif = true; piste.setPointerCapture(e.pointerId); e.preventDefault(); regler(i, vers(e));
+    });
+    piste.addEventListener("pointermove", e => { if (actif) regler(i, vers(e)); });
+    piste.addEventListener("pointerup", () => { actif = false; });
+    piste.addEventListener("pointercancel", () => { actif = false; });
+    piste.addEventListener("keydown", e => {
+      const d = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 }[e.key];
+      if (!d) return;
+      e.preventDefault();
+      regler(i, Math.round((w[i] + d * 0.05) * 20) / 20);
+    });
+  });
+  document.getElementById("f2-chat").addEventListener("click", () => regler(0, 1));
+  document.getElementById("f2-egaux").addEventListener("click", () => { w = w.map(() => 1 / w.length); maj(); });
+  document.getElementById("f2-depart").addEventListener("click", () => { w = [...DEPART]; maj(); });
+  maj();
+})();
+</script>
+```
+
+La moyenne pondérée. À gauche, les poids que « s'est » accorde à chaque mot de
+son contexte, lui-même compris : une distribution, dont le total fait toujours
+100 %. Faites glisser une barre (ou utilisez les flèches du clavier) : les
+autres s'ajustent. À droite, chaque mot est un vecteur, comme les plongements de
+la [semaine 2](s02.qmd#plongements), et la flèche orange est leur moyenne
+pondérée par ces poids : le nouveau vecteur de « s'est ». Tout le poids sur un
+mot, et elle se confond avec lui; des poids égaux, et elle tombe au centre. Les
+vecteurs sont choisis pour l'illustration.
+:::
 
 ### Requêtes, clés et valeurs
 
