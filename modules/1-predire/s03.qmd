@@ -888,41 +888,376 @@ appris, et leurs axes ne portent pas d'étiquettes.
 Reste ce qu'on moyenne. Dans la figure [-@fig-moyenne], c'étaient les
 plongements eux-mêmes. Mais ce que « chat » doit transmettre n'est pas
 forcément ce qui a permis de le trouver : on l'a trouvé parce que c'est un nom
-(sa clé), mais ce qui sert à « s'est », pour accorder la suite, c'est qu'il
-soit masculin singulier. D'où un troisième vecteur, la **valeur**, ce que le
+sujet (sa clé), mais ce qui sert à « s'est », pour accorder la suite, c'est
+qu'il soit masculin. D'où un troisième vecteur, la **valeur**, ce que le
 jeton transmet quand on le trouve.
 
 ### Requêtes, clés et valeurs
 
-Chaque jeton produit donc trois vecteurs, par trois multiplications
-matricielles de son plongement $x$ :
+Une image résume les trois rôles. Dans une bibliothèque, vous cherchez un livre
+sur les chats : c'est votre **requête**. Vous parcourez les étiquettes au dos
+des livres : ce sont les **clés**. Le livre dont l'étiquette correspond, vous
+l'ouvrez et vous le lisez : son contenu, c'est la **valeur**. L'étiquette sert à
+trouver le livre, mais ce que vous emportez, c'est son contenu. L'attention
+fait la même chose, à une différence près : au lieu de prendre un seul livre,
+elle lit un peu de chacun, d'autant plus que son étiquette correspond à la
+requête.
 
-- une **requête** (*query*) $q = x W_Q$ : ce qu'il cherche;
-- une **clé** (*key*) $k = x W_K$ : ce qu'il offre, ce sur quoi on peut le
-  trouver;
-- une **valeur** (*value*) $v = x W_V$ : ce qu'il transmet quand on le trouve.
+| Vecteur | La question à laquelle il répond | Il sert à… | Dans notre phrase |
+|:--|:--|:--|:--|
+| requête $q$ | Qu'est-ce que je cherche? | calculer les poids | « s'est » cherche un nom sujet |
+| clé $k$ | À quoi peut-on me reconnaître? | calculer les poids | « chat » se présente comme un nom sujet |
+| valeur $v$ | Que dois-je transmettre si on me choisit? | former le résultat | « chat » transmet « masculin » |
 
-Les trois matrices $W_Q$, $W_K$ et $W_V$ sont les paramètres de l'attention,
-apprises par descente de gradient comme tout le reste. Leur taille ne dépend
-que de la dimension des vecteurs, pas de la longueur du contexte : c'est
-pourquoi allonger le contexte n'ajoute aucun paramètre. L'image est celle d'un
-dictionnaire où l'on chercherait par ressemblance plutôt que par égalité
-exacte : la requête est la question, les clés sont les entrées, les valeurs
-sont les définitions.
+La troisième colonne est la plus importante. La requête et la clé ne servent
+qu'à calculer les poids, puis elles disparaissent : elles décident **où
+regarder**. Seules les valeurs arrivent dans le résultat : elles décident
+**quoi transmettre**. La figure [-@fig-flux] montre ces deux circuits.
 
-Pour « s'est », l'attention se déroule donc en trois étapes, qui reprennent la
-figure [-@fig-moyenne] :
+::: {#fig-flux}
+
+```{=html}
+<svg class="figure-flux" viewBox="0 0 720 270" role="img"
+     aria-label="Deux circuits. « s'est » fabrique sa requête q avec la matrice W_Q; chaque mot du contexte fabrique sa clé k avec W_K et sa valeur v avec W_V. En bleu, où regarder : q et k donnent un score, le softmax sur tous les mots donne les poids. En vert, quoi transmettre : chaque valeur, multipliée par son poids, est additionnée sur tous les mots pour former le nouveau vecteur de « s'est »."
+     style="width:100%;max-width:720px;display:block;margin:auto;font-size:16px">
+  <defs>
+    <marker id="flux" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+    <marker id="flux-bleu" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#3b82f6"/></marker>
+    <marker id="flux-vert" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#10b981"/></marker>
+    <marker id="flux-orange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#f59e0b"/></marker>
+  </defs>
+  <g fill="currentColor" stroke="currentColor">
+    <rect x='150' y='8' width='400' height='160' rx='10' fill='#3b82f6' fill-opacity='0.07' stroke='none'/>
+    <rect x='150' y='178' width='400' height='86' rx='10' fill='#10b981' fill-opacity='0.07' stroke='none'/>
+    <text x='162' y='26' text-anchor='start' stroke='none' font-size='13' opacity='1' fill='#3b82f6' font-weight='bold'>OÙ REGARDER : la requête et la clé ne servent qu&#39;à calculer les poids</text>
+    <text x='162' y='256' text-anchor='start' stroke='none' font-size='13' opacity='1' fill='#10b981' font-weight='bold'>QUOI TRANSMETTRE : seule la valeur arrive dans le résultat</text>
+    <text x='60' y='42' text-anchor='middle' stroke='none' font-size='12' opacity='0.75'>le jeton qui regarde</text>
+    <rect x='12' y='50' width='96' height='32' rx='6' fill='none' stroke='currentColor' stroke-width='1.5'/><text x='60.0' y='71.0' text-anchor='middle' stroke='none' font-size='15'>« s&#39;est »</text>
+    <rect x='20' y='142' width='96' height='32' rx='6' fill='none' stroke='currentColor' stroke-width='1' opacity='0.35'/>
+    <rect x='16' y='146' width='96' height='32' rx='6' fill='none' stroke='currentColor' stroke-width='1' opacity='0.35'/>
+    <rect x='12' y='150' width='96' height='32' rx='6' fill='none' stroke='currentColor' stroke-width='1.5'/><text x='60.0' y='171.0' text-anchor='middle' stroke='none' font-size='15'>« chat »</text>
+    <text x='60' y='200' text-anchor='middle' stroke='none' font-size='12' opacity='0.75'>chaque mot</text>
+    <text x='60' y='213' text-anchor='middle' stroke='none' font-size='12' opacity='0.75'>du contexte,</text>
+    <text x='60' y='226' text-anchor='middle' stroke='none' font-size='12' opacity='0.75'>« s&#39;est » compris</text>
+    <line x1='108' y1='66' x2='172' y2='66'  stroke-width='1.6' marker-end='url(#flux)'/>
+    <text x='140' y='59' text-anchor='middle' stroke='none' font-size='13' opacity='0.9'>× <tspan font-style='italic'>W</tspan><tspan dy='4' font-size='10'>Q</tspan></text>
+    <line x1='108' y1='160' x2='172' y2='128'  stroke-width='1.6' marker-end='url(#flux)'/>
+    <text x='130' y='134' text-anchor='end' stroke='none' font-size='13' opacity='0.9'>× <tspan font-style='italic'>W</tspan><tspan dy='4' font-size='10'>K</tspan></text>
+    <line x1='108' y1='172' x2='172' y2='207'  stroke-width='1.6' marker-end='url(#flux)'/>
+    <text x='140' y='214' text-anchor='middle' stroke='none' font-size='13' opacity='0.9'>× <tspan font-style='italic'>W</tspan><tspan dy='4' font-size='10'>V</tspan></text>
+    <rect x='174' y='50' width='44' height='32' rx='6' fill='#3b82f6' fill-opacity='0.18' stroke='#3b82f6' stroke-width='1.5'/><text x='196.0' y='71.0' text-anchor='middle' stroke='none' font-size='17' font-weight='bold'>q</text>
+    <text x='196' y='98' text-anchor='middle' stroke='none' font-size='12' opacity='0.75'>ce qu&#39;il cherche</text>
+    <rect x='174' y='108' width='44' height='32' rx='6' fill='#3b82f6' fill-opacity='0.18' stroke='#3b82f6' stroke-width='1.5'/><text x='196.0' y='129.0' text-anchor='middle' stroke='none' font-size='17' font-weight='bold'>k</text>
+    <text x='196' y='156' text-anchor='middle' stroke='none' font-size='12' opacity='0.75'>ce qu&#39;il offre</text>
+    <rect x='174' y='192' width='44' height='32' rx='6' fill='#10b981' fill-opacity='0.18' stroke='#10b981' stroke-width='1.5'/><text x='196.0' y='213.0' text-anchor='middle' stroke='none' font-size='17' font-weight='bold'>v</text>
+    <text x='196' y='240' text-anchor='middle' stroke='none' font-size='12' opacity='0.75'>ce qu&#39;il transmet</text>
+    <line x1='218' y1='66' x2='268' y2='88' stroke='#3b82f6' stroke-width='1.6' marker-end='url(#flux-bleu)'/>
+    <line x1='218' y1='124' x2='268' y2='104' stroke='#3b82f6' stroke-width='1.6' marker-end='url(#flux-bleu)'/>
+    <rect x='270' y='80' width='60' height='32' rx='6' fill='#3b82f6' fill-opacity='0.18' stroke='#3b82f6' stroke-width='1.5'/><text x='300.0' y='101.0' text-anchor='middle' stroke='none' font-size='15'>q · k</text>
+    <text x='300' y='128' text-anchor='middle' stroke='none' font-size='12' opacity='0.75'>un score</text>
+    <line x1='330' y1='96' x2='360' y2='96' stroke='#3b82f6' stroke-width='1.6' marker-end='url(#flux-bleu)'/>
+    <rect x='362' y='80' width='76' height='32' rx='6' fill='#3b82f6' fill-opacity='0.18' stroke='#3b82f6' stroke-width='1.5'/><text x='400.0' y='101.0' text-anchor='middle' stroke='none' font-size='15'>softmax</text>
+    <text x='400' y='128' text-anchor='middle' stroke='none' font-size='12' opacity='0.75'>sur tous les mots</text>
+    <line x1='438' y1='96' x2='468' y2='96' stroke='#3b82f6' stroke-width='1.6' marker-end='url(#flux-bleu)'/>
+    <rect x='470' y='80' width='66' height='32' rx='6' fill='#3b82f6' fill-opacity='0.18' stroke='#3b82f6' stroke-width='1.5'/><text x='503.0' y='101.0' text-anchor='middle' stroke='none' font-size='15' font-weight='bold'>poids</text>
+    <line x1='503' y1='112' x2='503' y2='190' stroke='#3b82f6' stroke-width='2' marker-end='url(#flux-bleu)'/>
+    <line x1='218' y1='208' x2='468' y2='208' stroke='#10b981' stroke-width='2.2' marker-end='url(#flux-vert)'/>
+    <rect x='470' y='192' width='66' height='32' rx='6' fill='#f59e0b' fill-opacity='0.18' stroke='#f59e0b' stroke-width='1.5'/><text x='503.0' y='213.0' text-anchor='middle' stroke='none' font-size='13'>poids × v</text>
+    <line x1='536' y1='208' x2='560' y2='208' stroke='#f59e0b' stroke-width='1.6' marker-end='url(#flux-orange)'/>
+    <rect x='562' y='192' width='36' height='32' rx='6' fill='#f59e0b' fill-opacity='0.18' stroke='#f59e0b' stroke-width='1.5'/><text x='580.0' y='213.0' text-anchor='middle' stroke='none' font-size='15' font-weight='bold'>Σ</text>
+    <text x='580' y='240' text-anchor='middle' stroke='none' font-size='12' opacity='0.75'>sur tous</text>
+    <text x='580' y='253' text-anchor='middle' stroke='none' font-size='12' opacity='0.75'>les mots</text>
+    <line x1='598' y1='208' x2='616' y2='208' stroke='#f59e0b' stroke-width='1.6' marker-end='url(#flux-orange)'/>
+    <rect x='618' y='186' width='96' height='44' rx='6' fill='#f59e0b' fill-opacity='0.18' stroke='#f59e0b' stroke-width='2'/>
+    <text x='666' y='204' text-anchor='middle' stroke='none' font-size='14' font-weight='bold'>nouveau</text>
+    <text x='666' y='221' text-anchor='middle' stroke='none' font-size='14' font-weight='bold'>« s&#39;est »</text>
+  </g>
+</svg>
+```
+
+Deux circuits. Le jeton qui regarde (ici « s'est ») fabrique sa requête; chaque
+mot du contexte fabrique sa clé et sa valeur, avec les mêmes matrices pour
+tous. En bleu, la requête et la clé ne servent qu'à calculer un poids par mot
+(le softmax se fait sur tous les mots à la fois). En vert, la valeur suit un
+chemin à part : c'est elle, multipliée par son poids, qui arrive dans le
+nouveau vecteur de « s'est ».
+:::
+
+Les trois vecteurs sont tirés du même plongement $x$, par trois
+multiplications matricielles :
+
+- la **requête** (*query*) $q = x W_Q$;
+- la **clé** (*key*) $k = x W_K$;
+- la **valeur** (*value*) $v = x W_V$.
+
+Ce sont trois façons de regarder le même mot. Les trois matrices $W_Q$, $W_K$
+et $W_V$ sont les mêmes pour tous les jetons : la même machine fabrique la
+requête, la clé et la valeur de chaque mot, quelle que soit sa place. Leur
+taille ne dépend que de la dimension des vecteurs, pas de la longueur du
+contexte : c'est pourquoi allonger le contexte n'ajoute aucun paramètre. Elles
+sont apprises par descente de gradient, comme tout le reste : c'est
+l'entraînement qui décide quoi chercher, comment se présenter et quoi
+transmettre.
+
+### L'attention de « s'est », case par case {#calcul}
+
+Faisons maintenant le calcul complet, avec des vecteurs assez petits pour être
+lus. Pour rendre le piège plus visible, changeons un mot de la phrase : « Le
+chat noir qui dormait sur **la chaise** s'est … ». Le nom le plus proche de
+« s'est » est maintenant féminin : un modèle qui se fierait aux mots voisins
+écrirait « réveillée ». Chaque vecteur n'a que deux coordonnées, et chacune a
+un sens : la clé dit si le mot est un nom et s'il est sujet; la valeur dit
+s'il est masculin ou féminin; la requête de « s'est » dit ce qu'il cherche. La
+figure [-@fig-calcul] déroule les trois étapes, de gauche à droite.
+
+::: {#fig-calcul}
+
+```{=html}
+<svg class="figure-calcul" viewBox="0 0 720 438" role="img"
+     aria-label="L'attention de « s'est » dans « Le chat noir qui dormait sur la chaise s'est », case par case. La requête de « s'est » cherche un nom sujet. Seul « chat » a la clé d'un nom sujet : il reçoit presque tout le poids. Sa valeur, masculin, devient l'essentiel du nouveau vecteur de « s'est » : la suite s'accorde au masculin, « réveillé »."
+     style="width:100%;max-width:720px;display:block;margin:auto;font-size:16px">
+  <g fill="currentColor" stroke="currentColor">
+    <text x='92' y='28' text-anchor='end' stroke='none' font-size='14' font-weight='bold' fill='#3b82f6'>requête</text>
+    <text x='92' y='43' text-anchor='end' stroke='none' font-size='14' font-weight='bold' fill='#3b82f6'>de « s&#39;est »</text>
+    <text x='127.0' y='14' text-anchor='middle' stroke='none' font-size='12' opacity='0.75'>nom</text>
+    <rect id='fc-q0' x='104' y='24.0' width='46' height='20' rx='3' fill='#3b82f6' fill-opacity='0.1' stroke='#3b82f6' stroke-opacity='0.5' stroke-width='1' class='case-cliquable' tabindex='0' role='button' aria-label='requête, case nom : cliquez pour changer' style='cursor:pointer'/><text id='fc-q0t' x='127.0' y='39' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <text x='177.0' y='14' text-anchor='middle' stroke='none' font-size='12' opacity='0.75'>sujet</text>
+    <rect id='fc-q1' x='154' y='24.0' width='46' height='20' rx='3' fill='#3b82f6' fill-opacity='0.1' stroke='#3b82f6' stroke-opacity='0.5' stroke-width='1' class='case-cliquable' tabindex='0' role='button' aria-label='requête, case sujet : cliquez pour changer' style='cursor:pointer'/><text id='fc-q1t' x='177.0' y='39' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <text id='fc-qdesc' x='214' y='39' stroke='none' font-size='14'></text>
+    <text x='152.0' y='86' text-anchor='middle' stroke='none' font-size='13' opacity='1' fill='#3b82f6' font-weight='bold'>clé</text>
+    <text x='238' y='86' text-anchor='middle' stroke='none' font-size='13' opacity='1' font-weight='bold'>① score</text>
+    <text x='329.0' y='86' text-anchor='middle' stroke='none' font-size='13' opacity='1' font-weight='bold'>② poids</text>
+    <text x='468.0' y='86' text-anchor='middle' stroke='none' font-size='13' opacity='1' fill='#10b981' font-weight='bold'>valeur</text>
+    <text x='608.0' y='86' text-anchor='middle' stroke='none' font-size='13' opacity='1' fill='#f59e0b' font-weight='bold'>③ poids × valeur</text>
+    <text x='127.0' y='104' text-anchor='middle' stroke='none' font-size='12' opacity='0.75'>nom</text>
+    <text x='177.0' y='104' text-anchor='middle' stroke='none' font-size='12' opacity='0.75'>sujet</text>
+    <text x='443.0' y='104' text-anchor='middle' stroke='none' font-size='12' opacity='0.75'>masc.</text>
+    <text x='493.0' y='104' text-anchor='middle' stroke='none' font-size='12' opacity='0.75'>fém.</text>
+    <text x='583.0' y='104' text-anchor='middle' stroke='none' font-size='12' opacity='0.75'>masc.</text>
+    <text x='633.0' y='104' text-anchor='middle' stroke='none' font-size='12' opacity='0.75'>fém.</text>
+    <text x='238' y='104' text-anchor='middle' stroke='none' font-size='12' opacity='0.75'>q · k</text>
+    <text x='329.0' y='104' text-anchor='middle' stroke='none' font-size='12' opacity='0.75'>softmax</text>
+    <text x='92' y='133' text-anchor='end' stroke='none' font-size='14'>Le</text>
+    <rect id='fc-k00' x='104' y='118.0' width='46' height='20' rx='3' fill='#3b82f6' fill-opacity='0.1' stroke='#3b82f6' stroke-opacity='0.5' stroke-width='1' class='case-cliquable' tabindex='0' role='button' aria-label='clé de Le, case nom : cliquez pour basculer entre 0 et 1' style='cursor:pointer'/><text id='fc-k00t' x='127.0' y='133' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <rect id='fc-k01' x='154' y='118.0' width='46' height='20' rx='3' fill='#3b82f6' fill-opacity='0.1' stroke='#3b82f6' stroke-opacity='0.5' stroke-width='1' class='case-cliquable' tabindex='0' role='button' aria-label='clé de Le, case sujet : cliquez pour basculer entre 0 et 1' style='cursor:pointer'/><text id='fc-k01t' x='177.0' y='133' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <text id='fc-s0' x='238' y='133' text-anchor='middle' stroke='none' font-size='13' style='font-variant-numeric:tabular-nums'></text>
+    <rect x='268' y='120' width='90' height='16' rx='3' fill='currentColor' fill-opacity='0.08' stroke='none'/>
+    <rect id='fc-b0' x='268' y='120' height='16' rx='3' fill='#3b82f6' stroke='none'/>
+    <text id='fc-p0' x='364' y='133' stroke='none' font-size='13' style='font-variant-numeric:tabular-nums'></text>
+    <rect id='fc-v00' x='420' y='118.0' width='46' height='20' rx='3' fill='#10b981' fill-opacity='0.1' stroke='#10b981' stroke-opacity='0.5' stroke-width='1' class='case-cliquable' tabindex='0' role='button' aria-label='valeur de Le, case masculin : cliquez pour basculer entre 0 et 1' style='cursor:pointer'/><text id='fc-v00t' x='443.0' y='133' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <rect id='fc-c00' x='560' y='118.0' width='46' height='20' rx='3' fill='#f59e0b' fill-opacity='0.1' stroke='#f59e0b' stroke-opacity='0.5' stroke-width='1'/><text id='fc-c00t' x='583.0' y='133' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <rect id='fc-v01' x='470' y='118.0' width='46' height='20' rx='3' fill='#10b981' fill-opacity='0.1' stroke='#10b981' stroke-opacity='0.5' stroke-width='1' class='case-cliquable' tabindex='0' role='button' aria-label='valeur de Le, case féminin : cliquez pour basculer entre 0 et 1' style='cursor:pointer'/><text id='fc-v01t' x='493.0' y='133' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <rect id='fc-c01' x='610' y='118.0' width='46' height='20' rx='3' fill='#f59e0b' fill-opacity='0.1' stroke='#f59e0b' stroke-opacity='0.5' stroke-width='1'/><text id='fc-c01t' x='633.0' y='133' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <text x='92' y='160' text-anchor='end' stroke='none' font-size='14'>chat</text>
+    <rect id='fc-k10' x='104' y='145.0' width='46' height='20' rx='3' fill='#3b82f6' fill-opacity='0.1' stroke='#3b82f6' stroke-opacity='0.5' stroke-width='1' class='case-cliquable' tabindex='0' role='button' aria-label='clé de chat, case nom : cliquez pour basculer entre 0 et 1' style='cursor:pointer'/><text id='fc-k10t' x='127.0' y='160' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <rect id='fc-k11' x='154' y='145.0' width='46' height='20' rx='3' fill='#3b82f6' fill-opacity='0.1' stroke='#3b82f6' stroke-opacity='0.5' stroke-width='1' class='case-cliquable' tabindex='0' role='button' aria-label='clé de chat, case sujet : cliquez pour basculer entre 0 et 1' style='cursor:pointer'/><text id='fc-k11t' x='177.0' y='160' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <text id='fc-s1' x='238' y='160' text-anchor='middle' stroke='none' font-size='13' style='font-variant-numeric:tabular-nums'></text>
+    <rect x='268' y='147' width='90' height='16' rx='3' fill='currentColor' fill-opacity='0.08' stroke='none'/>
+    <rect id='fc-b1' x='268' y='147' height='16' rx='3' fill='#3b82f6' stroke='none'/>
+    <text id='fc-p1' x='364' y='160' stroke='none' font-size='13' style='font-variant-numeric:tabular-nums'></text>
+    <rect id='fc-v10' x='420' y='145.0' width='46' height='20' rx='3' fill='#10b981' fill-opacity='0.1' stroke='#10b981' stroke-opacity='0.5' stroke-width='1' class='case-cliquable' tabindex='0' role='button' aria-label='valeur de chat, case masculin : cliquez pour basculer entre 0 et 1' style='cursor:pointer'/><text id='fc-v10t' x='443.0' y='160' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <rect id='fc-c10' x='560' y='145.0' width='46' height='20' rx='3' fill='#f59e0b' fill-opacity='0.1' stroke='#f59e0b' stroke-opacity='0.5' stroke-width='1'/><text id='fc-c10t' x='583.0' y='160' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <rect id='fc-v11' x='470' y='145.0' width='46' height='20' rx='3' fill='#10b981' fill-opacity='0.1' stroke='#10b981' stroke-opacity='0.5' stroke-width='1' class='case-cliquable' tabindex='0' role='button' aria-label='valeur de chat, case féminin : cliquez pour basculer entre 0 et 1' style='cursor:pointer'/><text id='fc-v11t' x='493.0' y='160' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <rect id='fc-c11' x='610' y='145.0' width='46' height='20' rx='3' fill='#f59e0b' fill-opacity='0.1' stroke='#f59e0b' stroke-opacity='0.5' stroke-width='1'/><text id='fc-c11t' x='633.0' y='160' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <text x='92' y='187' text-anchor='end' stroke='none' font-size='14'>noir</text>
+    <rect id='fc-k20' x='104' y='172.0' width='46' height='20' rx='3' fill='#3b82f6' fill-opacity='0.1' stroke='#3b82f6' stroke-opacity='0.5' stroke-width='1' class='case-cliquable' tabindex='0' role='button' aria-label='clé de noir, case nom : cliquez pour basculer entre 0 et 1' style='cursor:pointer'/><text id='fc-k20t' x='127.0' y='187' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <rect id='fc-k21' x='154' y='172.0' width='46' height='20' rx='3' fill='#3b82f6' fill-opacity='0.1' stroke='#3b82f6' stroke-opacity='0.5' stroke-width='1' class='case-cliquable' tabindex='0' role='button' aria-label='clé de noir, case sujet : cliquez pour basculer entre 0 et 1' style='cursor:pointer'/><text id='fc-k21t' x='177.0' y='187' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <text id='fc-s2' x='238' y='187' text-anchor='middle' stroke='none' font-size='13' style='font-variant-numeric:tabular-nums'></text>
+    <rect x='268' y='174' width='90' height='16' rx='3' fill='currentColor' fill-opacity='0.08' stroke='none'/>
+    <rect id='fc-b2' x='268' y='174' height='16' rx='3' fill='#3b82f6' stroke='none'/>
+    <text id='fc-p2' x='364' y='187' stroke='none' font-size='13' style='font-variant-numeric:tabular-nums'></text>
+    <rect id='fc-v20' x='420' y='172.0' width='46' height='20' rx='3' fill='#10b981' fill-opacity='0.1' stroke='#10b981' stroke-opacity='0.5' stroke-width='1' class='case-cliquable' tabindex='0' role='button' aria-label='valeur de noir, case masculin : cliquez pour basculer entre 0 et 1' style='cursor:pointer'/><text id='fc-v20t' x='443.0' y='187' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <rect id='fc-c20' x='560' y='172.0' width='46' height='20' rx='3' fill='#f59e0b' fill-opacity='0.1' stroke='#f59e0b' stroke-opacity='0.5' stroke-width='1'/><text id='fc-c20t' x='583.0' y='187' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <rect id='fc-v21' x='470' y='172.0' width='46' height='20' rx='3' fill='#10b981' fill-opacity='0.1' stroke='#10b981' stroke-opacity='0.5' stroke-width='1' class='case-cliquable' tabindex='0' role='button' aria-label='valeur de noir, case féminin : cliquez pour basculer entre 0 et 1' style='cursor:pointer'/><text id='fc-v21t' x='493.0' y='187' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <rect id='fc-c21' x='610' y='172.0' width='46' height='20' rx='3' fill='#f59e0b' fill-opacity='0.1' stroke='#f59e0b' stroke-opacity='0.5' stroke-width='1'/><text id='fc-c21t' x='633.0' y='187' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <text x='92' y='214' text-anchor='end' stroke='none' font-size='14'>qui</text>
+    <rect id='fc-k30' x='104' y='199.0' width='46' height='20' rx='3' fill='#3b82f6' fill-opacity='0.1' stroke='#3b82f6' stroke-opacity='0.5' stroke-width='1' class='case-cliquable' tabindex='0' role='button' aria-label='clé de qui, case nom : cliquez pour basculer entre 0 et 1' style='cursor:pointer'/><text id='fc-k30t' x='127.0' y='214' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <rect id='fc-k31' x='154' y='199.0' width='46' height='20' rx='3' fill='#3b82f6' fill-opacity='0.1' stroke='#3b82f6' stroke-opacity='0.5' stroke-width='1' class='case-cliquable' tabindex='0' role='button' aria-label='clé de qui, case sujet : cliquez pour basculer entre 0 et 1' style='cursor:pointer'/><text id='fc-k31t' x='177.0' y='214' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <text id='fc-s3' x='238' y='214' text-anchor='middle' stroke='none' font-size='13' style='font-variant-numeric:tabular-nums'></text>
+    <rect x='268' y='201' width='90' height='16' rx='3' fill='currentColor' fill-opacity='0.08' stroke='none'/>
+    <rect id='fc-b3' x='268' y='201' height='16' rx='3' fill='#3b82f6' stroke='none'/>
+    <text id='fc-p3' x='364' y='214' stroke='none' font-size='13' style='font-variant-numeric:tabular-nums'></text>
+    <rect id='fc-v30' x='420' y='199.0' width='46' height='20' rx='3' fill='#10b981' fill-opacity='0.1' stroke='#10b981' stroke-opacity='0.5' stroke-width='1' class='case-cliquable' tabindex='0' role='button' aria-label='valeur de qui, case masculin : cliquez pour basculer entre 0 et 1' style='cursor:pointer'/><text id='fc-v30t' x='443.0' y='214' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <rect id='fc-c30' x='560' y='199.0' width='46' height='20' rx='3' fill='#f59e0b' fill-opacity='0.1' stroke='#f59e0b' stroke-opacity='0.5' stroke-width='1'/><text id='fc-c30t' x='583.0' y='214' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <rect id='fc-v31' x='470' y='199.0' width='46' height='20' rx='3' fill='#10b981' fill-opacity='0.1' stroke='#10b981' stroke-opacity='0.5' stroke-width='1' class='case-cliquable' tabindex='0' role='button' aria-label='valeur de qui, case féminin : cliquez pour basculer entre 0 et 1' style='cursor:pointer'/><text id='fc-v31t' x='493.0' y='214' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <rect id='fc-c31' x='610' y='199.0' width='46' height='20' rx='3' fill='#f59e0b' fill-opacity='0.1' stroke='#f59e0b' stroke-opacity='0.5' stroke-width='1'/><text id='fc-c31t' x='633.0' y='214' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <text x='92' y='241' text-anchor='end' stroke='none' font-size='14'>dormait</text>
+    <rect id='fc-k40' x='104' y='226.0' width='46' height='20' rx='3' fill='#3b82f6' fill-opacity='0.1' stroke='#3b82f6' stroke-opacity='0.5' stroke-width='1' class='case-cliquable' tabindex='0' role='button' aria-label='clé de dormait, case nom : cliquez pour basculer entre 0 et 1' style='cursor:pointer'/><text id='fc-k40t' x='127.0' y='241' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <rect id='fc-k41' x='154' y='226.0' width='46' height='20' rx='3' fill='#3b82f6' fill-opacity='0.1' stroke='#3b82f6' stroke-opacity='0.5' stroke-width='1' class='case-cliquable' tabindex='0' role='button' aria-label='clé de dormait, case sujet : cliquez pour basculer entre 0 et 1' style='cursor:pointer'/><text id='fc-k41t' x='177.0' y='241' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <text id='fc-s4' x='238' y='241' text-anchor='middle' stroke='none' font-size='13' style='font-variant-numeric:tabular-nums'></text>
+    <rect x='268' y='228' width='90' height='16' rx='3' fill='currentColor' fill-opacity='0.08' stroke='none'/>
+    <rect id='fc-b4' x='268' y='228' height='16' rx='3' fill='#3b82f6' stroke='none'/>
+    <text id='fc-p4' x='364' y='241' stroke='none' font-size='13' style='font-variant-numeric:tabular-nums'></text>
+    <rect id='fc-v40' x='420' y='226.0' width='46' height='20' rx='3' fill='#10b981' fill-opacity='0.1' stroke='#10b981' stroke-opacity='0.5' stroke-width='1' class='case-cliquable' tabindex='0' role='button' aria-label='valeur de dormait, case masculin : cliquez pour basculer entre 0 et 1' style='cursor:pointer'/><text id='fc-v40t' x='443.0' y='241' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <rect id='fc-c40' x='560' y='226.0' width='46' height='20' rx='3' fill='#f59e0b' fill-opacity='0.1' stroke='#f59e0b' stroke-opacity='0.5' stroke-width='1'/><text id='fc-c40t' x='583.0' y='241' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <rect id='fc-v41' x='470' y='226.0' width='46' height='20' rx='3' fill='#10b981' fill-opacity='0.1' stroke='#10b981' stroke-opacity='0.5' stroke-width='1' class='case-cliquable' tabindex='0' role='button' aria-label='valeur de dormait, case féminin : cliquez pour basculer entre 0 et 1' style='cursor:pointer'/><text id='fc-v41t' x='493.0' y='241' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <rect id='fc-c41' x='610' y='226.0' width='46' height='20' rx='3' fill='#f59e0b' fill-opacity='0.1' stroke='#f59e0b' stroke-opacity='0.5' stroke-width='1'/><text id='fc-c41t' x='633.0' y='241' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <text x='92' y='268' text-anchor='end' stroke='none' font-size='14'>sur</text>
+    <rect id='fc-k50' x='104' y='253.0' width='46' height='20' rx='3' fill='#3b82f6' fill-opacity='0.1' stroke='#3b82f6' stroke-opacity='0.5' stroke-width='1' class='case-cliquable' tabindex='0' role='button' aria-label='clé de sur, case nom : cliquez pour basculer entre 0 et 1' style='cursor:pointer'/><text id='fc-k50t' x='127.0' y='268' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <rect id='fc-k51' x='154' y='253.0' width='46' height='20' rx='3' fill='#3b82f6' fill-opacity='0.1' stroke='#3b82f6' stroke-opacity='0.5' stroke-width='1' class='case-cliquable' tabindex='0' role='button' aria-label='clé de sur, case sujet : cliquez pour basculer entre 0 et 1' style='cursor:pointer'/><text id='fc-k51t' x='177.0' y='268' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <text id='fc-s5' x='238' y='268' text-anchor='middle' stroke='none' font-size='13' style='font-variant-numeric:tabular-nums'></text>
+    <rect x='268' y='255' width='90' height='16' rx='3' fill='currentColor' fill-opacity='0.08' stroke='none'/>
+    <rect id='fc-b5' x='268' y='255' height='16' rx='3' fill='#3b82f6' stroke='none'/>
+    <text id='fc-p5' x='364' y='268' stroke='none' font-size='13' style='font-variant-numeric:tabular-nums'></text>
+    <rect id='fc-v50' x='420' y='253.0' width='46' height='20' rx='3' fill='#10b981' fill-opacity='0.1' stroke='#10b981' stroke-opacity='0.5' stroke-width='1' class='case-cliquable' tabindex='0' role='button' aria-label='valeur de sur, case masculin : cliquez pour basculer entre 0 et 1' style='cursor:pointer'/><text id='fc-v50t' x='443.0' y='268' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <rect id='fc-c50' x='560' y='253.0' width='46' height='20' rx='3' fill='#f59e0b' fill-opacity='0.1' stroke='#f59e0b' stroke-opacity='0.5' stroke-width='1'/><text id='fc-c50t' x='583.0' y='268' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <rect id='fc-v51' x='470' y='253.0' width='46' height='20' rx='3' fill='#10b981' fill-opacity='0.1' stroke='#10b981' stroke-opacity='0.5' stroke-width='1' class='case-cliquable' tabindex='0' role='button' aria-label='valeur de sur, case féminin : cliquez pour basculer entre 0 et 1' style='cursor:pointer'/><text id='fc-v51t' x='493.0' y='268' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <rect id='fc-c51' x='610' y='253.0' width='46' height='20' rx='3' fill='#f59e0b' fill-opacity='0.1' stroke='#f59e0b' stroke-opacity='0.5' stroke-width='1'/><text id='fc-c51t' x='633.0' y='268' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <text x='92' y='295' text-anchor='end' stroke='none' font-size='14'>la</text>
+    <rect id='fc-k60' x='104' y='280.0' width='46' height='20' rx='3' fill='#3b82f6' fill-opacity='0.1' stroke='#3b82f6' stroke-opacity='0.5' stroke-width='1' class='case-cliquable' tabindex='0' role='button' aria-label='clé de la, case nom : cliquez pour basculer entre 0 et 1' style='cursor:pointer'/><text id='fc-k60t' x='127.0' y='295' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <rect id='fc-k61' x='154' y='280.0' width='46' height='20' rx='3' fill='#3b82f6' fill-opacity='0.1' stroke='#3b82f6' stroke-opacity='0.5' stroke-width='1' class='case-cliquable' tabindex='0' role='button' aria-label='clé de la, case sujet : cliquez pour basculer entre 0 et 1' style='cursor:pointer'/><text id='fc-k61t' x='177.0' y='295' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <text id='fc-s6' x='238' y='295' text-anchor='middle' stroke='none' font-size='13' style='font-variant-numeric:tabular-nums'></text>
+    <rect x='268' y='282' width='90' height='16' rx='3' fill='currentColor' fill-opacity='0.08' stroke='none'/>
+    <rect id='fc-b6' x='268' y='282' height='16' rx='3' fill='#3b82f6' stroke='none'/>
+    <text id='fc-p6' x='364' y='295' stroke='none' font-size='13' style='font-variant-numeric:tabular-nums'></text>
+    <rect id='fc-v60' x='420' y='280.0' width='46' height='20' rx='3' fill='#10b981' fill-opacity='0.1' stroke='#10b981' stroke-opacity='0.5' stroke-width='1' class='case-cliquable' tabindex='0' role='button' aria-label='valeur de la, case masculin : cliquez pour basculer entre 0 et 1' style='cursor:pointer'/><text id='fc-v60t' x='443.0' y='295' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <rect id='fc-c60' x='560' y='280.0' width='46' height='20' rx='3' fill='#f59e0b' fill-opacity='0.1' stroke='#f59e0b' stroke-opacity='0.5' stroke-width='1'/><text id='fc-c60t' x='583.0' y='295' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <rect id='fc-v61' x='470' y='280.0' width='46' height='20' rx='3' fill='#10b981' fill-opacity='0.1' stroke='#10b981' stroke-opacity='0.5' stroke-width='1' class='case-cliquable' tabindex='0' role='button' aria-label='valeur de la, case féminin : cliquez pour basculer entre 0 et 1' style='cursor:pointer'/><text id='fc-v61t' x='493.0' y='295' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <rect id='fc-c61' x='610' y='280.0' width='46' height='20' rx='3' fill='#f59e0b' fill-opacity='0.1' stroke='#f59e0b' stroke-opacity='0.5' stroke-width='1'/><text id='fc-c61t' x='633.0' y='295' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <text x='92' y='322' text-anchor='end' stroke='none' font-size='14'>chaise</text>
+    <rect id='fc-k70' x='104' y='307.0' width='46' height='20' rx='3' fill='#3b82f6' fill-opacity='0.1' stroke='#3b82f6' stroke-opacity='0.5' stroke-width='1' class='case-cliquable' tabindex='0' role='button' aria-label='clé de chaise, case nom : cliquez pour basculer entre 0 et 1' style='cursor:pointer'/><text id='fc-k70t' x='127.0' y='322' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <rect id='fc-k71' x='154' y='307.0' width='46' height='20' rx='3' fill='#3b82f6' fill-opacity='0.1' stroke='#3b82f6' stroke-opacity='0.5' stroke-width='1' class='case-cliquable' tabindex='0' role='button' aria-label='clé de chaise, case sujet : cliquez pour basculer entre 0 et 1' style='cursor:pointer'/><text id='fc-k71t' x='177.0' y='322' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <text id='fc-s7' x='238' y='322' text-anchor='middle' stroke='none' font-size='13' style='font-variant-numeric:tabular-nums'></text>
+    <rect x='268' y='309' width='90' height='16' rx='3' fill='currentColor' fill-opacity='0.08' stroke='none'/>
+    <rect id='fc-b7' x='268' y='309' height='16' rx='3' fill='#3b82f6' stroke='none'/>
+    <text id='fc-p7' x='364' y='322' stroke='none' font-size='13' style='font-variant-numeric:tabular-nums'></text>
+    <rect id='fc-v70' x='420' y='307.0' width='46' height='20' rx='3' fill='#10b981' fill-opacity='0.1' stroke='#10b981' stroke-opacity='0.5' stroke-width='1' class='case-cliquable' tabindex='0' role='button' aria-label='valeur de chaise, case masculin : cliquez pour basculer entre 0 et 1' style='cursor:pointer'/><text id='fc-v70t' x='443.0' y='322' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <rect id='fc-c70' x='560' y='307.0' width='46' height='20' rx='3' fill='#f59e0b' fill-opacity='0.1' stroke='#f59e0b' stroke-opacity='0.5' stroke-width='1'/><text id='fc-c70t' x='583.0' y='322' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <rect id='fc-v71' x='470' y='307.0' width='46' height='20' rx='3' fill='#10b981' fill-opacity='0.1' stroke='#10b981' stroke-opacity='0.5' stroke-width='1' class='case-cliquable' tabindex='0' role='button' aria-label='valeur de chaise, case féminin : cliquez pour basculer entre 0 et 1' style='cursor:pointer'/><text id='fc-v71t' x='493.0' y='322' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <rect id='fc-c71' x='610' y='307.0' width='46' height='20' rx='3' fill='#f59e0b' fill-opacity='0.1' stroke='#f59e0b' stroke-opacity='0.5' stroke-width='1'/><text id='fc-c71t' x='633.0' y='322' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <text x='92' y='349' text-anchor='end' stroke='none' font-size='14' font-weight='bold'>s&#39;est</text>
+    <rect id='fc-k80' x='104' y='334.0' width='46' height='20' rx='3' fill='#3b82f6' fill-opacity='0.1' stroke='#3b82f6' stroke-opacity='0.5' stroke-width='1' class='case-cliquable' tabindex='0' role='button' aria-label='clé de s&#39;est, case nom : cliquez pour basculer entre 0 et 1' style='cursor:pointer'/><text id='fc-k80t' x='127.0' y='349' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <rect id='fc-k81' x='154' y='334.0' width='46' height='20' rx='3' fill='#3b82f6' fill-opacity='0.1' stroke='#3b82f6' stroke-opacity='0.5' stroke-width='1' class='case-cliquable' tabindex='0' role='button' aria-label='clé de s&#39;est, case sujet : cliquez pour basculer entre 0 et 1' style='cursor:pointer'/><text id='fc-k81t' x='177.0' y='349' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <text id='fc-s8' x='238' y='349' text-anchor='middle' stroke='none' font-size='13' style='font-variant-numeric:tabular-nums'></text>
+    <rect x='268' y='336' width='90' height='16' rx='3' fill='currentColor' fill-opacity='0.08' stroke='none'/>
+    <rect id='fc-b8' x='268' y='336' height='16' rx='3' fill='#3b82f6' stroke='none'/>
+    <text id='fc-p8' x='364' y='349' stroke='none' font-size='13' style='font-variant-numeric:tabular-nums'></text>
+    <rect id='fc-v80' x='420' y='334.0' width='46' height='20' rx='3' fill='#10b981' fill-opacity='0.1' stroke='#10b981' stroke-opacity='0.5' stroke-width='1' class='case-cliquable' tabindex='0' role='button' aria-label='valeur de s&#39;est, case masculin : cliquez pour basculer entre 0 et 1' style='cursor:pointer'/><text id='fc-v80t' x='443.0' y='349' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <rect id='fc-c80' x='560' y='334.0' width='46' height='20' rx='3' fill='#f59e0b' fill-opacity='0.1' stroke='#f59e0b' stroke-opacity='0.5' stroke-width='1'/><text id='fc-c80t' x='583.0' y='349' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <rect id='fc-v81' x='470' y='334.0' width='46' height='20' rx='3' fill='#10b981' fill-opacity='0.1' stroke='#10b981' stroke-opacity='0.5' stroke-width='1' class='case-cliquable' tabindex='0' role='button' aria-label='valeur de s&#39;est, case féminin : cliquez pour basculer entre 0 et 1' style='cursor:pointer'/><text id='fc-v81t' x='493.0' y='349' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <rect id='fc-c81' x='610' y='334.0' width='46' height='20' rx='3' fill='#f59e0b' fill-opacity='0.1' stroke='#f59e0b' stroke-opacity='0.5' stroke-width='1'/><text id='fc-c81t' x='633.0' y='349' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <line x1='556' y1='375' x2='660' y2='375' stroke-width='1.2'/>
+    <text x='548' y='397' text-anchor='end' stroke='none' font-size='14' font-weight='bold' fill='#f59e0b'>somme : nouveau « s&#39;est » =</text>
+    <rect id='fc-o0' x='560' y='382.0' width='46' height='20' rx='3' fill='#f59e0b' fill-opacity='0.1' stroke='#f59e0b' stroke-opacity='0.5' stroke-width='1'/><text id='fc-o0t' x='583.0' y='397' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <rect id='fc-o1' x='610' y='382.0' width='46' height='20' rx='3' fill='#f59e0b' fill-opacity='0.1' stroke='#f59e0b' stroke-opacity='0.5' stroke-width='1'/><text id='fc-o1t' x='633.0' y='397' text-anchor='middle' stroke='none' font-size='13' pointer-events='none' style='font-variant-numeric:tabular-nums'></text>
+    <text id='fc-verdict' x='656' y='426' text-anchor='end' stroke='none' font-size='14'></text>
+  </g>
+</svg>
+<div style="display:flex;gap:.4rem;justify-content:center;margin-top:.3rem;flex-wrap:wrap">
+  <button type="button" class="btn btn-sm bouton-figure" id="fc-r-sujet">Requête : un nom sujet</button>
+  <button type="button" class="btn btn-sm bouton-figure" id="fc-r-nom">Requête : un nom</button>
+  <button type="button" class="btn btn-sm bouton-figure" id="fc-r-rien">Requête : rien de précis</button>
+  <button type="button" class="btn btn-sm bouton-figure" id="fc-depart">Revenir au départ</button>
+</div>
+<script>
+(() => {
+  const D = {"mots": ["Le", "chat", "noir", "qui", "dormait", "sur", "la", "chaise", "s'est"], "k": [[0, 0], [1, 1], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [1, 0], [0, 0]], "v": [[1, 0], [1, 0], [1, 0], [0, 0], [0, 0], [0, 0], [0, 1], [0, 1], [0, 0]], "q": [3, 3], "lp": 90};
+  const fig = document.querySelector("svg.figure-calcul");
+  const $ = id => fig.querySelector("#" + id);
+  const BLEU = "#3b82f6", VERT = "#10b981", ORANGE = "#f59e0b";
+  const fmt = (v, d = 2) => (v < -1e-9 ? "−" : "") + Math.abs(v).toFixed(d).replace(".", ",");
+  const ent = v => (v < 0 ? "−" : "") + Math.abs(v);
+  const copie = a => a.map(r => [...r]);
+  let q = [...D.q], K = copie(D.k), V = copie(D.v);
+
+  const DESC = {
+    "3,3": "un nom sujet", "3,0": "un nom", "3,-3": "un nom qui n'est pas sujet",
+    "0,3": "un sujet", "0,0": "rien de précis", "0,-3": "un mot qui n'est pas sujet",
+    "-3,3": "un sujet qui n'est pas un nom", "-3,0": "autre chose qu'un nom",
+    "-3,-3": "ni un nom ni un sujet",
+  };
+  // Une case : sa teinte suit la valeur, et un zéro s'efface pour que le reste ressorte
+  const teinte = (id, couleur, a) => {
+    $(id).setAttribute("fill-opacity", (0.08 + 0.55 * Math.min(1, Math.abs(a))).toFixed(2));
+    $(id + "t").setAttribute("opacity", Math.abs(a) < 0.005 ? "0.4" : "1");
+  };
+
+  const maj = () => {
+    q.forEach((x, j) => { $(`fc-q${j}t`).textContent = ent(x); teinte(`fc-q${j}`, BLEU, x / 3); });
+    $("fc-qdesc").textContent = `ce qu'il cherche : ${DESC[q.join(",")]}`;
+    const sc = K.map(k => q[0] * k[0] + q[1] * k[1]);
+    const m = Math.max(...sc), e = sc.map(x => Math.exp(x - m)), t = e.reduce((a, b) => a + b);
+    const w = e.map(x => x / t);
+    const out = [0, 0];
+    D.mots.forEach((_, i) => {
+      K[i].forEach((x, j) => { $(`fc-k${i}${j}t`).textContent = x; teinte(`fc-k${i}${j}`, BLEU, x); });
+      $(`fc-s${i}`).textContent = ent(sc[i]);
+      $(`fc-b${i}`).setAttribute("width", (w[i] * D.lp).toFixed(1));
+      $(`fc-p${i}`).textContent = Math.round(w[i] * 100) + " %";
+      V[i].forEach((x, j) => {
+        $(`fc-v${i}${j}t`).textContent = x; teinte(`fc-v${i}${j}`, VERT, x);
+        const c = w[i] * x;
+        out[j] += c;
+        $(`fc-c${i}${j}t`).textContent = fmt(c);
+        teinte(`fc-c${i}${j}`, ORANGE, c);
+      });
+    });
+    out.forEach((x, j) => { $(`fc-o${j}t`).textContent = fmt(x); teinte(`fc-o${j}`, ORANGE, x); });
+    const verdict = $("fc-verdict");
+    if (out[0] - out[1] > 0.2) verdict.textContent = "→ la suite s'accorde au masculin : « réveillé »";
+    else if (out[1] - out[0] > 0.2) verdict.textContent = "→ la suite s'accorde au féminin : « réveillée »";
+    else verdict.textContent = "→ indécis : « réveillé » ou « réveillée »?";
+  };
+
+  const activer = (id, action) => {
+    const el = $(id);
+    el.addEventListener("click", () => { action(); maj(); });
+    el.addEventListener("keydown", e => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); action(); maj(); }
+    });
+  };
+  const suivant = x => (x === 0 ? 3 : x === 3 ? -3 : 0);
+  q.forEach((_, j) => activer(`fc-q${j}`, () => { q[j] = suivant(q[j]); }));
+  D.mots.forEach((_, i) => [0, 1].forEach(j => {
+    activer(`fc-k${i}${j}`, () => { K[i][j] = 1 - K[i][j]; });
+    activer(`fc-v${i}${j}`, () => { V[i][j] = 1 - V[i][j]; });
+  }));
+  const bouton = (id, f) => document.getElementById(id).addEventListener("click", () => { f(); maj(); });
+  bouton("fc-r-sujet", () => { q = [3, 3]; });
+  bouton("fc-r-nom", () => { q = [3, 0]; });
+  bouton("fc-r-rien", () => { q = [0, 0]; });
+  bouton("fc-depart", () => { q = [...D.q]; K = copie(D.k); V = copie(D.v); });
+  maj();
+})();
+</script>
+```
+
+L'attention de « s'est », case par case, dans « Le chat noir qui dormait sur
+la chaise s'est … ». ① Le score de chaque mot est le produit scalaire de la
+requête de « s'est » et de sa clé : $3 \times 1 + 3 \times 1 = 6$ pour
+« chat », le seul nom sujet. ② Le softmax change les scores en poids.
+③ Chaque valeur est multipliée par son poids, et la somme est le nouveau
+vecteur de « s'est » : surtout du masculin, pris à « chat ». Cliquez une case
+de la requête (0, 3 ou −3), d'une clé ou d'une valeur (0 ou 1) pour la
+changer, ou choisissez une requête avec les boutons. Les vecteurs sont écrits à
+la main pour l'illustration; dans un vrai modèle, ils ont des centaines de
+coordonnées, apprises, sans étiquettes.
+:::
+
+Trois expériences dans cette figure isolent le rôle de chaque vecteur :
+
+- **Changez la requête.** Si « s'est » cherche seulement « un nom », « chat » et
+  « chaise » se partagent les poids, et le résultat hésite entre masculin et
+  féminin. Il faut chercher un nom *sujet* pour trouver le bon.
+- **Changez une clé.** Donnez à « chaise » la clé d'un sujet (cliquez sa case
+  « sujet ») : les poids se déplacent, et le résultat avec eux.
+- **Changez une valeur.** Faites de « chat » un féminin (cliquez ses cases
+  « masc. » et « fém. ») : les poids ne bougent pas, mais le résultat passe au
+  féminin. La valeur ne décide pas où l'on regarde, seulement ce qu'on
+  rapporte.
+
+En résumé, pour « s'est », l'attention se déroule en trois étapes, les trois
+groupes de colonnes de la figure [-@fig-calcul] :
 
 1. un score par jeton du contexte, le produit scalaire $q_{\text{s'est}} \cdot
-   k_j$;
-2. un softmax sur ces scores : ce sont les poids, les barres de gauche de la
-   figure;
-3. la moyenne des valeurs $v_j$ selon ces poids : c'est la flèche orange, le
-   nouveau vecteur de « s'est ».
+   k_j$ de la requête et de chaque clé;
+2. un softmax sur ces scores : ce sont les poids;
+3. la moyenne des valeurs $v_j$ selon ces poids : c'est le nouveau vecteur de
+   « s'est ».
 
 Pour tous les jetons à la fois, en empilant les vecteurs en matrices :
 
-$$\mathrm{Attention}(Q, K, V) = \mathrm{softmax}\!\left(\frac{QK^\top}{\sqrt{d}}\right) V$$
+$$\mathrm{Attention}(Q, K, V) = \underbrace{\mathrm{softmax}\!\left(\frac{QK^\top}{\sqrt{d}}\right)}_{\text{les poids : où regarder}} \; \underbrace{V\vphantom{\left(\frac{QK^\top}{\sqrt{d}}\right)}}_{\text{quoi transmettre}}$$
 
 Deux détails. La division par $\sqrt{d}$, où $d$ est la dimension des
 vecteurs, empêche les scores de grandir avec la dimension, ce qui rendrait le
@@ -956,9 +1291,11 @@ code_attention
 
 ### Une attention construite à la main
 
-Dans un vrai modèle, les matrices $W_Q$, $W_K$ et $W_V$ sont apprises, et ce
-qu'elles encodent est difficile à lire. Construisons-en une à la main, pour
-voir le mécanisme. Chaque mot de la phrase « le chat noir dort sur le tapis »
+Dans la figure [-@fig-calcul], nous avons écrit les requêtes, les clés et les
+valeurs directement. Dans un vrai modèle, elles sortent des matrices $W_Q$,
+$W_K$ et $W_V$, qui sont apprises, et ce qu'elles encodent est difficile à
+lire. Écrivons cette fois les matrices elles-mêmes, en code, pour une autre
+phrase. Chaque mot de la phrase « le chat noir dort sur le tapis »
 est codé par sa catégorie grammaticale : déterminant, nom, adjectif, verbe ou
 préposition. Une matrice $M$ dit quelle catégorie en « cherche » quelle autre :
 un adjectif cherche un nom (pour s'accorder), un verbe cherche un nom (son
