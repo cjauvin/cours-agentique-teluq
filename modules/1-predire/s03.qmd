@@ -160,7 +160,8 @@ paramètres, pour y retrouver tout ce qu'on a construit depuis trois semaines.
 - expliquer comment un texte est découpé en jetons par l'algorithme BPE, et
   pourquoi ce découpage a des conséquences pratiques pour un agent;
 - expliquer le calcul de l'attention (requêtes, clés, valeurs, masque causal),
-  et pourquoi elle a besoin d'une information de position;
+  le passage de l'attention croisée à l'auto-attention, et pourquoi elle a
+  besoin d'une information de position;
 - décrire un transformeur : ses blocs, sa sortie et son entraînement;
 - lire les distributions, les surprises et les cartes d'attention d'un vrai
   modèle;
@@ -657,27 +658,344 @@ dont il dispose : les vecteurs des jetons. Il lui faut, pour chaque paire de
 jetons, un **score** qui dise à quel point le second intéresse le premier;
 un softmax, celui de la sortie du
 [bigramme neuronal](s02.qmd#bigramme-neuronal), transforme ensuite les scores
-de tout le contexte en poids positifs qui somment à 1.
+de tout le contexte en poids positifs qui somment à 1. Pour voir comment
+calculer ce score, faisons un détour par le problème pour lequel l'attention a
+été inventée : la traduction.
 
-Première idée, la plus simple : la ressemblance. À la
-[semaine 2](s02.qmd#plongements), les mots qui se comportent de la même façon
-avaient des vecteurs proches, et le produit scalaire $x_i \cdot x_j$ de deux
-plongements mesure justement cette proximité. Prenons-le comme score. Cette
-attention-là ne demande aucun paramètre, mais elle échoue, pour deux raisons.
-D'abord, le mot qui ressemble le plus à « s'est », c'est presque toujours
-« s'est » lui-même : chaque jeton regarderait surtout lui-même. Ensuite, et
-surtout, ce que cherche « s'est », ce n'est pas un mot qui lui ressemble, c'est
-son sujet : un nom, pas un verbe. **Ce qu'un mot cherche n'est pas ce qu'il
-est.** Un seul vecteur par mot ne peut pas porter les deux.
+### L'attention entre deux phrases {#attention-croisee}
 
-D'où l'idée de donner à chaque jeton deux vecteurs distincts, tirés de son
-plongement : une **requête**, qui décrit ce qu'il cherche, et une **clé**, qui
-décrit ce qu'il est, ce sur quoi on peut le trouver. Le score de « chat » pour
-« s'est » devient le produit scalaire de la requête de « s'est » et de la clé de
-« chat » : grand si ce que l'un cherche ressemble à ce que l'autre offre. La
-requête de « s'est » peut alors dire « un nom sujet », la clé de « chat » dire
-« un nom », sans que les deux mots se ressemblent : c'est ce que montre la
-figure [-@fig-requete].
+En 2014, à l'Université de Montréal, Dzmitry Bahdanau, Kyunghyun Cho et Yoshua
+Bengio traduisaient avec des réseaux de neurones [@bahdanau2015traduction]. Les
+réseaux de l'époque lisaient toute la phrase anglaise, la résumaient en un seul
+vecteur, puis écrivaient la phrase française à partir de ce résumé : plus la
+phrase était longue, plus le résumé en perdait. Leur idée : à chaque mot
+français à écrire, relire la phrase anglaise et choisir où regarder. Pour
+traduire « the black cat woke up », il faut lire « cat » pour écrire « chat »,
+puis revenir en arrière, à « black », pour écrire « noir » : l'ordre des mots
+change d'une langue à l'autre, et aucune fenêtre fixe ne suit ces allers-retours
+(figure [-@fig-croisee]).
+
+<!-- figure : attention croisée -->
+
+::: {#fig-croisee}
+
+```{=html}
+<svg class="figure-croisee" viewBox="0 0 720 292" role="img"
+     aria-label="L'attention entre deux phrases. En haut, la phrase anglaise The black cat woke up; en bas, la traduction en cours, Le chat noir s'est réveillé. Pour écrire « noir », le traducteur regarde surtout « black », qui vient avant « cat » en anglais : les traits de « chat » vers cat et de « noir » vers black se croisent."
+     style="width:100%;max-width:720px;display:block;margin:auto;font-size:16px">
+  <g fill="currentColor" stroke="currentColor">
+    <text x='16' y='24' stroke='none' font-size='13' font-weight='600'>la phrase à traduire : les livres, chacun avec une <tspan fill='#3b82f6'>clé</tspan> et une <tspan fill='#10b981'>valeur</tspan></text>
+    <text x='16' y='244' stroke='none' font-size='13' font-weight='600'>la traduction en cours : le mot qu'on écrit est le lecteur, avec sa <tspan fill='#3b82f6'>requête</tspan> (cliquez un mot)</text>
+    <line x1='110' y1='178' x2='110' y2='82' stroke-width='1.2' opacity='0.3'/>
+    <line x1='235' y1='178' x2='360' y2='82' stroke-width='1.2' opacity='0.3'/>
+    <line x1='360' y1='178' x2='235' y2='82' stroke-width='1.2' opacity='0.3'/>
+    <line x1='485' y1='178' x2='485' y2='82' stroke-width='1.2' opacity='0.3'/>
+    <line x1='610' y1='178' x2='485' y2='82' stroke-width='1.2' opacity='0.3'/>
+    <line x1='610' y1='178' x2='610' y2='82' stroke-width='1.2' opacity='0.3'/>
+    <line id='fx-a0' x1='0' y1='178' x2='110' y2='82' stroke='#3b82f6' stroke-linecap='round'/>
+    <text id='fx-p0' x='110' y='50' text-anchor='middle' stroke='none' font-size='12' fill='#3b82f6'></text>
+    <line id='fx-a1' x1='0' y1='178' x2='235' y2='82' stroke='#3b82f6' stroke-linecap='round'/>
+    <text id='fx-p1' x='235' y='50' text-anchor='middle' stroke='none' font-size='12' fill='#3b82f6'></text>
+    <line id='fx-a2' x1='0' y1='178' x2='360' y2='82' stroke='#3b82f6' stroke-linecap='round'/>
+    <text id='fx-p2' x='360' y='50' text-anchor='middle' stroke='none' font-size='12' fill='#3b82f6'></text>
+    <line id='fx-a3' x1='0' y1='178' x2='485' y2='82' stroke='#3b82f6' stroke-linecap='round'/>
+    <text id='fx-p3' x='485' y='50' text-anchor='middle' stroke='none' font-size='12' fill='#3b82f6'></text>
+    <line id='fx-a4' x1='0' y1='178' x2='610' y2='82' stroke='#3b82f6' stroke-linecap='round'/>
+    <text id='fx-p4' x='610' y='50' text-anchor='middle' stroke='none' font-size='12' fill='#3b82f6'></text>
+    <text id='fx-h0' x='110' y='72' text-anchor='middle' stroke='none' font-size='17' font-style='italic'>The</text>
+    <text id='fx-h1' x='235' y='72' text-anchor='middle' stroke='none' font-size='17' font-style='italic'>black</text>
+    <text id='fx-h2' x='360' y='72' text-anchor='middle' stroke='none' font-size='17' font-style='italic'>cat</text>
+    <text id='fx-h3' x='485' y='72' text-anchor='middle' stroke='none' font-size='17' font-style='italic'>woke</text>
+    <text id='fx-h4' x='610' y='72' text-anchor='middle' stroke='none' font-size='17' font-style='italic'>up</text>
+    <text id='fx-b0' class='mot-lecteur' x='110' y='196' text-anchor='middle' stroke='none' font-size='17' tabindex='0' role='button' style='cursor:pointer' aria-label='Écrire « Le »'>Le</text>
+    <text id='fx-b1' class='mot-lecteur' x='235' y='196' text-anchor='middle' stroke='none' font-size='17' tabindex='0' role='button' style='cursor:pointer' aria-label='Écrire « chat »'>chat</text>
+    <text id='fx-b2' class='mot-lecteur' x='360' y='196' text-anchor='middle' stroke='none' font-size='17' tabindex='0' role='button' style='cursor:pointer' aria-label='Écrire « noir »'>noir</text>
+    <text id='fx-b3' class='mot-lecteur' x='485' y='196' text-anchor='middle' stroke='none' font-size='17' tabindex='0' role='button' style='cursor:pointer' aria-label='Écrire « s&#39;est »'>s&#39;est</text>
+    <text id='fx-b4' class='mot-lecteur' x='610' y='196' text-anchor='middle' stroke='none' font-size='17' tabindex='0' role='button' style='cursor:pointer' aria-label='Écrire « réveillé »'>réveillé</text>
+    <text id='fx-req' y='214' text-anchor='middle' stroke='none' font-size='12' fill='#3b82f6'>requête</text>
+    <text id='fx-msg' x='360' y='278' text-anchor='middle' stroke='none' font-size='14'></text>
+  </g>
+</svg>
+<script>
+(() => {
+  const D = {"en": ["The", "black", "cat", "woke", "up"], "fr": ["Le", "chat", "noir", "s'est", "réveillé"], "w": [[0.8, 0.04, 0.12, 0.02, 0.02], [0.06, 0.08, 0.82, 0.02, 0.02], [0.03, 0.85, 0.1, 0.01, 0.01], [0.04, 0.02, 0.14, 0.55, 0.25], [0.02, 0.01, 0.07, 0.55, 0.35]], "x": [110, 235, 360, 485, 610]};
+  const fig = document.querySelector("svg.figure-croisee");
+  const $ = id => fig.querySelector("#" + id);
+  const choisir = i => {
+    D.fr.forEach((_, k) => {
+      const el = $("fx-b" + k);
+      el.setAttribute("opacity", k > i ? "0.35" : "1");
+      el.setAttribute("font-weight", k === i ? "bold" : "normal");
+      el.setAttribute("fill", k === i ? "#3b82f6" : "currentColor");
+    });
+    $("fx-req").setAttribute("x", D.x[i]);
+    let max = 0;
+    D.w[i].forEach((p, j) => {
+      const l = $("fx-a" + j);
+      l.setAttribute("x1", D.x[i]);
+      l.setAttribute("stroke-width", (1 + 9 * p).toFixed(1));
+      l.setAttribute("stroke-opacity", (0.2 + 0.8 * p).toFixed(2));
+      $("fx-p" + j).textContent = p >= 0.05 ? Math.round(p * 100) + " %" : "";
+      $("fx-h" + j).setAttribute("font-weight", p >= 0.3 ? "bold" : "normal");
+      if (p > D.w[i][max]) max = j;
+    });
+    let msg = `Pour écrire « ${D.fr[i]} », le traducteur lit surtout « ${D.en[max]} » (${Math.round(D.w[i][max] * 100)} %)`;
+    if (i === 2) msg += ", qui vient avant « cat » en anglais";
+    $("fx-msg").textContent = msg + ".";
+  };
+  D.fr.forEach((_, i) => {
+    const el = $("fx-b" + i);
+    el.addEventListener("click", () => choisir(i));
+    el.addEventListener("keydown", e => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); choisir(i); }
+    });
+  });
+  choisir(2);
+})();
+</script>
+```
+
+L'attention entre deux phrases. En haut, la phrase à traduire; en bas, la
+traduction en cours. Le mot qu'on écrit lit la phrase anglaise : sa requête est
+comparée à la clé de chaque mot anglais, et il reçoit surtout la valeur de celui
+qui correspond. Cliquez un mot français. Les traits pâles montrent, pour chaque
+mot, le mot anglais qu'il lit le plus : ceux de « chat » et de « noir » se
+croisent, parce que l'adjectif change de place d'une langue à l'autre. Les
+poids sont choisis pour l'illustration.
+:::
+
+Ici, les rôles sont bien séparés. D'un côté, le mot qu'on est en train
+d'écrire : c'est le lecteur. De l'autre, les mots anglais : ce sont les livres
+qu'il consulte. C'est l'image d'une bibliothèque. Vous cherchez un livre sur
+les chats : c'est votre **requête** (*query*). Vous parcourez les étiquettes au
+dos des livres : ce sont les **clés** (*keys*). Le livre dont l'étiquette
+correspond, vous l'ouvrez et vous le lisez : son contenu, c'est la **valeur**
+(*value*). L'étiquette sert à trouver le livre, mais ce que vous emportez,
+c'est son contenu. L'attention fait la même chose, à une différence près : au
+lieu de prendre un seul livre, elle lit un peu de chacun, d'autant plus que
+son étiquette correspond à la requête. Cette attention d'une phrase vers une
+autre s'appelle l'**attention croisée** (*cross-attention*).
+
+| Vecteur | Qui le porte | La question à laquelle il répond | Il sert à… | En écrivant « noir » |
+|:--|:--|:--|:--|:--|
+| requête $q$ | le lecteur | Qu'est-ce que je cherche? | calculer les poids | « l'adjectif du nom que je viens d'écrire » |
+| clé $k$ | chaque livre | À quoi peut-on me reconnaître? | calculer les poids | « black » : « je suis un adjectif » |
+| valeur $v$ | chaque livre | Que dois-je transmettre si on me choisit? | former le résultat | « black » : son sens, « noir » |
+
+La quatrième colonne est la plus importante. La requête et la clé ne servent
+qu'à calculer les poids, puis elles disparaissent : elles décident **où
+regarder**. Seules les valeurs arrivent dans le résultat : elles décident
+**quoi transmettre**. Le score est le produit scalaire de la requête et de
+chaque clé, $q \cdot k$ : grand quand ce que le lecteur cherche ressemble à ce
+que le livre offre.
+
+### L'auto-attention : la phrase se consulte elle-même {#auto-attention}
+
+Un modèle de langue n'a pas de phrase anglaise à consulter : il n'a que le
+texte qu'il est en train d'écrire. L'idée du transformeur
+[@vaswani2017attention] est d'appliquer l'attention à ce texte lui-même : la
+phrase se consulte elle-même. C'est l'**auto-attention** (*self-attention*).
+Les deux rangées de la figure [-@fig-croisee] deviennent la même phrase, et
+chaque mot y joue les deux rôles : il est un lecteur, qui cherche dans les mots
+qui le précèdent, et un livre, que les mots suivants viendront consulter.
+Rangés dans un tableau, les poids ont alors la phrase sur les deux axes : c'est
+le contexte comparé à lui-même (figure [-@fig-auto]).
+
+<!-- figure : auto-attention -->
+
+::: {#fig-auto}
+
+```{=html}
+<svg class="figure-auto" viewBox="0 0 720 600" role="img"
+     aria-label="L'auto-attention. La même phrase, Le chat noir qui dormait sur le tapis s'est, apparaît deux fois : en haut comme livres, en bas comme lecteurs. « s'est » lit surtout « chat ». En dessous, les mêmes poids en tableau, avec la phrase sur les deux axes : une ligne par mot qui lit, une colonne par mot lu, et un triangle vide, le masque causal."
+     style="width:100%;max-width:720px;display:block;margin:auto;font-size:16px">
+  <g fill="currentColor" stroke="currentColor">
+    <text x='16' y='22' stroke='none' font-size='13' font-weight='600'>la phrase, comme livres : une <tspan fill='#3b82f6'>clé</tspan> et une <tspan fill='#10b981'>valeur</tspan> par mot</text>
+    <text x='16' y='238' stroke='none' font-size='13' font-weight='600'>la même phrase, comme lecteurs : une <tspan fill='#3b82f6'>requête</tspan> par mot (cliquez un mot)</text>
+    <line x1='45' y1='88' x2='45' y2='192' stroke-width='1' stroke-dasharray='2 4' opacity='0.25'/>
+    <line x1='124' y1='88' x2='124' y2='192' stroke-width='1' stroke-dasharray='2 4' opacity='0.25'/>
+    <line x1='203' y1='88' x2='203' y2='192' stroke-width='1' stroke-dasharray='2 4' opacity='0.25'/>
+    <line x1='282' y1='88' x2='282' y2='192' stroke-width='1' stroke-dasharray='2 4' opacity='0.25'/>
+    <line x1='361' y1='88' x2='361' y2='192' stroke-width='1' stroke-dasharray='2 4' opacity='0.25'/>
+    <line x1='440' y1='88' x2='440' y2='192' stroke-width='1' stroke-dasharray='2 4' opacity='0.25'/>
+    <line x1='519' y1='88' x2='519' y2='192' stroke-width='1' stroke-dasharray='2 4' opacity='0.25'/>
+    <line x1='598' y1='88' x2='598' y2='192' stroke-width='1' stroke-dasharray='2 4' opacity='0.25'/>
+    <line x1='677' y1='88' x2='677' y2='192' stroke-width='1' stroke-dasharray='2 4' opacity='0.25'/>
+    <line id='fa-a0' y1='192' x2='45' y2='88' stroke='#3b82f6' stroke-linecap='round'/>
+    <text id='fa-p0' x='45' y='58' text-anchor='middle' stroke='none' font-size='12' fill='#3b82f6'></text>
+    <line id='fa-a1' y1='192' x2='124' y2='88' stroke='#3b82f6' stroke-linecap='round'/>
+    <text id='fa-p1' x='124' y='58' text-anchor='middle' stroke='none' font-size='12' fill='#3b82f6'></text>
+    <line id='fa-a2' y1='192' x2='203' y2='88' stroke='#3b82f6' stroke-linecap='round'/>
+    <text id='fa-p2' x='203' y='58' text-anchor='middle' stroke='none' font-size='12' fill='#3b82f6'></text>
+    <line id='fa-a3' y1='192' x2='282' y2='88' stroke='#3b82f6' stroke-linecap='round'/>
+    <text id='fa-p3' x='282' y='58' text-anchor='middle' stroke='none' font-size='12' fill='#3b82f6'></text>
+    <line id='fa-a4' y1='192' x2='361' y2='88' stroke='#3b82f6' stroke-linecap='round'/>
+    <text id='fa-p4' x='361' y='58' text-anchor='middle' stroke='none' font-size='12' fill='#3b82f6'></text>
+    <line id='fa-a5' y1='192' x2='440' y2='88' stroke='#3b82f6' stroke-linecap='round'/>
+    <text id='fa-p5' x='440' y='58' text-anchor='middle' stroke='none' font-size='12' fill='#3b82f6'></text>
+    <line id='fa-a6' y1='192' x2='519' y2='88' stroke='#3b82f6' stroke-linecap='round'/>
+    <text id='fa-p6' x='519' y='58' text-anchor='middle' stroke='none' font-size='12' fill='#3b82f6'></text>
+    <line id='fa-a7' y1='192' x2='598' y2='88' stroke='#3b82f6' stroke-linecap='round'/>
+    <text id='fa-p7' x='598' y='58' text-anchor='middle' stroke='none' font-size='12' fill='#3b82f6'></text>
+    <line id='fa-a8' y1='192' x2='677' y2='88' stroke='#3b82f6' stroke-linecap='round'/>
+    <text id='fa-p8' x='677' y='58' text-anchor='middle' stroke='none' font-size='12' fill='#3b82f6'></text>
+    <text id='fa-h0' x='45' y='80' text-anchor='middle' stroke='none' font-size='16'>Le</text>
+    <text id='fa-b0' x='45' y='210' text-anchor='middle' stroke='none' font-size='16' tabindex='0' role='button' style='cursor:pointer' aria-label='Lecteur « Le »'>Le</text>
+    <text id='fa-h1' x='124' y='80' text-anchor='middle' stroke='none' font-size='16'>chat</text>
+    <text id='fa-b1' x='124' y='210' text-anchor='middle' stroke='none' font-size='16' tabindex='0' role='button' style='cursor:pointer' aria-label='Lecteur « chat »'>chat</text>
+    <text id='fa-h2' x='203' y='80' text-anchor='middle' stroke='none' font-size='16'>noir</text>
+    <text id='fa-b2' x='203' y='210' text-anchor='middle' stroke='none' font-size='16' tabindex='0' role='button' style='cursor:pointer' aria-label='Lecteur « noir »'>noir</text>
+    <text id='fa-h3' x='282' y='80' text-anchor='middle' stroke='none' font-size='16'>qui</text>
+    <text id='fa-b3' x='282' y='210' text-anchor='middle' stroke='none' font-size='16' tabindex='0' role='button' style='cursor:pointer' aria-label='Lecteur « qui »'>qui</text>
+    <text id='fa-h4' x='361' y='80' text-anchor='middle' stroke='none' font-size='16'>dormait</text>
+    <text id='fa-b4' x='361' y='210' text-anchor='middle' stroke='none' font-size='16' tabindex='0' role='button' style='cursor:pointer' aria-label='Lecteur « dormait »'>dormait</text>
+    <text id='fa-h5' x='440' y='80' text-anchor='middle' stroke='none' font-size='16'>sur</text>
+    <text id='fa-b5' x='440' y='210' text-anchor='middle' stroke='none' font-size='16' tabindex='0' role='button' style='cursor:pointer' aria-label='Lecteur « sur »'>sur</text>
+    <text id='fa-h6' x='519' y='80' text-anchor='middle' stroke='none' font-size='16'>le</text>
+    <text id='fa-b6' x='519' y='210' text-anchor='middle' stroke='none' font-size='16' tabindex='0' role='button' style='cursor:pointer' aria-label='Lecteur « le »'>le</text>
+    <text id='fa-h7' x='598' y='80' text-anchor='middle' stroke='none' font-size='16'>tapis</text>
+    <text id='fa-b7' x='598' y='210' text-anchor='middle' stroke='none' font-size='16' tabindex='0' role='button' style='cursor:pointer' aria-label='Lecteur « tapis »'>tapis</text>
+    <text id='fa-h8' x='677' y='80' text-anchor='middle' stroke='none' font-size='16'>s&#39;est</text>
+    <text id='fa-b8' x='677' y='210' text-anchor='middle' stroke='none' font-size='16' tabindex='0' role='button' style='cursor:pointer' aria-label='Lecteur « s&#39;est »'>s&#39;est</text>
+    <text id='fa-msg' x='360' y='264' text-anchor='middle' stroke='none' font-size='14'></text>
+    <line x1='16' y1='280' x2='704' y2='280' stroke-width='1' opacity='0.15'/>
+    <text x='16' y='302' stroke='none' font-size='13' font-weight='600'>le même calcul en tableau : la phrase sur les deux axes</text>
+    <text x='299.0' y='346' stroke='none' font-size='13' transform='rotate(-45 299.0 346)'>Le</text>
+    <text x='325.0' y='346' stroke='none' font-size='13' transform='rotate(-45 325.0 346)'>chat</text>
+    <text x='351.0' y='346' stroke='none' font-size='13' transform='rotate(-45 351.0 346)'>noir</text>
+    <text x='377.0' y='346' stroke='none' font-size='13' transform='rotate(-45 377.0 346)'>qui</text>
+    <text x='403.0' y='346' stroke='none' font-size='13' transform='rotate(-45 403.0 346)'>dormait</text>
+    <text x='429.0' y='346' stroke='none' font-size='13' transform='rotate(-45 429.0 346)'>sur</text>
+    <text x='455.0' y='346' stroke='none' font-size='13' transform='rotate(-45 455.0 346)'>le</text>
+    <text x='481.0' y='346' stroke='none' font-size='13' transform='rotate(-45 481.0 346)'>tapis</text>
+    <text x='507.0' y='346' stroke='none' font-size='13' transform='rotate(-45 507.0 346)'>s&#39;est</text>
+    <text id='fa-l0' x='282' y='369' text-anchor='end' stroke='none' font-size='13' style='cursor:pointer'>Le</text>
+    <rect id='fa-c0_0' x='291' y='353' width='24' height='24' rx='2' fill='#3b82f6' fill-opacity='0.96' stroke='none' style='cursor:pointer'/>
+    <text id='fa-l1' x='282' y='395' text-anchor='end' stroke='none' font-size='13' style='cursor:pointer'>chat</text>
+    <rect id='fa-c1_0' x='291' y='379' width='24' height='24' rx='2' fill='#3b82f6' fill-opacity='0.69' stroke='none' style='cursor:pointer'/>
+    <rect id='fa-c1_1' x='317' y='379' width='24' height='24' rx='2' fill='#3b82f6' fill-opacity='0.33' stroke='none' style='cursor:pointer'/>
+    <text id='fa-l2' x='282' y='421' text-anchor='end' stroke='none' font-size='13' style='cursor:pointer'>noir</text>
+    <rect id='fa-c2_0' x='291' y='405' width='24' height='24' rx='2' fill='#3b82f6' fill-opacity='0.15' stroke='none' style='cursor:pointer'/>
+    <rect id='fa-c2_1' x='317' y='405' width='24' height='24' rx='2' fill='#3b82f6' fill-opacity='0.78' stroke='none' style='cursor:pointer'/>
+    <rect id='fa-c2_2' x='343' y='405' width='24' height='24' rx='2' fill='#3b82f6' fill-opacity='0.15' stroke='none' style='cursor:pointer'/>
+    <text id='fa-l3' x='282' y='447' text-anchor='end' stroke='none' font-size='13' style='cursor:pointer'>qui</text>
+    <rect id='fa-c3_0' x='291' y='431' width='24' height='24' rx='2' fill='#3b82f6' fill-opacity='0.11' stroke='none' style='cursor:pointer'/>
+    <rect id='fa-c3_1' x='317' y='431' width='24' height='24' rx='2' fill='#3b82f6' fill-opacity='0.74' stroke='none' style='cursor:pointer'/>
+    <rect id='fa-c3_2' x='343' y='431' width='24' height='24' rx='2' fill='#3b82f6' fill-opacity='0.15' stroke='none' style='cursor:pointer'/>
+    <rect id='fa-c3_3' x='369' y='431' width='24' height='24' rx='2' fill='#3b82f6' fill-opacity='0.15' stroke='none' style='cursor:pointer'/>
+    <text id='fa-l4' x='282' y='473' text-anchor='end' stroke='none' font-size='13' style='cursor:pointer'>dormait</text>
+    <rect id='fa-c4_0' x='291' y='457' width='24' height='24' rx='2' fill='#3b82f6' fill-opacity='0.09' stroke='none' style='cursor:pointer'/>
+    <rect id='fa-c4_1' x='317' y='457' width='24' height='24' rx='2' fill='#3b82f6' fill-opacity='0.24' stroke='none' style='cursor:pointer'/>
+    <rect id='fa-c4_2' x='343' y='457' width='24' height='24' rx='2' fill='#3b82f6' fill-opacity='0.11' stroke='none' style='cursor:pointer'/>
+    <rect id='fa-c4_3' x='369' y='457' width='24' height='24' rx='2' fill='#3b82f6' fill-opacity='0.62' stroke='none' style='cursor:pointer'/>
+    <rect id='fa-c4_4' x='395' y='457' width='24' height='24' rx='2' fill='#3b82f6' fill-opacity='0.15' stroke='none' style='cursor:pointer'/>
+    <text id='fa-l5' x='282' y='499' text-anchor='end' stroke='none' font-size='13' style='cursor:pointer'>sur</text>
+    <rect id='fa-c5_0' x='291' y='483' width='24' height='24' rx='2' fill='#3b82f6' fill-opacity='0.11' stroke='none' style='cursor:pointer'/>
+    <rect id='fa-c5_1' x='317' y='483' width='24' height='24' rx='2' fill='#3b82f6' fill-opacity='0.11' stroke='none' style='cursor:pointer'/>
+    <rect id='fa-c5_2' x='343' y='483' width='24' height='24' rx='2' fill='#3b82f6' fill-opacity='0.11' stroke='none' style='cursor:pointer'/>
+    <rect id='fa-c5_3' x='369' y='483' width='24' height='24' rx='2' fill='#3b82f6' fill-opacity='0.15' stroke='none' style='cursor:pointer'/>
+    <rect id='fa-c5_4' x='395' y='483' width='24' height='24' rx='2' fill='#3b82f6' fill-opacity='0.65' stroke='none' style='cursor:pointer'/>
+    <rect id='fa-c5_5' x='421' y='483' width='24' height='24' rx='2' fill='#3b82f6' fill-opacity='0.15' stroke='none' style='cursor:pointer'/>
+    <text id='fa-l6' x='282' y='525' text-anchor='end' stroke='none' font-size='13' style='cursor:pointer'>le</text>
+    <rect id='fa-c6_0' x='291' y='509' width='24' height='24' rx='2' fill='#3b82f6' fill-opacity='0.11' stroke='none' style='cursor:pointer'/>
+    <rect id='fa-c6_1' x='317' y='509' width='24' height='24' rx='2' fill='#3b82f6' fill-opacity='0.09' stroke='none' style='cursor:pointer'/>
+    <rect id='fa-c6_2' x='343' y='509' width='24' height='24' rx='2' fill='#3b82f6' fill-opacity='0.08' stroke='none' style='cursor:pointer'/>
+    <rect id='fa-c6_3' x='369' y='509' width='24' height='24' rx='2' fill='#3b82f6' fill-opacity='0.11' stroke='none' style='cursor:pointer'/>
+    <rect id='fa-c6_4' x='395' y='509' width='24' height='24' rx='2' fill='#3b82f6' fill-opacity='0.20' stroke='none' style='cursor:pointer'/>
+    <rect id='fa-c6_5' x='421' y='509' width='24' height='24' rx='2' fill='#3b82f6' fill-opacity='0.60' stroke='none' style='cursor:pointer'/>
+    <rect id='fa-c6_6' x='447' y='509' width='24' height='24' rx='2' fill='#3b82f6' fill-opacity='0.15' stroke='none' style='cursor:pointer'/>
+    <text id='fa-l7' x='282' y='551' text-anchor='end' stroke='none' font-size='13' style='cursor:pointer'>tapis</text>
+    <rect id='fa-c7_0' x='291' y='535' width='24' height='24' rx='2' fill='#3b82f6' fill-opacity='0.08' stroke='none' style='cursor:pointer'/>
+    <rect id='fa-c7_1' x='317' y='535' width='24' height='24' rx='2' fill='#3b82f6' fill-opacity='0.11' stroke='none' style='cursor:pointer'/>
+    <rect id='fa-c7_2' x='343' y='535' width='24' height='24' rx='2' fill='#3b82f6' fill-opacity='0.08' stroke='none' style='cursor:pointer'/>
+    <rect id='fa-c7_3' x='369' y='535' width='24' height='24' rx='2' fill='#3b82f6' fill-opacity='0.08' stroke='none' style='cursor:pointer'/>
+    <rect id='fa-c7_4' x='395' y='535' width='24' height='24' rx='2' fill='#3b82f6' fill-opacity='0.15' stroke='none' style='cursor:pointer'/>
+    <rect id='fa-c7_5' x='421' y='535' width='24' height='24' rx='2' fill='#3b82f6' fill-opacity='0.20' stroke='none' style='cursor:pointer'/>
+    <rect id='fa-c7_6' x='447' y='535' width='24' height='24' rx='2' fill='#3b82f6' fill-opacity='0.56' stroke='none' style='cursor:pointer'/>
+    <rect id='fa-c7_7' x='473' y='535' width='24' height='24' rx='2' fill='#3b82f6' fill-opacity='0.14' stroke='none' style='cursor:pointer'/>
+    <text id='fa-l8' x='282' y='577' text-anchor='end' stroke='none' font-size='13' style='cursor:pointer'>s&#39;est</text>
+    <rect id='fa-c8_0' x='291' y='561' width='24' height='24' rx='2' fill='#3b82f6' fill-opacity='0.10' stroke='none' style='cursor:pointer'/>
+    <rect id='fa-c8_1' x='317' y='561' width='24' height='24' rx='2' fill='#3b82f6' fill-opacity='0.56' stroke='none' style='cursor:pointer'/>
+    <rect id='fa-c8_2' x='343' y='561' width='24' height='24' rx='2' fill='#3b82f6' fill-opacity='0.12' stroke='none' style='cursor:pointer'/>
+    <rect id='fa-c8_3' x='369' y='561' width='24' height='24' rx='2' fill='#3b82f6' fill-opacity='0.11' stroke='none' style='cursor:pointer'/>
+    <rect id='fa-c8_4' x='395' y='561' width='24' height='24' rx='2' fill='#3b82f6' fill-opacity='0.14' stroke='none' style='cursor:pointer'/>
+    <rect id='fa-c8_5' x='421' y='561' width='24' height='24' rx='2' fill='#3b82f6' fill-opacity='0.09' stroke='none' style='cursor:pointer'/>
+    <rect id='fa-c8_6' x='447' y='561' width='24' height='24' rx='2' fill='#3b82f6' fill-opacity='0.10' stroke='none' style='cursor:pointer'/>
+    <rect id='fa-c8_7' x='473' y='561' width='24' height='24' rx='2' fill='#3b82f6' fill-opacity='0.13' stroke='none' style='cursor:pointer'/>
+    <rect id='fa-c8_8' x='499' y='561' width='24' height='24' rx='2' fill='#3b82f6' fill-opacity='0.11' stroke='none' style='cursor:pointer'/>
+    <rect id='fa-ligne' x='289' width='236' height='26' rx='3' fill='none' stroke='#f59e0b' stroke-width='2' pointer-events='none'/>
+    <text x='546' y='366' stroke='none' font-size='12' opacity='0.8'>lignes : les mots qui lisent</text>
+    <text x='546' y='382' stroke='none' font-size='12' opacity='0.8'>(leurs requêtes)</text>
+    <text x='546' y='414' stroke='none' font-size='12' opacity='0.8'>colonnes : les mots lus</text>
+    <text x='546' y='430' stroke='none' font-size='12' opacity='0.8'>(leurs clés et valeurs)</text>
+    <text x='546' y='462' stroke='none' font-size='12' opacity='0.8'>triangle vide : le masque;</text>
+    <text x='546' y='478' stroke='none' font-size='12' opacity='0.8'>un mot ne lit pas</text>
+    <text x='546' y='494' stroke='none' font-size='12' opacity='0.8'>les mots qui le suivent</text>
+    <text x='230' y='473.0' text-anchor='end' stroke='none' font-size='12' opacity='0.8'>lecteurs →</text>
+  </g>
+</svg>
+<script>
+(() => {
+  const D = {"mots": ["Le", "chat", "noir", "qui", "dormait", "sur", "le", "tapis", "s'est"], "w": [[1.0], [0.7, 0.3], [0.1, 0.8, 0.1], [0.05, 0.75, 0.1, 0.1], [0.03, 0.2, 0.05, 0.62, 0.1], [0.05, 0.05, 0.05, 0.1, 0.65, 0.1], [0.05, 0.03, 0.02, 0.05, 0.15, 0.6, 0.1], [0.02, 0.05, 0.02, 0.02, 0.1, 0.15, 0.55, 0.09], [0.04, 0.55, 0.07, 0.05, 0.09, 0.03, 0.04, 0.08, 0.05]], "x": [45, 124, 203, 282, 361, 440, 519, 598, 677], "gy": 352, "case": 26};
+  const fig = document.querySelector("svg.figure-auto");
+  const $ = id => fig.querySelector("#" + id);
+  const choisir = i => {
+    D.mots.forEach((_, k) => {
+      const b = $("fa-b" + k);
+      b.setAttribute("font-weight", k === i ? "bold" : "normal");
+      b.setAttribute("fill", k === i ? "#3b82f6" : "currentColor");
+      $("fa-l" + k).setAttribute("font-weight", k === i ? "bold" : "normal");
+      $("fa-h" + k).setAttribute("opacity", k > i ? "0.3" : "1");
+      const l = $("fa-a" + k), p = k <= i ? D.w[i][k] : 0;
+      l.setAttribute("x1", D.x[i]);
+      l.setAttribute("stroke-width", (1 + 9 * p).toFixed(1));
+      l.setAttribute("stroke-opacity", k <= i ? (0.2 + 0.8 * p).toFixed(2) : "0");
+      $("fa-p" + k).textContent = k <= i && p >= 0.05 ? Math.round(p * 100) + " %" : "";
+      $("fa-h" + k).setAttribute("font-weight", k <= i && p >= 0.3 ? "bold" : "normal");
+    });
+    $("fa-ligne").setAttribute("y", D.gy + i * D.case);
+    const w = D.w[i], max = w.indexOf(Math.max(...w));
+    $("fa-msg").textContent = i === 0
+      ? "« Le », premier mot, ne peut lire que lui-même."
+      : `« ${D.mots[i]} » lit surtout ${max === i ? "lui-même" : "« " + D.mots[max] + " »"} (${Math.round(w[max] * 100)} %); les mots qui le suivent lui sont cachés.`;
+  };
+  D.mots.forEach((_, i) => {
+    const cibles = [$("fa-b" + i), $("fa-l" + i)];
+    for (let j = 0; j <= i; j++) cibles.push($(`fa-c${i}_${j}`));
+    cibles.forEach(el => el.addEventListener("click", () => choisir(i)));
+    $("fa-b" + i).addEventListener("keydown", e => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); choisir(i); }
+    });
+  });
+  choisir(8);
+})();
+</script>
+```
+
+L'auto-attention. En haut et en bas, la même phrase : chaque mot y joue les
+deux rôles, livre (en haut) et lecteur (en bas). Cliquez un mot de la rangée du
+bas, ou une ligne du tableau : il lit les mots qui le précèdent, et lui-même;
+ceux qui le suivent lui sont cachés. Le tableau range les mêmes poids avec la
+phrase sur les deux axes, et la ligne encadrée est celle du lecteur choisi.
+Les poids sont choisis pour l'illustration; ceux d'un vrai modèle viennent plus
+bas.
+:::
+
+Voilà pourquoi chaque mot porte trois vecteurs : une requête pour son rôle de
+lecteur, une clé et une valeur pour son rôle de livre. On pourrait être tenté
+de faire plus simple : puisque c'est la même phrase des deux côtés, pourquoi ne
+pas comparer directement les plongements, et prendre $x_i \cdot x_j$ comme
+score? À la [semaine 2](s02.qmd#plongements), les mots qui se comportent de la
+même façon avaient des vecteurs proches, et ce produit scalaire mesure
+justement leur ressemblance. Cette attention-là ne demande aucun paramètre,
+mais elle échoue, pour deux raisons. D'abord, le mot qui ressemble le plus à
+« s'est », c'est presque toujours « s'est » lui-même : chaque jeton se lirait
+surtout lui-même. Ensuite, et surtout, ce que cherche « s'est », ce n'est pas
+un mot qui lui ressemble, c'est son sujet : un nom, pas un verbe. **Ce qu'un
+mot cherche n'est pas ce qu'il est.** Le lecteur et le livre doivent rester
+distincts, même quand c'est le même mot : la requête de « s'est » peut alors
+dire « un nom sujet », et la clé de « chat » dire « un nom », sans que les deux
+mots se ressemblent. C'est ce que montre la figure [-@fig-requete].
 
 ::: {#fig-requete}
 
@@ -871,7 +1189,7 @@ figure [-@fig-requete].
 </script>
 ```
 
-Requête et clé. À gauche, la première idée : un seul vecteur par mot, et pour
+Requête et clé. À gauche, la tentation : un seul vecteur par mot, et pour
 score la ressemblance des plongements. « s'est » ressemble surtout à lui-même
 et à l'autre verbe, « dormait », et ne regarde presque pas « chat ». À droite,
 chaque mot a une clé, ce qu'il est, et « s'est » a en plus une requête (en
@@ -885,34 +1203,21 @@ leurs rôles sont choisis pour l'illustration; dans un vrai modèle, ils sont
 appris, et leurs axes ne portent pas d'étiquettes.
 :::
 
-Reste ce qu'on moyenne. Dans la figure [-@fig-moyenne], c'étaient les
-plongements eux-mêmes. Mais ce que « chat » doit transmettre n'est pas
-forcément ce qui a permis de le trouver : on l'a trouvé parce que c'est un nom
-sujet (sa clé), mais ce qui sert à « s'est », pour accorder la suite, c'est
-qu'il soit masculin. D'où un troisième vecteur, la **valeur**, ce que le
-jeton transmet quand on le trouve.
+De même, ce que « chat » transmet n'est pas ce qui a permis de le trouver : on
+l'a trouvé parce que c'est un nom sujet (sa clé), mais ce qui sert à « s'est »,
+pour accorder la suite, c'est qu'il soit masculin (sa valeur).
 
 ### Requêtes, clés et valeurs
 
-Une image résume les trois rôles. Dans une bibliothèque, vous cherchez un livre
-sur les chats : c'est votre **requête**. Vous parcourez les étiquettes au dos
-des livres : ce sont les **clés**. Le livre dont l'étiquette correspond, vous
-l'ouvrez et vous le lisez : son contenu, c'est la **valeur**. L'étiquette sert à
-trouver le livre, mais ce que vous emportez, c'est son contenu. L'attention
-fait la même chose, à une différence près : au lieu de prendre un seul livre,
-elle lit un peu de chacun, d'autant plus que son étiquette correspond à la
-requête.
+En auto-attention, les trois vecteurs d'un mot sont tirés de son plongement
+$x$, par trois multiplications matricielles :
 
-| Vecteur | La question à laquelle il répond | Il sert à… | Dans notre phrase |
-|:--|:--|:--|:--|
-| requête $q$ | Qu'est-ce que je cherche? | calculer les poids | « s'est » cherche un nom sujet |
-| clé $k$ | À quoi peut-on me reconnaître? | calculer les poids | « chat » se présente comme un nom sujet |
-| valeur $v$ | Que dois-je transmettre si on me choisit? | former le résultat | « chat » transmet « masculin » |
+- la requête $q = x W_Q$;
+- la clé $k = x W_K$;
+- la valeur $v = x W_V$.
 
-La troisième colonne est la plus importante. La requête et la clé ne servent
-qu'à calculer les poids, puis elles disparaissent : elles décident **où
-regarder**. Seules les valeurs arrivent dans le résultat : elles décident
-**quoi transmettre**. La figure [-@fig-flux] montre ces deux circuits.
+La figure [-@fig-flux] montre leurs deux circuits pour « s'est » : l'un décide
+où regarder, l'autre quoi transmettre.
 
 ::: {#fig-flux}
 
@@ -983,13 +1288,6 @@ chemin à part : c'est elle, multipliée par son poids, qui arrive dans le
 nouveau vecteur de « s'est ».
 :::
 
-Les trois vecteurs sont tirés du même plongement $x$, par trois
-multiplications matricielles :
-
-- la **requête** (*query*) $q = x W_Q$;
-- la **clé** (*key*) $k = x W_K$;
-- la **valeur** (*value*) $v = x W_V$.
-
 Ce sont trois façons de regarder le même mot. Les trois matrices $W_Q$, $W_K$
 et $W_V$ sont les mêmes pour tous les jetons : la même machine fabrique la
 requête, la clé et la valeur de chaque mot, quelle que soit sa place. Leur
@@ -997,7 +1295,10 @@ taille ne dépend que de la dimension des vecteurs, pas de la longueur du
 contexte : c'est pourquoi allonger le contexte n'ajoute aucun paramètre. Elles
 sont apprises par descente de gradient, comme tout le reste : c'est
 l'entraînement qui décide quoi chercher, comment se présenter et quoi
-transmettre.
+transmettre. En attention croisée, la requête viendrait d'une phrase, et les
+clés et les valeurs de l'autre. Le transformeur original, conçu pour la
+traduction, utilisait les deux; les modèles de langue comme GPT ou Qwen ne
+gardent que l'auto-attention.
 
 ### L'attention de « s'est », case par case {#calcul}
 
@@ -1255,9 +1556,14 @@ groupes de colonnes de la figure [-@fig-calcul] :
 3. la moyenne des valeurs $v_j$ selon ces poids : c'est le nouveau vecteur de
    « s'est ».
 
-Pour tous les jetons à la fois, en empilant les vecteurs en matrices :
+Pour tous les jetons à la fois, on empile les vecteurs en matrices,
+$Q = XW_Q$, $K = XW_K$ et $V = XW_V$, toutes trois tirées de la même phrase $X$ :
 
 $$\mathrm{Attention}(Q, K, V) = \underbrace{\mathrm{softmax}\!\left(\frac{QK^\top}{\sqrt{d}}\right)}_{\text{les poids : où regarder}} \; \underbrace{V\vphantom{\left(\frac{QK^\top}{\sqrt{d}}\right)}}_{\text{quoi transmettre}}$$
+
+Le produit $QK^\top$ est le tableau de la figure [-@fig-auto], avant le
+softmax : une ligne par mot qui lit, une colonne par mot lu, et dans chaque
+case le score d'une paire. C'est là que la phrase est comparée à elle-même.
 
 Deux détails. La division par $\sqrt{d}$, où $d$ est la dimension des
 vecteurs, empêche les scores de grandir avec la dimension, ce qui rendrait le
@@ -1860,7 +2166,12 @@ fois plus gros, se compte en processeurs graphiques et en argent.
 - L'attention permet à chaque jeton d'aller chercher l'information dans tout
   le contexte, quelle que soit la distance : une moyenne des valeurs,
   pondérée par la ressemblance entre sa requête et les clés des autres jetons.
-  Le masque causal l'empêche de regarder l'avenir.
+  La requête et la clé décident où regarder; la valeur, quoi transmettre.
+- Inventée pour la traduction, où une phrase en lit une autre (attention
+  croisée), l'attention d'un modèle de langue est une auto-attention : la
+  phrase se lit elle-même, et chaque mot y est à la fois lecteur (sa requête)
+  et livre (sa clé et sa valeur). Le masque causal l'empêche de lire
+  l'avenir.
 - L'attention ignore l'ordre des jetons; on le lui donne par des vecteurs de
   position ou, dans les modèles récents, par des rotations (RoPE) qui rendent
   le score dépendant de la distance entre les jetons.
